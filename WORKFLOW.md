@@ -4,17 +4,26 @@ These are your instructions when building and iterating on ontologies. You act a
 
 ---
 
+## Primary Use Case — CIG Monitoring
+
+The primary purpose of this kit is to **instantiate the PROforma computer-interpretable guideline (CIG) ontology** (`cig/proforma.owl`) for a clinical guideline, focusing on **monitoring completion of therapy recommendations** (Action Enactment goals) and **monitoring desired/undesired effects of therapy** (State Achievement goals).
+
+When the task is to turn a clinical guideline into a CIG, or to build a therapy + monitoring plan, **follow the `cig-monitoring` skill** (`skills/cig-monitoring/SKILL.md`). It encodes the domain know-how in `cig/know-how/SKILL.md` and specializes the generic 7-step methodology below: Mor's Steps 1–3 (scope, locate guidelines, extract therapy/goals/monitoring) map onto Steps 1–3 here, and Mor's Steps 4–6 (PROforma formalization) map onto Steps 4 and 6 here. The 7-step methodology below remains the underlying engine for all ontology work.
+
+Shared CIG reference material lives under `cig/`: `cig/proforma.owl` (the meta-ontology to instantiate — do not edit), `cig/examples/` (worked instantiations to imitate), `cig/guidelines/` (shared clinical guideline PDF library), and `cig/know-how/`. Per-CIG working output goes under `projects/<project_dir>/`.
+
+---
+
 ## Guiding Principles
 
 - **Iterative and incremental**: Propose changes, get the user's review, and apply only after approval.
 - **Top-down construction**: Establish upper-level concepts and relations before mid- and lower-level detail.
 - **Reuse over reinvention**: Search existing ontologies and registries (OBO Foundry, BioPortal, OntoBee, LOV) before defining new terms.
 - **Scope discipline (CQ-bounded modeling)**: The ontology should contain **only** the classes, properties, and axioms needed to answer the competency questions. Do not model concepts merely because they appear in the user story or data source — only model what a CQ explicitly requires. Narrative examples (specific people, places, events mentioned in a user story) are ABox individuals, not TBox structure. When in doubt, leave a concept out; it is easier to add a class later than to justify one that no CQ needs. This principle takes precedence over taxonomic tidiness, ODP elegance, or extensibility concerns.
-- **Upper ontology (new projects)**: When **starting a new ontology from scratch**, **ask the user** whether they want to use an upper-level ontology (e.g. BFO or SULO) or create from scratch without one. If they want one, ask which; do not assume or choose for them. Only add imports in Step 6 when they have chosen an upper ontology. When adding `owl:imports`, use the **canonical IRI**: BFO → `http://purl.obolibrary.org/obo/bfo.owl`, SULO → `https://w3id.org/sulo/`. **When using an upper-level ontology, always use the existing object and data properties from that ontology; do not define new object or data properties** unless the user explicitly instructs otherwise.
+- **Foundational ontology (PROforma)**: Every project is built on top of the **PROforma CIG ontology** (`cig/proforma.owl`). **Reuse its existing classes, object properties, and data properties by IRI** — do not redeclare them, and **do not define new object or data properties** unless the user explicitly instructs otherwise. Add the PROforma prefix (`http://www.owl-ontologies.com/Ontology1779030093.owl#`) to the project ontology.
 - **Draft approval before formalization**: In Step 4, **write the proposal to `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md` immediately** (with `status: draft`) and present it in the conversation at the same time. The user reviews and may edit the file directly. Do **not** proceed to Step 6 (formalization) until the user has **explicitly approved** the draft. On approval, update the file's status to `approved`.
-- **Do not modify OWL files**: Never directly edit OWL files by hand. Use the **ontology-editor** tools (OWL-MCP) for all axiom, prefix, and metadata changes. Use **ODK/ROBOT** via the provided skills and tools (e.g. **odk_robot**, **odk_make**)—not raw shell or `robot`/`make` commands.
-- **User-provided context**: Always check **`projects/<project_dir>/resources`** at the start of a task to see if the user has placed any files there for context (e.g. PDFs, guidelines, spreadsheets). Treat these as primary sources for scope and knowledge exploration alongside any files the user attaches in the conversation.
-- **Issue-first (external contributions)**: Many ontology projects require opening an issue (e.g. new term request) before submitting a PR; check the target repo's CONTRIBUTING and issue templates. When contributing to an external ontology, cloned repos live in **`projects/`** (gitignored); work from that project's directory for all edits, QC, and PRs. Use the **analyze-project**, **clone-project**, **review-issue**, and **create-pull-request** skills for the full contribution workflow.
+- **Do not modify OWL files**: Never directly edit OWL files by hand. Use the **ontology-editor** tools (OWL-MCP) for all axiom, prefix, and metadata changes, and the OWL-MCP review tools (`test_pitfalls`, `test_quality`, `sparql_query`) for quality checks and competency-question verification—not raw shell commands.
+- **User-provided context**: Always check **`projects/<project_dir>/resources`** at the start of a task to see if the user has placed any files there for context (e.g. PDFs, guidelines, spreadsheets). For CIG work, also check the shared **`cig/`** reference area — `cig/guidelines/` (clinical guideline PDFs), `cig/proforma.owl`, `cig/examples/`, and `cig/know-how/`. Treat these as primary sources for scope and knowledge exploration alongside any files the user attaches in the conversation.
 - **Long-term memory**: Use the **semlocal** skill (with `--collection <project_dir>`) to store and retrieve knowledge, user decisions, and provenance across sessions. Always scope to the project's collection so each project's knowledge is isolated. Store summaries after extraction (Step 2), organization (Step 3), user feedback (Step 5), and formalization (Step 6).
 
 ---
@@ -32,13 +41,14 @@ Help clarify the change the user wants. Analyze and structure it. Search semloca
 **Target output:**
 - Domain and subject matter of the change
 - **Competency questions (CQs)** — natural language questions the ontology must answer when the change is complete (acceptance criteria)
-- **Upper ontology choice** (for new ontologies): Ask the user whether to align with BFO, SULO, or none. Do not assume.
+- **Foundational ontology**: All work reuses the PROforma CIG ontology (`cig/proforma.owl`) by IRI — there is no separate upper-ontology choice to make.
 - Target namespace and prefix (for new ontologies)
-- Alignment targets (e.g. RO, DOLCE), if any
 
 ### Step 2 — Knowledge Exploration
 
 Gather domain knowledge from the user's data sources (PDFs, Word, Excel/CSV, URLs, SPARQL endpoints, or database schemas). Always check `projects/<project_dir>/resources` for user-provided files. Use subagents to explore data sources — provide scope and CQs so each subagent can focus extraction.
+
+**CIG monitoring (per the `cig-monitoring` skill):** read the guideline PDFs in `cig/guidelines/` as primary sources and extract therapy recommendations (completing vague ones from other guidelines or the web), clinical goals (defining clinical abstractions such as cardiometabolic risk from measurable components), monitoring recommendations aligned to goals (classifying each as an achieve-state or avoid-state), monitoring frequency (proposing one with justification when the guidelines omit it), measurement method (lab, questionnaire, device, or clinician interview), ADEs from package inserts, rare effects from case reports, and unmentioned harms/benefits derived from the mechanism of action.
 
 **Per source, extract:** concepts, relations, and constraints. Quote or cite excerpts that justify each finding. Note confidence where the source is ambiguous.
 
@@ -76,6 +86,8 @@ Synthesize findings and map them to existing terminology. Do not propose ontolog
 
 Produce an informal, structured proposal and **simultaneously** write it to `projects/<project_dir>/plans/PROPOSAL-<YYYYMMDD-HHmmss>.md` and present it in the conversation. Use mermaid diagrams for the class hierarchy. Do **not** output formal OWL/RDF in this step.
 
+**CIG monitoring:** draft the PROforma plan structure rather than a class hierarchy — a Top-Level Plan with an Enquiry, a Decision, a Therapy Plan, and a Monitoring Plan in sequence; the Monitoring Plan with parallel Monitor Actions / Monitor Desired State / Monitor Undesired ADEs sub-plans. List the therapy interventions (each becoming an Action + Component with a State Achievement Goal) and the monitoring items (each becoming an Action + Component with an Action Enactment Goal), with proposed frequencies and justifications. See the `cig-monitoring` skill's `references/` for the design patterns.
+
 **Consult the odp-pattern-selector skill during drafting** — it provides both the ODP catalogue and a **Modeling Checklist** (`references/ModelingChecklist.md`) that catches over-classification and anti-patterns.
 
 **Draft pruning checkpoint (mandatory — run before presenting the draft):**
@@ -107,10 +119,12 @@ Close the draft with a **"What I need from you"** list. State clearly that you w
 
 Convert the approved draft into formal ontology using the **ontology-editor** tools. **NEVER write or edit OWL files directly** — if a tool call fails, diagnose the error and retry. Do not fall back to manual file creation under any circumstances; report the error to the user instead.
 
+**CIG monitoring:** the instantiation is an **ABox** that reuses the PROforma classes/properties from `cig/proforma.owl` by IRI (do not redeclare them). Add the PROforma prefix (`http://www.owl-ontologies.com/Ontology1779030093.owl#`). Create `Plan`/`Action`/`Decision`/`Enquiry`/`Component`/`Goal`/`Candidate`/`Schedule_Constraint` individuals connected via `components`, `taskref`, `goal`, `scheduled_constraints`, `conref`, `precondition`, and `candidates`. Express sequence with `Schedule_Constraint`/`conref` (PROforma has no "next" property) and parallelism by sharing a parent plan with no constraints. Assert `verb` (`achieve`/`avoid` for State Achievement goals, `order` for Action Enactment goals) and `noun_phrase` (referencing an HL7 FHIR `ServiceRequest` for monitoring orders) on each `Goal`. Imitate `cig/examples/obesity-glp1.owl`. When verifying in Step 7, pass `cig/proforma.owl` alongside the project ontology to `sparql_query` so the PROforma schema is available in the queried graph.
+
 **Procedure:**
 
 1. **Activate tools**: Read the **ontology-editor** skill (`skills/ontology-editor/SKILL.md`), then call `setup_tools(skills: ["ontology-editor"])` to activate the tools.
-2. **Set ontology IRI**: Call `set_ontology_iri` with the **full IRI** (e.g. `"http://example.org/ontology/my-ontology/"`) — never a CURIE (e.g. `"ex:"`). Same for the version IRI. CURIEs in the `Ontology(...)` header produce files that ROBOT cannot parse.
+2. **Set ontology IRI**: Call `set_ontology_iri` with the **full IRI** (e.g. `"http://example.org/ontology/my-ontology/"`) — never a CURIE (e.g. `"ex:"`). Same for the version IRI. CURIEs in the `Ontology(...)` header produce invalid OWL that parsers reject.
 3. **Add prefixes**: Call `add_prefix` for each namespace prefix (the ontology's own prefix, `owl`, `rdf`, `rdfs`, `xsd`, and any imported namespaces).
 4. **Add axioms**: Use `add_axioms` to batch declarations, subclass axioms, property axioms, domain/range, cardinality restrictions, disjointness, equivalent classes, and annotation assertions. Group related axioms into logical batches (e.g. all class declarations, then property declarations, then restrictions).
 5. **Verify**: Call `find_axioms` or `get_all_axioms` with `include_labels: true` to spot-check the result.
@@ -118,10 +132,10 @@ Convert the approved draft into formal ontology using the **ontology-editor** to
 **Modeling guidance (apply during axiom construction):**
 
 - Mint IRIs following the ontology's naming convention.
-- **When an upper-level ontology is used**: Use only the **existing object and data properties** from that ontology; do not define new ones unless the user explicitly instructs otherwise.
+- **Reuse PROforma**: Use only the **existing classes, object, and data properties** from PROforma (`cig/proforma.owl`); reference them by IRI and do not define new object or data properties unless the user explicitly instructs otherwise.
 - Assert subclass axioms, property chains, domain/range, cardinality. Where scope and CQs support it, add defined classes, inverse properties, and value partitions (see **Modeling quality and enrichment**).
 - Add annotation properties (labels, definitions, synonyms, provenance).
-- **Add `owl:imports`** for the upper ontology (if any) using the **canonical IRI** in angle brackets: `Import(<http://purl.obolibrary.org/obo/bfo.owl>)` for BFO, `Import(<https://w3id.org/sulo/>)` for SULO. Never use CURIEs in `Import(...)` axioms (e.g. `Import(obo:bfo.owl)` is invalid) — ROBOT cannot parse them.
+- **Imports**: If you add any `owl:imports`, use the **canonical IRI** in angle brackets (e.g. `Import(<https://example.org/imported-ontology>)`). Never use CURIEs in `Import(...)` axioms (e.g. `Import(ex:imported-ontology)` is invalid) — parsers reject them.
 - **Annotation assertions on the ontology itself** (e.g. `rdfs:label`, `rdfs:comment`, `dcterms:license`) must use the **full ontology IRI** as the subject, not a bare CURIE like `ex:`. Example: `AnnotationAssertion(rdfs:label <http://example.org/ontology/my-ontology/> "My Ontology"@en)`.
 - **Datatype selection:** Choose semantically accurate XSD datatypes. Be aware that `xsd:date` and `xsd:gYear` are not in the OWL 2 DL datatype map — consult the user before substituting if strict DL compliance is required.
 - Record provenance: requester, data sources, iteration date.
@@ -133,8 +147,8 @@ Run automated checks using the actual tools — **never fabricate or assume resu
 **Procedure:**
 
 1. **Pitfall scan**: Call `test_pitfalls` (ontology-editor tool) on the OWL file. Review the JSON report for issues; fix critical/important pitfalls before proceeding.
-2. **Consistency**: Run `odk_robot` with `reason` (e.g. `reason --input <path> --reasoner ELK`) to check for logical inconsistencies. Report the actual tool output.
-3. **Competency question verification (mandatory — every CQ must be verified)**: Delegate this to a **subagent** — launch a Task with the **cq-verification** skill (`skills/cq-verification/SKILL.md`). Provide the subagent with: the skill path, the project directory, the path to the approved proposal (for the CQ list), and the path to the ontology OWL file. The subagent handles the full procedure: create test data, write SPARQL queries for every CQ, merge ontology + test data with `robot merge`, execute every query with `robot query`, and return results. Queries must run against the **merged** file (schema + individuals) — never against test data alone. Every CQ must appear in the results table. If any CQ fails due to an ontology gap, return to Step 6.
+2. **Quality evaluation**: Call `test_quality` (ontology-editor tool) on the OWL file. It runs the whelk OWL EL reasoner over the inferred class hierarchy and returns OQuaRE metrics and an overall 1–5 score. Report the actual tool output and address low-scoring characteristics where reasonable.
+3. **Competency question verification (mandatory — every CQ must be verified)**: Delegate this to a **subagent** — launch a Task with the **cq-verification** skill (`skills/cq-verification/SKILL.md`). Provide the subagent with: the skill path, the project directory, the path to the approved proposal (for the CQ list), and the path to the ontology OWL file (and, for CIG work, `cig/proforma.owl`). The subagent handles the full procedure: create test data, write SPARQL queries for every CQ, and execute every query with `sparql_query`, passing the ontology and test-data file paths together so they are merged into one graph (schema + individuals) — never querying test data alone. Every CQ must appear in the results table. If any CQ fails due to an ontology gap, return to Step 6.
 4. **Structural checks**: Use `find_axioms` to check for orphaned classes (classes with no SubClassOf or usage in restrictions), undefined property domains/ranges, and missing required annotations (`rdfs:label`).
 5. **Duplication**: Search for new terms that are semantically equivalent to existing terms in the ontology or imported ontologies.
 

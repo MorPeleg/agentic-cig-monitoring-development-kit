@@ -1,16 +1,10 @@
-providers:
-  - cursor
 options:
   toolExposure: on-demand
   requiresCommands:
-    - cli: docker
-      description: Required to run ODK containerised tools
-    - cli: node
-      description: Required to run capa and ODK scripts
+    - cli: npx
+      description: Launches the owl-mcp MCP server (ships with Node.js)
     - cli: semlocal
       description: Required for local semantic memory (npm install -g semlocal)
-    - cli: curl
-      description: Required to search the EBI OLS4 API
 skills:
   - id: capabilities-manager
     type: github
@@ -20,6 +14,26 @@ skills:
       requires:
         - install
         - find_skills
+  - id: cig-monitoring
+    type: local
+    def:
+      path: ./skills/cig-monitoring
+      description: >-
+        Primary workflow: instantiate the PROforma CIG ontology
+        (cig/proforma.owl) for a clinical guideline. Model therapy
+        recommendations and monitoring of desired/undesired effects as PROforma
+        Plans, Actions, Components and Goals (State Achievement goals with verb
+        achieve/avoid; Action Enactment goals with verb order and FHIR
+        ServiceRequest). Use when turning a guideline into a CIG or building a
+        therapy + monitoring plan.
+      requires:
+        - '@owl.add_axiom'
+        - '@owl.add_axioms'
+        - '@owl.add_prefix'
+        - '@owl.set_ontology_iri'
+        - '@owl.find_axioms'
+        - '@owl.get_all_axioms'
+        - '@owl.sparql_query'
   - id: odp-pattern-selector
     type: local
     def:
@@ -34,17 +48,17 @@ skills:
         with test data. Use during Step 7, or whenever the user asks to test,
         validate, or verify an ontology against its CQs.
       requires:
-        - robot
         - '@owl.add_axiom'
         - '@owl.add_axioms'
         - '@owl.add_prefix'
         - '@owl.set_ontology_iri'
         - '@owl.find_axioms'
+        - '@owl.sparql_query'
   - id: ontology-editor
     type: local
     def:
       path: ./skills/ontology-editor
-      description: OWL-MCP tools for ontology editing (axioms, prefixes, IRI, pitfalls)
+      description: OWL-MCP tools for ontology editing (axioms, prefixes, IRI, pitfalls, quality)
       requires:
         - '@owl.add_axiom'
         - '@owl.add_axioms'
@@ -55,25 +69,8 @@ skills:
         - '@owl.ontology_metadata'
         - '@owl.get_labels_for_iri'
         - '@owl.set_ontology_iri'
+        - '@owl.test_quality'
         - '@owl.test_pitfalls'
-  - id: odk-run
-    type: local
-    def:
-      path: ./skills/odk-run
-      description: >-
-        Run custom Make targets or other ODK tools (Konclude, jena,
-        relation-graph, etc.) not covered by dedicated skills
-      requires:
-        - run
-  - id: odk-robot
-    type: local
-    def:
-      path: ./skills/odk-robot
-      description: >-
-        Run ROBOT in ODK Docker (verify, merge, reason, convert, template,
-        query)
-      requires:
-        - robot
   - id: semlocal
     type: remote
     def:
@@ -82,51 +79,29 @@ skills:
         Store, search, and delete text using local semantic search (semlocal CLI).
         Use for long-term memory, knowledge extraction, and recall across sessions.
       requires: []
-  - id: analyze-project
-    type: local
-    def:
-      path: ./skills/analyze-project
-      description: >-
-        Understand a target ontology repo (structure, CONTRIBUTING, issue/PR
-        conventions). Use when user wants to analyze a repo or learn how to
-        contribute.
-  - id: clone-project
-    type: local
-    def:
-      path: ./skills/clone-project
-      description: >-
-        Clone an ontology repo into projects/<slug>/; all later work is done
-        from that directory. Use when user wants to clone or set up a repo
-        locally.
-  - id: review-issue
-    type: local
-    def:
-      path: ./skills/review-issue
-      description: >-
-        Summarize and triage ontology repo issues (NTR, synonym, etc.).
-        Use when user wants to review an issue or find good first issues.
-  - id: create-pull-request
-    type: local
-    def:
-      path: ./skills/create-pull-request
-      description: >-
-        From project directory, create branch, commit, push, and open PR.
-        Use when user wants to create a PR for their changes or for an issue.
-  - id: ontology-reuse
-    type: local
-    def:
-      path: ./skills/ontology-reuse
-      description: >-
-        Search ontology registries (OLS, OBO Foundry, BioPortal) for existing
-        terms to reuse. Use during Steps 2–3, or when the user asks to find,
-        look up, or reuse existing ontology terms.
-      requires:
-        - ols_search
 agents:
   base:
     type: local
     path: ./WORKFLOW.md
   additional:
+    - type: inline
+      id: cig_monitoring_workflow
+      content: >-
+        This kit's primary purpose is instantiating the PROforma CIG ontology
+        (cig/proforma.owl) for clinical guidelines, focusing on monitoring of
+        therapy completion and of desired/undesired effects. For CIG tasks
+        follow the cig-monitoring skill: read guideline PDFs from the shared
+        cig/guidelines/ library; extract therapy recommendations, clinical
+        goals, ADEs and monitoring (proposing monitoring frequencies with
+        justification when the guidelines omit them); then build a PROforma
+        Top-Level Plan with an Enquiry, a Decision, a Therapy Plan, and a
+        Monitoring Plan in sequence (the Monitoring Plan has parallel Monitor
+        Actions / Monitor Desired State / Monitor Undesired ADEs sub-plans).
+        Model each therapy intervention as an Action + Component with a State
+        Achievement Goal (verb achieve/avoid), and each monitoring item as an
+        Action + Component with an Action Enactment Goal (verb order, FHIR
+        ServiceRequest). Reuse PROforma classes/properties by IRI and imitate
+        cig/examples/obesity-glp1.owl.
     - type: inline
       id: capa_tool_usage
       content: >-
@@ -137,16 +112,10 @@ agents:
       id: ontology_builder_tools
       content: >-
         For ontology work: edit OWL only via the ontology-editor tools (never by
-        hand); run ROBOT (reason, verify, merge, etc.) via the odk_robot tool. Paths for ODK tools are relative to the mounted project root
-        (e.g. ontology/agentic-ai.owl).
-    - type: inline
-      id: external_ontology_contribution
-      content: >-
-        For contributing to an external ontology, use analyze-project, then
-        clone-project (into projects/), then review-issue, then implement using
-        odk_robot with project_dir, then
-        create-pull-request. Do not run the ODK Docker script manually for
-        clones. Follow the target repo's CONTRIBUTING and PR checklist.
+        hand); check quality with the OWL-MCP test_pitfalls and test_quality
+        tools; and verify competency questions by running SPARQL with the
+        sparql_query tool (pass the ontology and test-data file paths together so
+        they are merged into one graph before querying).
 servers:
   # Minitour/owl-mcp (Rust): https://github.com/Minitour/owl-mcp
   - id: owl
@@ -156,7 +125,7 @@ servers:
       cmd: npx
       args:
         - -y
-        - owl-mcp@1.0.8
+        - owl-mcp@1.0.10
         - serve
 tools:
   - id: add_axioms
@@ -213,69 +182,21 @@ tools:
     def:
       server: '@owl'
       tool: test_pitfalls
-  - id: run
-    type: command
-    group: odk
+  - id: test_quality
+    type: mcp
     description: >-
-      Run an arbitrary ODK command (custom make target or other tool not covered
-      by dedicated tools). Optional project_dir mounts that dir at /work (e.g.
-      projects/pizza). Paths in command are relative to repo root or project_dir.
+      Evaluate ontology quality with the OQuaRE framework (uses the whelk OWL EL
+      reasoner to compute the inferred class hierarchy); returns metrics,
+      subcharacteristics, and an overall 1-5 quality score
     def:
-      run:
-        cmd: node scripts/odk-docker-run.js "{project_dir}" "{command}"
-        args:
-          - name: command
-            type: string
-            description: >-
-              Full command (e.g. make -C ontology custom-target, Konclude -i
-              edit.owl -o out.owl). No robot—use odk_robot.
-            required: true
-          - name: project_dir
-            type: string
-            description: >-
-              Optional. Project root to mount (e.g. projects/pizza). Empty or
-              omit to use current working directory.
-            required: false
-  - id: robot
-    type: command
-    group: odk
+      server: '@owl'
+      tool: test_quality
+  - id: sparql_query
+    type: mcp
     description: >-
-      Run ROBOT inside ODK Docker (validate, merge, reason, convert, template,
-      query). Paths relative to project root (or cwd when project_dir empty).
-      Use project_dir for clones under projects/ (e.g. projects/owner-repo).
+      Run a SPARQL query over one or more OWL files. Pass several owl_file_paths
+      to merge a schema with its ABox/test data in-memory before querying (used
+      for competency-question verification). SELECT/ASK return SPARQL JSON.
     def:
-      run:
-        cmd: node scripts/odk-docker-run.js "{project_dir}" "robot {robot_args}"
-        args:
-          - name: robot_args
-            type: string
-            description: >-
-              ROBOT arguments; paths relative to mounted root (e.g. reason
-              --input ontology/edit.owl or the edit file path in the project)
-            required: true
-          - name: project_dir
-            type: string
-            description: >-
-              Optional. Project root to mount (e.g. projects/owner-repo for a
-              clone). Empty or omit for workspace ontology (cwd).
-            required: false
-  - id: ols_search
-    type: command
-    description: >-
-      Search the EBI OLS4 API for ontology entities. Returns matching entities
-      with facets for ontologyId and type, filtered to defining ontologies.
-    def:
-      run:
-        cmd: curl -s -G "https://www.ebi.ac.uk/ols4/api/v2/entities" --data-urlencode "search={query}" --data-urlencode "facetFields=ontologyId type" -d "size=10" -d "page={page}" -d "isDefiningOntology=true"
-        args:
-          - name: query
-            type: string
-            description: >-
-              Search query (e.g. "cancer related fatigue"). Spaces are
-              URL-encoded automatically.
-            required: true
-          - name: page
-            type: string
-            description: Page number for paginated results (defaults to 0).
-            required: false
-            default: "0"
+      server: '@owl'
+      tool: sparql_query

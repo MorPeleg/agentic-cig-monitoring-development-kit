@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+<rdf:RDF
+    xmlns:xsp="http://www.owl-ontologies.com/2005/08/07/xsp.owl#"
+    xmlns:swrlb="http://www.w3.org/2003/11/swrlb#"
+    xmlns:swrl="http://www.w3.org/2003/11/swrl#"
+    xmlns:protege="http://protege.stanford.edu/plugins/owl/protege#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:p1="http://www.owl-ontologies.com/Ontology1779030093.owl#"
+    xmlns="http://www.owl-ontologies.com/Ontology1779033579.owl#"
+  xml:base="http://www.owl-ontologies.com/Ontology1779033579.owl">
+  <owl:Ontology rdf:about="">
+    <owl:imports rdf:resource="http://www.owl-ontologies.com/Ontology1779030093.owl"/>
+  </owl:Ontology>
+  <p1:Plan rdf:ID="Obesity_Guideline_Plan">
+    <p1:goal>
+      <p1:Goal rdf:ID="Treat_Obesity">
+        <p1:verb rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+        >treat</p1:verb>
+        <p1:noun_phrase rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+        >obesity</p1:noun_phrase>
+      </p1:Goal>
+    </p1:goal>
+    <p1:components>
+      <p1:Component rdf:ID="Get_Eligibility_Data_Component">
+        <p1:taskref>
+          <p1:Enquiry rdf:ID="Get_Eligibility_Data_Items"/>
+        </p1:taskref>
+      </p1:Component>
+    </p1:components>
+    <p1:components>
+      <p1:Component rdf:ID="Eligibility_Decision_Component">
+        <p1:scheduled_constraints>
+          <p1:Schedule_Constraint rdf:ID="Schedule_Constraint_10">
+            <p1:conref rdf:resource="#Get_Eligibility_Data_Items"/>
+          </p1:Schedule_Constraint>
+        </p1:scheduled_constraints>
+        <p1:taskref>
+          <p1:Decision rdf:ID="Eligiblity_Decision">
+            <p1:candidates>
+              <p1:Candidate rdf:ID="Eligible"/>
+            </p1:candidates>
+            <p1:candidates>
+              <p1:Candidate rdf:ID="Not_Eligible"/>
+            </p1:candidates>
+          </p1:Decision>
+        </p1:taskref>
+      </p1:Component>
+    </p1:components>
+    <p1:components>
+      <p1:Component rdf:ID="Therapy_Component">
+        <p1:taskref>
+          <p1:Plan rdf:ID="Obesity_Therapy">
+            <p1:components>
+              <p1:Component rdf:ID="GLP1_Prescription_Component">
+                <p1:taskref>
+                  <p1:Action rdf:ID="Prescribe_GLP1">
+                    <p1:goal>
+                      <p1:Goal rdf:ID="Goal_achieve_body-weight_reduction_of_5-10_percent">
+                        <p1:noun_phrase rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+                        >body-weight reduction of 5-10 percent</p1:noun_phrase>
+                        <p1:verb rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+                        >achieve</p1:verb>
+                      </p1:Goal>
+                    </p1:goal>
+                  </p1:Action>
+                </p1:taskref>
+              </p1:Component>
+            </p1:components>
+            <p1:precondition>
+              <p1:PROforma_Condition rdf:ID="PROforma_Condition_15">
+                <p1:string_representation rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+                >result_of(Eligibility_Decision) = Eligible</p1:string_representation>
+              </p1:PROforma_Condition>
+            </p1:precondition>
+          </p1:Plan>
+        </p1:taskref>
+        <p1:scheduled_constraints>
+          <p1:Schedule_Constraint rdf:ID="Schedule_Constraint_14">
+            <p1:conref rdf:resource="#Eligiblity_Decision"/>
+          </p1:Schedule_Constraint>
+        </p1:scheduled_constraints>
+      </p1:Component>
+    </p1:components>
+    <p1:components>
+      <p1:Component rdf:ID="Monitoring_Component">
+        <p1:taskref>
+          <p1:Plan rdf:ID="Monitoing">
+            <p1:components>
+              <p1:Component rdf:ID="Monitoring_Action_Component">
+                <p1:taskref>
+                  <p1:Plan rdf:ID="Monitor_Actions">
+                    <p1:goal>
+                      <p1:Goal rdf:ID="Goal_achieve_actions_monitored">
+                        <p1:verb rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+                        >achieve</p1:verb>
+                        <p1:noun_phrase rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+                        >actions monitored</p1:noun_phrase>
+                      </p1:Goal>
+                    </p1:goal>
+                  </p1:Plan>
+                </p1:taskref>
+              </p1:Component>
+            </p1:components>
+            <p1:components>
+              <p1:Component rdf:ID="Monitoring_Undesired_State_Component">
+                <p1:taskref>
+                  <p1:Plan rdf:ID="Monitor_Undesired_State"/>
+                </p1:taskref>
+              </p1:Component>
+            </p1:components>
+            <p1:components>
+              <p1:Component rdf:ID="Monitoring_Desired_State_Component">
+                <p1:taskref>
+                  <p1:Plan rdf:ID="Monitor_Desired_State"/>
+                </p1:taskref>
+              </p1:Component>
+            </p1:components>
+          </p1:Plan>
+        </p1:taskref>
+        <p1:scheduled_constraints>
+          <p1:Schedule_Constraint rdf:ID="Schedule_Constraint_17">
+            <p1:conref rdf:resource="#Obesity_Therapy"/>
+          </p1:Schedule_Constraint>
+        </p1:scheduled_constraints>
+      </p1:Component>
+    </p1:components>
+  </p1:Plan>
+  <p1:Component rdf:ID="Weight_Monitoring_Component">
+    <p1:taskref>
+      <p1:Action rdf:ID="Monitor_Weight">
+        <p1:goal>
+          <p1:Goal rdf:ID="Start_BIA_body_weight_and_composition_measuring">
+            <p1:verb rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+            >start</p1:verb>
+            <p1:noun_phrase rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+            >ServiceRequest.intent = order; 
+ServiceRequest.code = body weight measurement / body composition measurement; 
+ServiceRequest.occurrenceTiming = daily/weekly/etc.; 
+ServiceRequest.patientInstruction = use home BIA scale under standardized conditions</p1:noun_phrase>
+          </p1:Goal>
+        </p1:goal>
+      </p1:Action>
+    </p1:taskref>
+  </p1:Component>
+  <p1:Goal rdf:ID="Goal_body_weight_measurement_via_BIA_scale">
+    <p1:verb rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >order</p1:verb>
+    <p1:noun_phrase rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >ServiceRequest.code= body weight measurement via BIA scale</p1:noun_phrase>
+  </p1:Goal>
+</rdf:RDF>
+
+<!-- Created with Protege (with OWL Plugin 3.4.1, Build 536)  http://protege.stanford.edu -->

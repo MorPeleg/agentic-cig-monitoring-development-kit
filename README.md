@@ -2,7 +2,7 @@
 
 Build or edit ontologies with AI assistance in Cursor or Claude Code. You install the required tools, put your ontology files in the right place, and tell the agent what you want. The agent handles scope, proposals, PROforma-based formalization, and checks.
 
-**Primary use case — CIG monitoring:** this kit specializes in instantiating the **PROforma computer-interpretable guideline (CIG) ontology** (`cig/proforma.owl`) for a clinical guideline, focusing on monitoring completion of therapy recommendations (Action Enactment goals) and monitoring desired/undesired effects of therapy (State Achievement goals). For CIG tasks the agent follows the **`cig-monitoring`** skill, reads guideline PDFs from the shared `cig/guidelines/` library, and builds a PROforma Top-Level Plan (Enquiry → Decision → Therapy Plan → Monitoring Plan). See `cig/know-how/SKILL.md` for the domain know-how and `cig/examples/obesity-glp1.owl` for a worked example.
+**Primary use case — CIG monitoring:** this kit specializes in instantiating the **PROforma computer-interpretable guideline (CIG) ontology** (`cig/proforma.owl`) for a clinical guideline, focusing on monitoring completion of therapy recommendations (Action Enactment goals) and monitoring desired/undesired effects of therapy (State Achievement goals). For CIG tasks the agent follows the **`cig-monitoring`** skill, reads guideline PDFs from the shared `cig/guidelines/` library, and builds a PROforma Top-Level Plan (Enquiry → Decision → Therapy Plan → Monitoring Plan). See `cig/know-how/READNE.md` for the domain know-how and `cig/examples/obesity-glp1.owl` for a worked example.
 
 ## Architecture
 

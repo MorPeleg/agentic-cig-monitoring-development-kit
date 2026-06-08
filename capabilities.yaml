@@ -58,7 +58,8 @@ skills:
     type: local
     def:
       path: ./skills/ontology-editor
-      description: OWL-MCP tools for ontology editing (axioms, prefixes, IRI, pitfalls, quality)
+      description: OWL-MCP tools for ontology editing (axioms, prefixes, IRI,
+        pitfalls, quality)
       requires:
         - '@owl.add_axiom'
         - '@owl.add_axioms'
@@ -76,8 +77,9 @@ skills:
     def:
       url: https://raw.githubusercontent.com/Minitour/semlocal/refs/heads/main/skills/semlocal/SKILL.md
       description: >-
-        Store, search, and delete text using local semantic search (semlocal CLI).
-        Use for long-term memory, knowledge extraction, and recall across sessions.
+        Store, search, and delete text using local semantic search (semlocal
+        CLI). Use for long-term memory, knowledge extraction, and recall across
+        sessions.
       requires: []
 agents:
   base:
@@ -100,27 +102,36 @@ agents:
         Model each therapy intervention as an Action + Component with a State
         Achievement Goal (verb achieve/avoid), and each monitoring item as an
         Action + Component with an Action Enactment Goal (verb order, FHIR
-        ServiceRequest). Reuse PROforma classes/properties by IRI and imitate
-        cig/examples/obesity-glp1.owl.
+        ServiceRequest with intent/code/occurrenceTiming/patientInstruction).
+        Assert pf:metaprops on every monitoring Action: repeat the ServiceRequest
+        order and document provenance and operationalization (source, knowledge
+        origin, guideline_status, literature_basis, assistant_invention,
+        instrument, monitoring_frequency_basis, trigger, monitored_target) so
+        sourced facts are separable from self-designed ones; case-report sources
+        must document a drug harm (not symptom resolution after stopping); and
+        verify metaprops completeness with sparql_query in Step 7. Reuse PROforma
+        classes/properties by IRI and imitate cig/examples/obesity-glp1.owl plus
+        skills/cig-monitoring/references/ActionEnactmentGoal.md.
     - type: inline
       id: capa_tool_usage
       content: >-
-        After learning a new skill, call `setup_tools(skills: ["<skill-id>"])` to
-        activate it, then use `call_tool(name: "<tool>", data: {...})` to invoke
-        the relevant tool.
+        After learning a new skill, call `setup_tools(skills: ["<skill-id>"])`
+        to activate it, then use `call_tool(name: "<tool>", data: {...})` to
+        invoke the relevant tool.
     - type: inline
       id: ontology_builder_tools
       content: >-
         For ontology work: edit OWL only via the ontology-editor tools (never by
         hand); check quality with the OWL-MCP test_pitfalls and test_quality
         tools; and verify competency questions by running SPARQL with the
-        sparql_query tool (pass the ontology and test-data file paths together so
-        they are merged into one graph before querying).
+        sparql_query tool (pass the ontology and test-data file paths together
+        so they are merged into one graph before querying).
 servers:
   # Minitour/owl-mcp (Rust): https://github.com/Minitour/owl-mcp
   - id: owl
     type: mcp
-    description: OWL ontology editing via MCP (find/add/remove axioms, OWL functional syntax)
+    description: OWL ontology editing via MCP (find/add/remove axioms, OWL
+      functional syntax)
     def:
       cmd: npx
       args:

@@ -10,7 +10,7 @@ Use this skill to instantiate the **PROforma CIG OWL ontology** (`cig/proforma.o
 - **monitoring completion of therapy recommendations** — modeled as **Action Enactment Goals** (`verb = order`), and
 - **monitoring desired and undesired effects of therapy** — modeled as **State Achievement Goals** (`verb = achieve` / `verb = avoid`).
 
-It encodes the domain know-how in `cig/know-how/SKILL.md` (authored by Mor Peleg) and specializes the generic 7-step methodology in `WORKFLOW.md`. The full domain narrative with examples lives in `cig/know-how/SKILL.md`; this file is the operational procedure.
+It encodes the domain know-how in `cig/know-how/README.md` (authored by Mor Peleg) and specializes the generic 7-step methodology in `WORKFLOW.md`. The full domain narrative with examples lives in `cig/know-how/README.md`; this file is the operational procedure.
 
 ## Inputs and shared reference area
 
@@ -19,7 +19,7 @@ All CIG reference material is shared across projects under `cig/`:
 - `cig/proforma.owl` — the PROforma CIG meta-ontology to instantiate/import (do not edit it).
 - `cig/examples/obesity-glp1.owl` — a worked obesity/GLP-1 example to imitate.
 - `cig/guidelines/` — the shared clinical guideline PDF library (e.g. AGA 2022, Canadian Adult Obesity CPG, Endocrine Society 2016, NICE Tirzepatide, semaglutide package insert, WHO). Read these as primary sources.
-- `cig/know-how/SKILL.md` — the domain know-how this skill operationalizes.
+- `cig/know-how/README.md` — the domain know-how this skill operationalizes.
 
 Per-CIG working output goes under `projects/<project_dir>/` (ontology, plans, queries), following `WORKFLOW.md`.
 
@@ -79,6 +79,8 @@ From the guideline collection extract, citing the source PDF and page/section fo
 6. **Recommendations without matching monitoring.** Where a recommendation has no monitoring instruction (e.g. diet and exercise), propose monitoring and justify it with sources.
 7. **Side effects and ADEs** from the guidelines and drug package inserts (e.g. `cig/guidelines/semaglutide drug Info from Package.pdf`). Add a monitoring action for each.
 8. **Case reports** of rare undesired effects from the literature. Summarize each for the user with a monitoring suggestion, a frequency, and the monitoring mode (lab test vs. clinician asking about symptoms). Example: GLP-1 → extreme vomiting/weight loss → Wernicke encephalopathy (confusion, ataxia, ophthalmoplegia).
+   - **Source quality:** a case report cited as evidence of a harm must **document a harm caused by/occurring during the drug** — *not* a report whose point is that symptoms resolve after the drug is stopped (reversibility is not a monitorable harm). Reject such sources and find a better report. You may (and should) find suitable case reports **independently**, beyond the examples here, and must record provenance for each (see Step 6 `metaprops`).
+   - **Operationalize, don't just name:** for each rare harm, map the syndrome to observable manifestations and specify *what to ask/observe, which instrument/exam, what frequency (+basis), and what triggers urgent assessment* — naming an action `Monitor_<harm>` is not enough.
 9. **Unmentioned harms and benefits**, derived from the **mechanism of action**. Propose monitoring plans and note cost, danger, and prevalence. Example: GLP-1 appetite regulation is linked to reward circuits, so anhedonia/reduced enjoyment of life is a candidate harm — decide whether existing QoL questionnaires cover it or a short added instrument is needed, and at what frequency.
 
 Store extraction summaries via `semlocal --collection <project_dir>` per `WORKFLOW.md`.
@@ -107,10 +109,11 @@ See `references/ActionComponent.md` and `references/StateAchievementGoal.md`.
 
 For each therapy goal and each desired/undesired outcome from Step 5, create a monitoring `Action` (+ `Component`) inside the appropriate Monitoring sub-plan. Give each monitoring action a `goal` that is an **Action Enactment Goal**: `verb = order` plus a `noun_phrase` referencing an HL7 FHIR `ServiceRequest`.
 
-- Example: `verb=order`, `noun_phrase="ServiceRequest.code = body weight measurement via BIA scale"`.
-- Encode frequency and instructions in the `noun_phrase` using FHIR fields where useful, e.g. `ServiceRequest.occurrenceTiming = monthly x3 then q3mo`, `ServiceRequest.patientInstruction = use home BIA scale under standardized conditions`.
+- The `noun_phrase` must include **all** of `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, and `ServiceRequest.patientInstruction` (add `ServiceRequest.performerInstruction` for triggered labs) — not just `code`. Example: `"ServiceRequest.intent = order; ServiceRequest.code = body weight via BIA scale; ServiceRequest.occurrenceTiming = baseline, monthly x3, then q3mo; ServiceRequest.patientInstruction = use home BIA scale under standardized conditions"`.
+- **Assert `pf:metaprops` on every monitoring Action** (one `key=value; …` string). It must repeat the `ServiceRequest.*` fields **and** document provenance and operationalization: `category`, `monitored_target` (traceability to the harm/therapy goal), `provenance_type`, `source` (cite each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate self-designed from sourced; `none` if fully sourced), `instrument`, `monitoring_frequency_basis`, `trigger`, `cq`. This is **required**, not optional.
+- Keep the `ServiceRequest.*` fields consistent between the Goal `noun_phrase` and the Action `metaprops`.
 
-See `references/ActionEnactmentGoal.md`.
+See `references/ActionEnactmentGoal.md` for the full `metaprops` schema, the case-report source-quality rule, and worked rare-harm skeletons (Wernicke / rhabdomyolysis / anhedonia).
 
 ## Formalization mechanics
 
@@ -123,6 +126,26 @@ Do all OWL editing through the **ontology-editor** tools (never by hand), per `W
 
 Then run the **Step 7 automated review** from `WORKFLOW.md` (pitfall scan with `test_pitfalls`, quality evaluation with `test_quality`, and CQ verification via the `cq-verification` skill). For CQ verification, pass `cig/proforma.owl` alongside the project ontology to `sparql_query` so the PROforma schema is present in the queried graph.
 
+**Metaprops completeness check (CIG-specific).** Verify that every monitoring `Action` carries a `metaprops` string with the required fields, using `sparql_query` (pass the project ontology + `cig/proforma.owl`). This is how you — or the reviewer — confirm provenance and operationalization were actually captured. The query below lists monitoring Actions whose `metaprops` is missing or incomplete (fix any rows it returns):
+
+```sparql
+PREFIX pf: <http://www.owl-ontologies.com/Ontology1779030093.owl#>
+SELECT ?action ?metaprops WHERE {
+  ?action a pf:Action ; pf:goal ?g .
+  ?g pf:verb "order" .
+  OPTIONAL { ?action pf:metaprops ?metaprops }
+  FILTER( !BOUND(?metaprops)
+    || !CONTAINS(?metaprops, "ServiceRequest.intent")
+    || !CONTAINS(?metaprops, "ServiceRequest.occurrenceTiming")
+    || !CONTAINS(?metaprops, "provenance_type")
+    || !CONTAINS(?metaprops, "source=")
+    || !CONTAINS(?metaprops, "instrument")
+    || !CONTAINS(?metaprops, "monitoring_frequency_basis") )
+}
+```
+
+Any returned `?action` is incomplete: add the missing `metaprops` keys before reporting the CIG as done. An empty result means every monitoring Action is documented.
+
 ## Worked reference
 
-`cig/examples/obesity-glp1.owl` is a complete, small instantiation showing the Top-Level Plan, Enquiry, Decision (Eligible/Not_Eligible), Therapy Plan with `Prescribe_GLP1` (achieve goal), Monitoring Plan (Monitor_Actions / Monitor_Desired_State / Monitor_Undesired_State), and a `Monitor_Weight` action with a FHIR ServiceRequest goal. Mirror its structure and naming.
+`cig/examples/obesity-glp1.owl` is a complete, small instantiation showing the Top-Level Plan, Enquiry, Decision (Eligible/Not_Eligible), Therapy Plan with `Prescribe_GLP1` (achieve goal), Monitoring Plan (Monitor_Actions / Monitor_Desired_State / Monitor_Undesired_State), and a `Monitor_Weight` action with a FHIR ServiceRequest goal. Mirror its structure and naming. Note: the example predates the `metaprops` convention — for the provenance/operationalization metadata follow `references/ActionEnactmentGoal.md`, which is authoritative.

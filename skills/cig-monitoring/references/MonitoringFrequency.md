@@ -28,6 +28,15 @@ This table is the **default lookup** for an obesity GLP-1 CIG. Each row gives a 
 4. Use **slower cadences** (q6mo) for slowly-changing outcomes (QoL).
 5. Always write the justification into `monitoring_frequency_basis` in `metaprops` (see `MetapropsSyntax.md`).
 
+## When *not* to propose a routine schedule (negative recommendations)
+
+"Always propose a frequency" applies only when monitoring is actually warranted. Two cases override the default:
+
+- **The source advises against routine monitoring.** If a label or guideline states routine surveillance of a marker is of uncertain value or not recommended (classic example: **routine serum calcitonin / thyroid ultrasound** for GLP-1 medullary-thyroid C-cell risk — FDA states its value is uncertain), set `monitoring_stance=routine_not_recommended` and either scope the action to **symptom-triggered only** (neck mass, dysphagia, hoarseness → triggered work-up) or omit it. Do **not** manufacture a baseline/periodic screen the source recommends against.
+- **The harm applies only to a sub-population.** Frequency is moot if the action should not exist for the whole cohort. If the label qualifies the ADE (e.g. **hypoglycemia** only with concomitant insulin/secretagogue; **diabetic retinopathy** only in type 2 diabetes), record `applies_when` and gate the action with a `precondition`; choose the frequency for the applicable sub-population, not the whole cohort.
+
+Record the stance and condition in `metaprops` (`monitoring_stance`, `applies_when`) — see `MetapropsSyntax.md`. The `cig-monitoring-review` source-fidelity phase fails an action whose schedule contradicts the cited stance or whose applicability is broader than the source supports.
+
 ## Related
 
 - `MetapropsSyntax.md`, `ActionEnactmentGoal.md`, `MonitoringPlan.md`, `cig/examples/obesity-glp1-monitoring.owl`.

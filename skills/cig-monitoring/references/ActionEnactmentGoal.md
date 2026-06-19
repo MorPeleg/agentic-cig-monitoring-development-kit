@@ -52,12 +52,14 @@ Every monitoring `Action` **must** carry a `pf:metaprops` assertion (PROforma `m
 - **ServiceRequest block** (mirror the Goal's `noun_phrase` so the Action is self-contained): `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, and `ServiceRequest.performerInstruction` (for triggered labs/clinician steps).
 - `category` = `action_completion` | `desired_outcome` | `undesired_ade`.
 - `monitored_target` = the state/harm/action this monitors **and the therapy goal or recommendation it traces back to** (traceability — answers "which task relates to this source/harm?").
+- `applies_when` = the population/condition the **source** attaches to this harm (e.g. hypoglycemia *only with concomitant insulin/secretagogue*); `all_patients_on_therapy` only when the source applies it universally. A sub-population action must also carry a PROforma `precondition`. **Do not make a conditional ADE universal.**
 - `provenance_type` = e.g. `guideline_specified` | `assistant_completed_from_guidelines` | `mechanism_prompted_then_assistant_independent_literature_search_and_operationalized` | `assistant_independent_literature_search_and_operationalized`.
 - `source_kind` = `clinical_guideline` | `package_insert` | `case_report` | `screening_instrument` | `safety_source` …
 - `source` = each citation (include a stable id where possible, e.g. PMID/PMC + title). **Repeat the key** for each source.
 - `knowledge_origin` = where the knowledge came from (guideline / skill-suggested mechanism / assistant found independently).
 - `guideline_status` = `specified_as_a_guideline_monitoring_task` | `not_specified_as_a_guideline_monitoring_task`.
-- `literature_basis` = what the source(s) actually say.
+- `monitoring_stance` = `recommended` | `symptom_triggered_only` | `routine_not_recommended` | `proposed_by_assistant`. Capture **negative** recommendations faithfully: if the source says routine surveillance of X is not recommended, use `routine_not_recommended` and do not invent a routine schedule.
+- `literature_basis` = what the source(s) actually say. When the action reflects the source's own monitoring instruction (e.g. label "Monitor heart rate at regular intervals"), paraphrase that instruction, not just an incidence figure.
 - `assistant_invention` = what **you** designed yourself (vs. sourced); use `none` if fully source-based. **Always state this explicitly** so source-based and self-designed parts are separable.
 - `instrument` = how it is measured (patient symptom report | named lab test(s) | named questionnaire such as PHQ-9 / C-SSRS / CoEQ / SF-36 / IWQOL-Lite | physical exam | clinician interview).
 - `monitoring_frequency_basis` = justification for the chosen `occurrenceTiming`.
@@ -106,7 +108,7 @@ DataPropertyAssertion(pf:metaprops :Monitor_Rhabdomyolysis_Risk "category=undesi
 
 ## Worked example (`cig/examples/obesity-glp1-monitoring.owl` — authoritative)
 
-`Monitor_Rhabdomyolysis` (an independently-found case-report harm) and `Monitor_Body_Weight` (a guideline-specified desired outcome) each have an Action Enactment Goal (`verb=order`) whose `noun_phrase` spells out the full `ServiceRequest.*` block, and a matching `pf:metaprops` string that repeats that block and adds the provenance/operationalization keys per `MetapropsSyntax.md`. All ten monitoring Actions in that file pass the `cig-monitoring-review` gate — imitate them. (The older `cig/examples/obesity-glp1.owl` predates the `metaprops` convention and is kept only as a frozen earlier example.)
+`Monitor_Rhabdomyolysis` (an independently-found case-report harm) and `Monitor_Body_Weight` (a guideline-specified desired outcome) each have an Action Enactment Goal (`verb=order`) whose `noun_phrase` spells out the full `ServiceRequest.*` block, and a matching `pf:metaprops` string that repeats that block and adds the provenance/operationalization keys per `MetapropsSyntax.md`. All twelve monitoring Actions in that file pass the `cig-monitoring-review` gate — imitate them; `Monitor_Hypoglycemia` shows the conditional `applies_when` + `precondition` pattern, and several actions show `monitoring_stance=symptom_triggered_only`. (The older `cig/examples/obesity-glp1.owl` predates the `metaprops` convention and is kept only as a frozen earlier example.)
 
 ## Related patterns
 

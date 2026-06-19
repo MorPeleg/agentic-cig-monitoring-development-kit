@@ -7,6 +7,8 @@ description: Mandatory value-quality review gate for a CIG monitoring instantiat
 
 A **mandatory Step 7 gate** for any CIG monitoring instantiation. The earlier presence-only `metaprops` check was **gameable**: when the agent wrote placeholder values (`source=s; instrument=i; provenance_type=p`), a query that only tested *key presence* passed with "0 missing". This skill inspects **values**, not just keys, so placeholders fail.
 
+It checks two things presence-only checks miss: (1) **value quality** — placeholders, ServiceRequest consistency, controlled vocab, traceability; and (2) **source fidelity** — whether the action's applicability, monitoring stance, and label coverage match what the cited source actually says (a populated, well-cited action can still misrepresent the source by making a conditional ADE universal, inventing a schedule the source advises against, or omitting labeled warnings).
+
 It is intended to run as a **subagent** so the review is independent of the build. Activate the tools, extract the facts with SPARQL/`find_axioms`, then apply judgment against the rules below and emit a readable pass/fail report.
 
 ## Inputs
@@ -87,14 +89,39 @@ For every Q1 row, apply the `MetapropsSyntax.md` value constraints. Mark the act
 3. **ServiceRequest on the Goal too.** The Goal `noun_phrase` is missing or omits the same `ServiceRequest.*` fields. The two must be consistent.
 4. **occurrenceTiming is real.** It must name a cadence/trigger (a time unit such as daily/weekly/monthly/q3mo/baseline/visit/escalation/event), not a placeholder.
 5. **Real citations.** At least one `source=` value, each containing a citation token (PMID/PMC/DOI) or a named guideline/label/instrument. `source=s` fails.
-6. **Controlled vocab.** `category`, `provenance_type`, `source_kind`, `guideline_status` are within the `MetapropsSyntax.md` vocab.
+6. **Controlled vocab.** `category`, `provenance_type`, `source_kind`, `guideline_status`, `monitoring_stance` are within the `MetapropsSyntax.md` vocab.
 7. **Honest invention split.** `assistant_invention` is `none` or a descriptive phrase (not a single letter).
 8. **Traceability.** `monitored_target` names what is monitored **and** the therapy goal/recommendation it traces to. Confirm that target exists in the ontology.
-9. **Required documentation keys present with content.** `knowledge_origin`, `literature_basis`, `instrument`, `monitoring_frequency_basis`, `trigger`, `cq` each have real content.
+9. **Required documentation keys present with content.** `knowledge_origin`, `literature_basis`, `instrument`, `monitoring_frequency_basis`, `trigger`, `cq`, `applies_when`, `monitoring_stance` each have real content.
+10. **Stance ↔ schedule consistency.** If `monitoring_stance=routine_not_recommended`, the `occurrenceTiming` must be symptom/event-triggered, **not** a routine `baseline`/`monthly`/`q3mo` cadence. A routine schedule under a "not recommended" stance is a FAIL (the operationalization contradicts the cited source).
 
 ## Phase 3 — Case-report harm judgment (LLM)
 
 For every action whose `source_kind` contains `case_report`, read its `literature_basis` and `monitored_target` and **judge the harm-not-reversibility rule**: the case report must document a **harm caused by / occurring during** the drug — **not** a report whose point is that symptoms resolve after stopping the drug (reversibility is not a monitorable harm). Flag any case-report action that fails this test. List each case-report action with its sources so a human reviewer can confirm.
+
+## Phase 3b — Source fidelity (LLM judgment)
+
+Presence and well-formedness of `metaprops` do **not** guarantee the content is faithful to what the cited source says. For each monitoring action, read its `source`, `literature_basis`, `applies_when`, and `monitoring_stance` and judge:
+
+1. **Applicability fidelity.** If the cited source qualifies the harm to a sub-population (e.g. label hypoglycemia *only with concomitant insulin/secretagogue*; diabetic retinopathy *only in type 2 diabetes*), the action must carry that condition in `applies_when` **and** a PROforma `precondition`. An action that is unconditional (`applies_when=all_patients_on_therapy`) while its source is conditional is a **FAIL**. Cross-check with this query for missing preconditions on sub-population actions:
+
+```sparql
+PREFIX pf: <http://www.owl-ontologies.com/Ontology1779030093.owl#>
+SELECT ?action ?metaprops WHERE {
+  ?action a pf:Action ; pf:goal ?g ; pf:metaprops ?metaprops .
+  ?g pf:verb "order" .
+  FILTER( CONTAINS(?metaprops, "applies_when=") && !CONTAINS(?metaprops, "applies_when=all_patients_on_therapy") )
+  FILTER NOT EXISTS { ?action pf:precondition ?pc }
+}
+```
+
+2. **Negative-recommendation fidelity.** If the cited source says routine monitoring of X is not recommended / of uncertain value (e.g. routine calcitonin or thyroid ultrasound for C-cell risk), the action must be `monitoring_stance=routine_not_recommended` with a symptom-triggered schedule, or be omitted. An invented routine surveillance schedule that contradicts the source is a **FAIL**.
+
+3. **Monitoring-instruction fidelity.** If a labeled warning states its own monitoring instruction (e.g. §5.9 "Monitor heart rate at regular intervals"), the action should reflect it as a recommended, label-specified monitor — not down-rank it to an incidence footnote. Flag actions that ignore or contradict the source's explicit monitoring directive.
+
+4. **Label coverage.** Using the proposal's source list and §10 (Excluded Candidates), confirm every Boxed Warning and numbered Warnings & Precautions section of each cited label is accounted for — either as a monitoring action or an explicit exclusion-with-reason. List any labeled warning that is neither monitored nor excluded as a coverage gap.
+
+These are judgment calls (like the case-report phase): list each action with the source text, the verdict, and the reason so a human reviewer can confirm.
 
 ## Phase 4 — Scope and structure
 
@@ -106,8 +133,9 @@ For every action whose `source_kind` contains `case_report`, read its `literatur
 Write a readable report to `projects/<project_dir>/reviews/cig-monitoring-review-<YYYYMMDD-HHmmss>.md` (this is the concrete artifact a human reads instead of trusting a green check). Include:
 
 - A top-line **PASS/FAIL** and counts.
-- A per-action table: `Action | category | ServiceRequest on Goal? | ServiceRequest on Action? | citations ok? | placeholders? | monitored_target ok? | verdict`.
+- A per-action table: `Action | category | ServiceRequest on Goal? | ServiceRequest on Action? | citations ok? | placeholders? | monitored_target ok? | applies_when ok? | stance↔schedule ok? | verdict`.
 - A **case-report section**: each case-report action with `monitored_target`, `literature_basis`, sources, and the harm-judgment verdict.
+- A **source-fidelity section**: applicability/precondition gaps, negative-recommendation contradictions, ignored label monitoring instructions, and label-coverage gaps (Phase 3b).
 - A **structure section**: any empty components, unpopulated Enquiry/Decision, empty sub-plans, scope mismatches.
 - A **fix list**: the specific actions/fields to correct.
 

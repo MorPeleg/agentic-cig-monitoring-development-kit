@@ -29,6 +29,10 @@ skills:
       requires:
         - '@owl.add_axiom'
         - '@owl.add_axioms'
+        - '@owl.add_data_property_assertion'
+        - '@owl.add_annotation_assertion'
+        - '@owl.add_object_property_assertion'
+        - '@owl.add_class_assertion'
         - '@owl.add_prefix'
         - '@owl.set_ontology_iri'
         - '@owl.find_axioms'
@@ -50,9 +54,28 @@ skills:
       requires:
         - '@owl.add_axiom'
         - '@owl.add_axioms'
+        - '@owl.add_data_property_assertion'
+        - '@owl.add_object_property_assertion'
+        - '@owl.add_class_assertion'
         - '@owl.add_prefix'
         - '@owl.set_ontology_iri'
         - '@owl.find_axioms'
+        - '@owl.sparql_query'
+  - id: cig-monitoring-review
+    type: local
+    def:
+      path: ./skills/cig-monitoring-review
+      description: >-
+        Mandatory Step 7 value-quality gate for CIG monitoring builds. Checks
+        that every monitoring Action's pf:metaprops has real content (rejects
+        placeholders like source=s), that the ServiceRequest order is on BOTH
+        the Goal noun_phrase and the Action metaprops, that case-report sources
+        document a drug harm, that each action traces to a monitored target, and
+        that no empty placeholder components or unpopulated Enquiry/Decision
+        remain. Replaces the gameable presence-only metaprops check.
+      requires:
+        - '@owl.find_axioms'
+        - '@owl.get_all_axioms'
         - '@owl.sparql_query'
   - id: ontology-editor
     type: local
@@ -63,6 +86,10 @@ skills:
       requires:
         - '@owl.add_axiom'
         - '@owl.add_axioms'
+        - '@owl.add_data_property_assertion'
+        - '@owl.add_annotation_assertion'
+        - '@owl.add_object_property_assertion'
+        - '@owl.add_class_assertion'
         - '@owl.remove_axiom'
         - '@owl.find_axioms'
         - '@owl.get_all_axioms'
@@ -99,18 +126,31 @@ agents:
         Top-Level Plan with an Enquiry, a Decision, a Therapy Plan, and a
         Monitoring Plan in sequence (the Monitoring Plan has parallel Monitor
         Actions / Monitor Desired State / Monitor Undesired ADEs sub-plans).
+        Scope the design pattern to the request: build ONLY the requested
+        sub-structure and never emit empty placeholder components, an Enquiry
+        with no data items, or a Decision with no candidates/criteria — populate
+        the Enquiry's data items and the Decision's candidates+criteria from the
+        PROforma spec (see references/Enquiry.md and references/Decision.md).
         Model each therapy intervention as an Action + Component with a State
         Achievement Goal (verb achieve/avoid), and each monitoring item as an
         Action + Component with an Action Enactment Goal (verb order, FHIR
         ServiceRequest with intent/code/occurrenceTiming/patientInstruction).
-        Assert pf:metaprops on every monitoring Action: repeat the ServiceRequest
-        order and document provenance and operationalization (source, knowledge
-        origin, guideline_status, literature_basis, assistant_invention,
-        instrument, monitoring_frequency_basis, trigger, monitored_target) so
-        sourced facts are separable from self-designed ones; case-report sources
-        must document a drug harm (not symptom resolution after stopping); and
-        verify metaprops completeness with sparql_query in Step 7. Reuse PROforma
-        classes/properties by IRI and imitate cig/examples/obesity-glp1.owl plus
+        Assert pf:metaprops on every monitoring Action following the canonical
+        grammar in references/MetapropsSyntax.md — NO placeholder values
+        (source=s, instrument=i): the ServiceRequest.* order must appear on BOTH
+        the Goal noun_phrase AND the Action metaprops, with real citations and
+        provenance/operationalization keys (category, monitored_target,
+        provenance_type, source(s), knowledge_origin, guideline_status,
+        literature_basis, assistant_invention, instrument,
+        monitoring_frequency_basis, trigger, cq) so sourced facts are separable
+        from self-designed ones and each action traces to the harm/goal it
+        monitors. Case-report sources must document a drug harm (not symptom
+        resolution after stopping). Write long metaprops/noun_phrase literals
+        with the structured assertion tools so they are not truncated. In Step 7
+        run the mandatory cig-monitoring-review value-quality gate (it inspects
+        metaprops VALUES, not just keys, and replaces the gameable presence-only
+        check). Reuse PROforma classes/properties by IRI and imitate
+        cig/examples/obesity-glp1-monitoring.owl plus
         skills/cig-monitoring/references/ActionEnactmentGoal.md.
     - type: inline
       id: capa_tool_usage
@@ -136,7 +176,7 @@ servers:
       cmd: npx
       args:
         - -y
-        - owl-mcp@1.0.10
+        - owl-mcp@1.0.11
         - serve
 tools:
   - id: add_axioms
@@ -145,6 +185,35 @@ tools:
     def:
       server: '@owl'
       tool: add_axioms
+  - id: add_data_property_assertion
+    type: mcp
+    description: >-
+      Assert a data property value with the literal passed as a separate field
+      (no escaping/shell-quoting). Use for long or special-character literals
+      such as CIG pf:metaprops / noun_phrase strings.
+    def:
+      server: '@owl'
+      tool: add_data_property_assertion
+  - id: add_annotation_assertion
+    type: mcp
+    description: >-
+      Assert an annotation value with the literal passed as a separate field
+      (no escaping). Use for long annotation literals (rdfs:comment, etc.).
+    def:
+      server: '@owl'
+      tool: add_annotation_assertion
+  - id: add_object_property_assertion
+    type: mcp
+    description: Link two individuals via an object property (subject -> target).
+    def:
+      server: '@owl'
+      tool: add_object_property_assertion
+  - id: add_class_assertion
+    type: mcp
+    description: Assert that an individual is an instance of a class.
+    def:
+      server: '@owl'
+      tool: add_class_assertion
   - id: remove_axiom
     type: mcp
     description: Remove one axiom from an OWL file

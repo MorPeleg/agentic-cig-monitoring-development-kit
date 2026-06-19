@@ -49,11 +49,15 @@ Key properties:
 See `references/` for the design patterns, each with the exact classes/properties and an OWL functional-syntax skeleton:
 
 - `references/TopLevelPlan.md`
+- `references/Enquiry.md` — populate the eligibility/baseline data items (do not leave empty)
+- `references/Decision.md` — populate candidates + criteria (do not leave empty)
 - `references/TherapyPlan.md`
 - `references/MonitoringPlan.md`
 - `references/ActionComponent.md`
 - `references/StateAchievementGoal.md`
 - `references/ActionEnactmentGoal.md`
+- `references/MetapropsSyntax.md` — the **canonical `pf:metaprops` grammar** (ordered keys, controlled vocab, anti-placeholder value constraints)
+- `references/MonitoringFrequency.md` — default-with-justification frequency lookup
 
 ## Procedure
 
@@ -96,6 +100,14 @@ Instantiate the PROforma design patterns. Build a **Top-Level Plan** (`Plan` ind
 
 The **Monitoring Plan** is composed of parallel sub-`Plan`s: **Monitor Actions**, **Monitor Desired Outcome States**, **Monitor Undesired ADEs**. See `references/TopLevelPlan.md` and `references/MonitoringPlan.md`.
 
+**Scope the design pattern to the request (mandatory).** The four-component top-level plan above is the shape of a *full* CIG. Before formalizing, **confirm the requested scope and hierarchy with the user** and build **only** the sub-structure they asked for:
+
+- If the user asks for **ADE monitoring only**, build just the Monitor Undesired ADEs structure (at the correct level — e.g. as the relevant sub-plan), populated with real actions. Do **not** emit the full Top-Level Plan with empty Enquiry/Decision/Therapy/Monitor-Actions/Monitor-Desired placeholders.
+- **Never emit empty placeholder components** — a `Component` whose task has no goal/metaprops, an Enquiry with no data items, a Decision with no candidates/criteria, or a sub-plan with no actions. Every individual you create must be populated (this was a concrete failure Mor flagged: an ADE-only request produced the full plan with three empty stubs and a misplaced Monitor-Desired-State).
+- If a level of the hierarchy is genuinely needed only to host the requested sub-structure, create it **and populate it** — otherwise omit it. When in doubt about scope, ask before formalizing.
+
+The `cig-monitoring-review` gate (Step 7) flags empty placeholder components and unpopulated Enquiry/Decision as failures.
+
 ### Step 5 — Therapy interventions: Actions + Components + State Achievement Goals
 
 For **each therapy intervention**, create an `Action` and a matching `Component` (with `taskref` to the action) and add the component to the **Therapy Plan** via `components`. Give the action a `goal` that is a **State Achievement Goal**: `verb = achieve` or `verb = avoid` plus a `noun_phrase`.
@@ -110,10 +122,11 @@ See `references/ActionComponent.md` and `references/StateAchievementGoal.md`.
 For each therapy goal and each desired/undesired outcome from Step 5, create a monitoring `Action` (+ `Component`) inside the appropriate Monitoring sub-plan. Give each monitoring action a `goal` that is an **Action Enactment Goal**: `verb = order` plus a `noun_phrase` referencing an HL7 FHIR `ServiceRequest`.
 
 - The `noun_phrase` must include **all** of `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, and `ServiceRequest.patientInstruction` (add `ServiceRequest.performerInstruction` for triggered labs) — not just `code`. Example: `"ServiceRequest.intent = order; ServiceRequest.code = body weight via BIA scale; ServiceRequest.occurrenceTiming = baseline, monthly x3, then q3mo; ServiceRequest.patientInstruction = use home BIA scale under standardized conditions"`.
-- **Assert `pf:metaprops` on every monitoring Action** (one `key=value; …` string). It must repeat the `ServiceRequest.*` fields **and** document provenance and operationalization: `category`, `monitored_target` (traceability to the harm/therapy goal), `provenance_type`, `source` (cite each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate self-designed from sourced; `none` if fully sourced), `instrument`, `monitoring_frequency_basis`, `trigger`, `cq`. This is **required**, not optional.
+- **Assert `pf:metaprops` on every monitoring Action** following the **canonical grammar in `references/MetapropsSyntax.md`** (one `key=value; …` string). It must repeat the `ServiceRequest.*` fields **and** document provenance and operationalization: `category`, `monitored_target` (traceability to the harm/therapy goal), `provenance_type`, `source` (cite each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate self-designed from sourced; `none` if fully sourced), `instrument`, `monitoring_frequency_basis`, `trigger`, `cq`. This is **required**, not optional.
+- **No placeholder values** (`source=s`, `instrument=i`, `provenance_type=p`). Use real citations and real content — the `cig-monitoring-review` gate (Step 7) rejects placeholders. Write the long `metaprops`/`noun_phrase` literals with the **structured assertion tool** (`add_data_property_assertion`) so they are escaped server-side and not truncated; if you use `add_axioms`, keep each literal single-line.
 - Keep the `ServiceRequest.*` fields consistent between the Goal `noun_phrase` and the Action `metaprops`.
 
-See `references/ActionEnactmentGoal.md` for the full `metaprops` schema, the case-report source-quality rule, and worked rare-harm skeletons (Wernicke / rhabdomyolysis / anhedonia).
+See `references/MetapropsSyntax.md` for the canonical contract and `references/ActionEnactmentGoal.md` for the case-report source-quality rule and worked rare-harm skeletons (Wernicke / rhabdomyolysis / anhedonia).
 
 ## Formalization mechanics
 
@@ -121,12 +134,15 @@ Do all OWL editing through the **ontology-editor** tools (never by hand), per `W
 
 1. Read `skills/ontology-editor/SKILL.md`, then `setup_tools(skills: ["ontology-editor"])`.
 2. Create the project ontology at `projects/<project_dir>/ontology/<name>.owl`; `set_ontology_iri` to a full IRI; `add_prefix` for the PROforma namespace `http://www.owl-ontologies.com/Ontology1779030093.owl#` and the project namespace.
-3. Reuse PROforma classes/properties by IRI (do not redeclare them). The instantiation is an **ABox**: `Plan`, `Component`, `Action`, `Decision`, `Enquiry`, `Goal`, `Candidate`, `Schedule_Constraint` individuals connected by `components`, `taskref`, `goal`, `scheduled_constraints`, `conref`, `precondition`, `candidates`, with `verb` and `noun_phrase` data assertions on goals.
-4. Verify with `find_axioms`/`get_all_axioms` (`include_labels: true`).
+3. Reuse PROforma classes/properties by IRI (do not redeclare them). The instantiation is an **ABox**: `Plan`, `Component`, `Action`, `Decision`, `Enquiry`, `Goal`, `Candidate`, `Schedule_Constraint` individuals connected by `components`, `taskref`, `goal`, `scheduled_constraints`, `conref`, `precondition`, `candidates`, with `verb` and `noun_phrase` data assertions on goals. Populate the Enquiry's data items and the Decision's candidates+criteria (see `references/Enquiry.md`, `references/Decision.md`) — never leave them empty.
+4. For the long `metaprops` and `noun_phrase` literals, prefer the **structured assertion tool** (`add_data_property_assertion`), which escapes the value server-side so it is never truncated. If you use `add_axioms`, keep each literal single-line (no raw newlines, escape quotes).
+5. Verify with `find_axioms`/`get_all_axioms` (`include_labels: true`).
 
 Then run the **Step 7 automated review** from `WORKFLOW.md` (pitfall scan with `test_pitfalls`, quality evaluation with `test_quality`, and CQ verification via the `cq-verification` skill). For CQ verification, pass `cig/proforma.owl` alongside the project ontology to `sparql_query` so the PROforma schema is present in the queried graph.
 
-**Metaprops completeness check (CIG-specific).** Verify that every monitoring `Action` carries a `metaprops` string with the required fields, using `sparql_query` (pass the project ontology + `cig/proforma.owl`). This is how you — or the reviewer — confirm provenance and operationalization were actually captured. The query below lists monitoring Actions whose `metaprops` is missing or incomplete (fix any rows it returns):
+**Mandatory metaprops value-quality gate (CIG-specific).** Run the **`cig-monitoring-review`** skill as a Step 7 gate (ideally as a subagent). Unlike a presence-only key check — which is **gameable** (placeholder values like `source=s` pass it) — this gate inspects the **values**: it rejects placeholders, requires real citations, requires the `ServiceRequest.*` block on **both** the Goal `noun_phrase` and the Action `metaprops`, judges the case-report harm-not-reversibility rule, checks `monitored_target` traceability, and flags empty placeholder components and unpopulated Enquiry/Decision. It emits a readable pass/fail report under `projects/<project_dir>/reviews/`. Do **not** report the CIG as done while the gate reports any FAIL.
+
+The presence-only query below is a useful **coarse pre-filter** (catches actions missing keys entirely) but is **not** sufficient on its own — the `cig-monitoring-review` gate is what confirms quality:
 
 ```sparql
 PREFIX pf: <http://www.owl-ontologies.com/Ontology1779030093.owl#>
@@ -144,8 +160,6 @@ SELECT ?action ?metaprops WHERE {
 }
 ```
 
-Any returned `?action` is incomplete: add the missing `metaprops` keys before reporting the CIG as done. An empty result means every monitoring Action is documented.
-
 ## Worked reference
 
-`cig/examples/obesity-glp1.owl` is a complete, small instantiation showing the Top-Level Plan, Enquiry, Decision (Eligible/Not_Eligible), Therapy Plan with `Prescribe_GLP1` (achieve goal), Monitoring Plan (Monitor_Actions / Monitor_Desired_State / Monitor_Undesired_State), and a `Monitor_Weight` action with a FHIR ServiceRequest goal. Mirror its structure and naming. Note: the example predates the `metaprops` convention — for the provenance/operationalization metadata follow `references/ActionEnactmentGoal.md`, which is authoritative.
+`cig/examples/obesity-glp1-monitoring.owl` is the **authoritative** instantiation to imitate: a Top-Level Plan; a **populated** Enquiry (eligibility/baseline data items via `sources`/`sref`) and Decision (Eligible/Not_Eligible with arguments + criteria); a Therapy Plan with `Prescribe_GLP1`/`Prescribe_Lifestyle`/`Prescribe_Resistance_Exercise` carrying State Achievement goals (`achieve`/`avoid`); and a Monitoring Plan whose three parallel sub-plans hold ten monitoring Actions — each with an Action Enactment Goal **and** a full `pf:metaprops` string (including the worked rhabdomyolysis, anhedonia, and Wernicke cases). Mirror its structure, naming, and metaprops. (The older `cig/examples/obesity-glp1.owl` predates the `metaprops` convention and is kept only as a frozen earlier example — do not imitate its monitoring stubs.)

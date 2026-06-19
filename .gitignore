@@ -6,3 +6,4 @@ CLAUDE.md
 .semlocal
 projects
 capabilities.lock
+tmp/

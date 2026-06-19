@@ -45,6 +45,8 @@ DataPropertyAssertion(pf:metaprops :Monitor_Weight "category=desired_outcome; mo
 
 Every monitoring `Action` **must** carry a `pf:metaprops` assertion (PROforma `metaprops` has domain `Source ∪ Task`, so it is valid on an `Action`). Use **one string** of `key=value` pairs separated by `; ` (repeat `source=` for multiple sources). This is how the CIG documents *what is monitored, how, when, what triggers escalation, and where the knowledge came from* — so a reviewer can tell guideline-sourced facts apart from your own design.
 
+> **The canonical grammar, ordered keys, controlled vocabulary, and value constraints are defined in `MetapropsSyntax.md` — that file is authoritative; this section summarizes it.** Write **no placeholder values** (`source=s`, `instrument=i`): the `cig-monitoring-review` gate rejects them. Write the long `metaprops`/`noun_phrase` literals with the **structured assertion tool** (`add_data_property_assertion`) so the value is escaped server-side and never truncated; if you must use `add_axioms`, keep each literal single-line.
+
 **Canonical keys** (include every applicable one):
 
 - **ServiceRequest block** (mirror the Goal's `noun_phrase` so the Action is self-contained): `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, and `ServiceRequest.performerInstruction` (for triggered labs/clinician steps).
@@ -102,10 +104,10 @@ DataPropertyAssertion(pf:metaprops :Monitor_Rhabdomyolysis_Risk "category=undesi
 - **Every monitoring Action gets a `metaprops` string** (schema above): the full ServiceRequest order plus provenance/operationalization. Keep the ServiceRequest fields consistent between the Goal `noun_phrase` and the Action `metaprops`.
 - **Document sources and self-found knowledge** in `metaprops` (`source`, `knowledge_origin`, `assistant_invention`) so a reviewer can separate guideline-sourced facts from your own design — and tie each action to what it monitors via `monitored_target` (traceability).
 
-## Worked example (`cig/examples/obesity-glp1.owl`)
+## Worked example (`cig/examples/obesity-glp1-monitoring.owl` — authoritative)
 
-The standalone goal `Goal_body_weight_measurement_via_BIA_scale` (`verb=order`, `noun_phrase="ServiceRequest.code= body weight measurement via BIA scale"`), and `Monitor_Weight`'s goal `Start_BIA_body_weight_and_composition_measuring` whose `noun_phrase` spells out the FHIR ServiceRequest fields (code, intent, occurrenceTiming, patientInstruction).
+`Monitor_Rhabdomyolysis` (an independently-found case-report harm) and `Monitor_Body_Weight` (a guideline-specified desired outcome) each have an Action Enactment Goal (`verb=order`) whose `noun_phrase` spells out the full `ServiceRequest.*` block, and a matching `pf:metaprops` string that repeats that block and adds the provenance/operationalization keys per `MetapropsSyntax.md`. All ten monitoring Actions in that file pass the `cig-monitoring-review` gate — imitate them. (The older `cig/examples/obesity-glp1.owl` predates the `metaprops` convention and is kept only as a frozen earlier example.)
 
 ## Related patterns
 
-- `MonitoringPlan.md`, `ActionComponent.md`, `StateAchievementGoal.md`.
+- `MetapropsSyntax.md` (the canonical metaprops contract), `MonitoringPlan.md`, `ActionComponent.md`, `StateAchievementGoal.md`.

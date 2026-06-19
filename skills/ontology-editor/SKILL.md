@@ -33,6 +33,17 @@ Align with the project's INSTRUCTIONS.md: work top-down, get user approval befor
 | **find_axioms** | Search axioms by regex pattern; optional labels, limit, custom annotation property. Params: `owl_file_path`, `pattern`, `limit`, `include_labels`, `annotation_property` (nullable). |
 | **get_all_axioms** | Return all axioms (up to limit); optional labels, custom annotation property. Params: `owl_file_path`, `limit`, `include_labels`, `annotation_property` (nullable). |
 
+### Structured assertions (escaping-free — prefer for long literals; owl-mcp ≥ 1.0.11)
+
+These build the axiom server-side from separate fields, so **no quoting/escaping** is needed and long values are never truncated. Prefer them over hand-written `add_axiom` strings for any literal containing `;`, `=`, `/`, `,`, quotes, or newlines (e.g. a CIG `pf:metaprops` or `noun_phrase`).
+
+| Tool | Purpose |
+|------|--------|
+| **add_data_property_assertion** | Assert a data property value. Params: `owl_file_path`, `property`, `subject`, `value`, `datatype` (nullable), `lang` (nullable). |
+| **add_annotation_assertion** | Assert an annotation value. Params: `owl_file_path`, `property`, `subject`, `value`, `datatype` (nullable), `lang` (nullable). |
+| **add_object_property_assertion** | Link two individuals. Params: `owl_file_path`, `property`, `subject`, `target`. |
+| **add_class_assertion** | Assert an individual is an instance of a class. Params: `owl_file_path`, `class`, `individual`. |
+
 ### Prefixes, Metadata, and IRI Management
 
 | Tool | Purpose |
@@ -55,6 +66,7 @@ Align with the project's INSTRUCTIONS.md: work top-down, get user approval befor
 1. **Always use absolute paths**: Pass the full absolute path in `owl_file_path` to ensure the MCP server can resolve the file regardless of working directory.
 2. **Finding content**: Call `find_axioms` with a regex pattern; set `include_labels: true` for human-readable labels appended as `##` comments. Use `annotation_property` to override the default `rdfs:label` (e.g. for `skos:prefLabel`).
 3. **Adding axioms**: Use OWL functional syntax. Add one axiom per call with `add_axiom`, or batch with `add_axioms`. Ensure required prefixes exist (e.g. `owl`, `rdf`, `rdfs`, `xsd`); add custom ones with `add_prefix`.
+8. **Long string literals**: For long or special-character-laden literals (e.g. a CIG `pf:metaprops` or `noun_phrase` string with `;`, `=`, `/`, commas, or quotes), prefer the **structured assertion tools** — `add_data_property_assertion` / `add_annotation_assertion` — which take the IRIs and the raw value as separate arguments and escape the value **server-side**, so it is never truncated or mis-parsed. Reserve raw `add_axioms` functional-syntax strings for short, simple axioms; if you do use `add_axioms` for a long literal, keep it **single-line** (no raw newlines) and escape `\` and `"`.
 4. **Setting the ontology IRI**: Use `set_ontology_iri` to establish the ontology IRI and version IRI before adding axioms to a new file. **Always pass full IRIs** (e.g. `"http://example.org/ontology/my-ontology/"`), never CURIEs (e.g. `"ex:"`). CURIEs in the `Ontology(...)` header produce invalid OWL that parsers reject.
 5. **Project workflow**: After the user approves a draft (Step 5), use these tools to implement the change in the OWL file (Step 6), then run `test_pitfalls` and `test_quality` as part of automated review (Step 7).
 6. **Imports**: Add import axioms via `add_axiom` using **full IRIs in angle brackets**: `Import(<https://example.org/imported-ontology>)`. Never use CURIEs in `Import(...)` (e.g. `Import(ex:imported-ontology)` is invalid and will cause parsing failures).
@@ -65,6 +77,7 @@ Align with the project's INSTRUCTIONS.md: work top-down, get user approval befor
 This skill requires the following tools (proxied from the `owl-mcp` MCP server):
 
 - add_axiom, add_axioms, remove_axiom, find_axioms, get_all_axioms
+- add_data_property_assertion, add_annotation_assertion, add_object_property_assertion, add_class_assertion
 - add_prefix, ontology_metadata, get_labels_for_iri
 - set_ontology_iri, test_pitfalls
 

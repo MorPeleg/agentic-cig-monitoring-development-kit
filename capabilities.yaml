@@ -38,6 +38,32 @@ skills:
         - '@owl.find_axioms'
         - '@owl.get_all_axioms'
         - '@owl.sparql_query'
+  - id: cig-formalization
+    type: local
+    def:
+      path: ./skills/cig-formalization
+      description: >-
+        Deterministic Step 6 emitter: materialize an APPROVED PROforma CIG
+        monitoring proposal into a FRESH OWL ABox via the ontology-editor tools.
+        The proposal is the single source of truth; emit the approved action set
+        exactly (canonical IRIs, the fixed per-action bundle, ServiceRequest on
+        both the Goal noun_phrase and the Action metaprops), regenerate from
+        empty (never append to a prior run), keep one rdfs:label/comment with no
+        hand-written counts, and self-apply the end-of-Step-6 determinism check.
+        Use whenever an approved proposal must be formalized/regenerated as OWL.
+      requires:
+        - '@owl.add_axioms'
+        - '@owl.add_data_property_assertion'
+        - '@owl.add_annotation_assertion'
+        - '@owl.add_object_property_assertion'
+        - '@owl.add_class_assertion'
+        - '@owl.remove_axiom'
+        - '@owl.add_prefix'
+        - '@owl.set_ontology_iri'
+        - '@owl.find_axioms'
+        - '@owl.get_all_axioms'
+        - '@owl.ontology_metadata'
+        - '@owl.get_labels_for_iri'
   - id: odp-pattern-selector
     type: local
     def:
@@ -108,6 +134,10 @@ skills:
         CLI). Use for long-term memory, knowledge extraction, and recall across
         sessions.
       requires: []
+  - id: skill-creator
+    type: github
+    def:
+      repo: anthropics/skills@skill-creator
 agents:
   base:
     type: local
@@ -135,38 +165,39 @@ agents:
         Achievement Goal (verb achieve/avoid), and each monitoring item as an
         Action + Component with an Action Enactment Goal (verb order, FHIR
         ServiceRequest). The ServiceRequest order must carry ALL FIVE fields —
-        ServiceRequest.intent, ServiceRequest.code, ServiceRequest.occurrenceTiming,
-        ServiceRequest.patientInstruction, and ServiceRequest.performerInstruction
-        (performerInstruction is REQUIRED whenever there is a triggered lab or an
-        urgent/escalation step, e.g. "if symptoms occur, order serum CK/CPK,
-        creatinine/eGFR, electrolytes including potassium and phosphate,
-        urinalysis for blood/myoglobin pattern, and assess hydration/AKI risk") —
-        never stop at intent + code. Assert pf:metaprops on every monitoring
-        Action following the canonical grammar in references/MetapropsSyntax.md —
-        NO placeholder values (source=s, instrument=i): the full ServiceRequest.*
-        block must appear on BOTH the Goal noun_phrase AND the Action metaprops,
-        with real citations and provenance/operationalization keys (category,
-        monitored_target, provenance_type, source(s), knowledge_origin,
-        guideline_status, literature_basis, assistant_invention, instrument,
+        ServiceRequest.intent, ServiceRequest.code,
+        ServiceRequest.occurrenceTiming, ServiceRequest.patientInstruction, and
+        ServiceRequest.performerInstruction (performerInstruction is REQUIRED
+        whenever there is a triggered lab or an urgent/escalation step, e.g. "if
+        symptoms occur, order serum CK/CPK, creatinine/eGFR, electrolytes
+        including potassium and phosphate, urinalysis for blood/myoglobin
+        pattern, and assess hydration/AKI risk") — never stop at intent + code.
+        Assert pf:metaprops on every monitoring Action following the canonical
+        grammar in references/MetapropsSyntax.md — NO placeholder values
+        (source=s, instrument=i): the full ServiceRequest.* block must appear on
+        BOTH the Goal noun_phrase AND the Action metaprops, with real citations
+        and provenance/operationalization keys (category, monitored_target,
+        provenance_type, source(s), knowledge_origin, guideline_status,
+        literature_basis, assistant_invention, instrument,
         monitoring_frequency_basis, trigger, cq) so sourced facts are separable
         from self-designed ones and each action traces to the harm/goal it
         monitors. Case-report sources must document a drug harm (not symptom
         resolution after stopping). Write long metaprops/noun_phrase literals
-        with the structured assertion tools so they are not truncated.
-        Step 6 is a DETERMINISTIC, regenerate-from-empty emit: delegate it to the
-        cig-formalizer subagent, which treats the approved proposal as the single
-        source of truth, builds into a FRESH/EMPTY file (never appends to a prior
-        run), uses the canonical IRI fixed in the proposal (one IRI per ADE/label
-        section), and emits the approved action set EXACTLY with no duplicates,
-        no shared Goals, the ontology IRI set, and a single rdfs:label/comment.
-        Step 7 is a BLOCKING gate: delegate to the cig-monitoring-reviewer
-        subagent (runs cig-monitoring-review, which inspects metaprops VALUES not
-        just keys) and the cig-cq-verifier subagent. The gate re-runs the FULL
-        check set every time, treats scope/residue/duplicate mismatches and
-        missing ServiceRequest fields as hard FAILs, never waives a FAIL or
-        inherits a prior PASS, and PASSes only when zero FAILs remain. Reuse
-        PROforma classes/properties by IRI and imitate
-        cig/examples/obesity-glp1-monitoring.owl plus
+        with the structured assertion tools so they are not truncated. Step 6 is
+        a DETERMINISTIC, regenerate-from-empty emit: delegate it to the
+        cig-formalizer subagent, which treats the approved proposal as the
+        single source of truth, builds into a FRESH/EMPTY file (never appends to
+        a prior run), uses the canonical IRI fixed in the proposal (one IRI per
+        ADE/label section), and emits the approved action set EXACTLY with no
+        duplicates, no shared Goals, the ontology IRI set, and a single
+        rdfs:label/comment. Step 7 is a BLOCKING gate: delegate to the
+        cig-monitoring-reviewer subagent (runs cig-monitoring-review, which
+        inspects metaprops VALUES not just keys) and the cig-cq-verifier
+        subagent. The gate re-runs the FULL check set every time, treats
+        scope/residue/duplicate mismatches and missing ServiceRequest fields as
+        hard FAILs, never waives a FAIL or inherits a prior PASS, and PASSes
+        only when zero FAILs remain. Reuse PROforma classes/properties by IRI
+        and imitate cig/examples/obesity-glp1-monitoring.owl plus
         skills/cig-monitoring/references/ActionEnactmentGoal.md.
     - type: inline
       id: capa_tool_usage
@@ -189,10 +220,10 @@ subagents:
       Use to formalize an APPROVED proposal into an OWL ABox: it regenerates the
       project ontology from an empty file (never appends to a prior run),
       materializes the approved action set exactly, and asserts the full
-      ServiceRequest block on both the Goal noun_phrase and the Action metaprops.
-      Delegate the formalization step to this subagent.
+      ServiceRequest block on both the Goal noun_phrase and the Action
+      metaprops. Delegate the formalization step to this subagent.
     skills:
-      - cig-monitoring
+      - cig-formalization
       - ontology-editor
     tools:
       - add_axioms
@@ -211,47 +242,30 @@ subagents:
       - test_quality
     instructions: |
       You are the cig-formalizer. You run Step 6 (Formalization) of a CIG
-      monitoring build and nothing else. The APPROVED proposal
-      (`projects/<project_dir>/plans/PROPOSAL-*.md`, status: approved) is your
-      SINGLE SOURCE OF TRUTH. Read it and the worked example
+      monitoring build and nothing else. FOLLOW THE `cig-formalization` SKILL
+      (loaded for you) as the authoritative recipe — it defines the fresh-file
+      rule, canonical IRIs, the fixed per-action bundle, ServiceRequest-on-both-
+      sides, the annotation discipline, and the end-of-Step-6 determinism check.
+
+      The APPROVED proposal (`projects/<project_dir>/plans/PROPOSAL-*.md`,
+      status: approved) is your SINGLE SOURCE OF TRUTH; its §6 Individuals tables
+      are the verbatim IRI list. Read it and the worked example
       `cig/examples/obesity-glp1-monitoring.owl`, then emit OWL via the
-      ontology-editor tools only — never edit OWL by hand.
+      ontology-editor tools only — never edit OWL by hand. If the proposal is
+      missing or not approved, stop and report instead of emitting.
 
-      Hard rules (MUST / MUST NOT):
-      - MUST build into a FRESH/EMPTY ontology file. If a project ontology
-        already exists, DELETE it first (or regenerate from scratch). NEVER
-        append to, merge into, or extend an ontology produced by a different
-        plan or a prior run — even if its content looks "well implemented."
-      - The final ABox action set MUST EQUAL the approved proposal's action set
-        EXACTLY — no extra actions, none missing.
-      - Use the CANONICAL IRIs fixed in the proposal: exactly one IRI per ADE /
-        label section. NEVER invent a second IRI for an ADE already named
-        (e.g. never both Monitor_AKI and Monitor_Acute_Kidney_Injury).
-      - Emission MUST be idempotent: no duplicate individuals, no two Actions
-        sharing one Goal, no individual with two metaprops or two noun_phrase
-        assertions, no two plan roots.
-      - For EACH approved monitoring action emit the fixed bundle and only it:
-        one Action + one Component (taskref + components into its sub-plan) +
-        one Goal (verb=order) with exactly one noun_phrase, one metaprops, one
-        caption, plus a precondition when the proposal marks it conditional.
-      - ServiceRequest completeness (the recurring failure): the Goal
-        noun_phrase AND the Action metaprops MUST EACH contain all five fields —
-        ServiceRequest.intent, ServiceRequest.code, ServiceRequest.occurrenceTiming,
-        ServiceRequest.patientInstruction, and ServiceRequest.performerInstruction
-        (performerInstruction is REQUIRED whenever there is a triggered lab or an
-        urgent/escalation step — e.g. "if symptoms occur, order serum CK/CPK,
-        creatinine/eGFR, electrolytes including potassium and phosphate,
-        urinalysis for blood/myoglobin pattern, and assess hydration/AKI risk").
-        Keep the ServiceRequest block consistent between the Goal and the Action.
-      - Write long metaprops/noun_phrase literals with add_data_property_assertion
-        (single-line) so they are escaped server-side and never truncated. No
-        placeholder values.
-
-      Before returning, self-verify with find_axioms/get_all_axioms and report:
-      count of pf:Action == count in the approved proposal; each Action has
-      exactly one metaprops and one Goal with exactly one noun_phrase; no two
-      Actions share a Goal; the ontology IRI + version IRI are set; exactly one
-      rdfs:label and one rdfs:comment; no hand-written action counts in prose.
+      Non-negotiables (the skill expands each): build into a FRESH/EMPTY file
+      (delete any existing project ontology first; never append to a prior run);
+      emit the approved action set EXACTLY (no residue, no renames, no
+      duplicates, no two Actions sharing a Goal, single plan root); every
+      monitoring Goal noun_phrase AND Action metaprops carries all five
+      ServiceRequest.* fields (incl. performerInstruction for triggered/urgent
+      steps); no placeholder values; write long literals with
+      add_data_property_assertion. Before returning, run the skill's
+      determinism check with find_axioms/get_all_axioms and report each result
+      (Action count == approved §6; one metaprops + one Goal + one noun_phrase
+      per Action; ontology IRI + version IRI set; exactly one rdfs:label and one
+      rdfs:comment with no hand-written counts).
   - id: cig-monitoring-reviewer
     description: >-
       Independent BLOCKING value-quality + structural gate for Step 7 of a CIG
@@ -352,8 +366,8 @@ tools:
   - id: add_annotation_assertion
     type: mcp
     description: >-
-      Assert an annotation value with the literal passed as a separate field
-      (no escaping). Use for long annotation literals (rdfs:comment, etc.).
+      Assert an annotation value with the literal passed as a separate field (no
+      escaping). Use for long annotation literals (rdfs:comment, etc.).
     def:
       server: '@owl'
       tool: add_annotation_assertion

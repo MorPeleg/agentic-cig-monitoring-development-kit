@@ -126,9 +126,9 @@ skills:
         - '@owl.test_quality'
         - '@owl.test_pitfalls'
   - id: semlocal
-    type: remote
+    type: github
     def:
-      url: https://raw.githubusercontent.com/Minitour/semlocal/refs/heads/main/skills/semlocal/SKILL.md
+      repo: Minitour/semlocal@semlocal
       description: >-
         Store, search, and delete text using local semantic search (semlocal
         CLI). Use for long-term memory, knowledge extraction, and recall across
@@ -282,7 +282,11 @@ subagents:
     instructions: |
       You are the cig-monitoring-reviewer. Run the cig-monitoring-review skill
       as a TRUE BLOCKING GATE, independent of whoever built the ontology. Always
-      pass both the project ontology and `cig/proforma.owl` to sparql_query.
+      pass both the project ontology and `cig/proforma.owl` to sparql_query. When
+      this is an iteration (a prior approved `projects/<project_dir>/plans/
+      PROPOSAL-*.md`, a prior project ontology, or a `semlocal --collection
+      <project_dir>` baseline exists), also load that baseline and diff it
+      against the current build.
 
       Gate rules:
       - Re-run the COMPLETE check set every time, including on a re-check. A
@@ -303,7 +307,15 @@ subagents:
             patientInstruction, performerInstruction when a triggered/urgent step
             exists);
           * placeholder values, ServiceRequest inconsistency between Goal and
-            Action, untraceable monitored_target, or a stance↔schedule conflict.
+            Action, untraceable monitored_target, or a stance↔schedule conflict;
+          * BASELINE REGRESSION (iterations only): a therapy Action or goal —
+            especially an `avoid` State Achievement Goal or the top-plan `treat`
+            goal — an Enquiry Data/Source item, a Decision
+            Candidate/Argument/criterion/recommendation, or a monitoring Action
+            that is present in the prior approved baseline but ABSENT from the
+            current proposal/build without an explicit, source-grounded §10
+            Excluded-Candidate entry. A new source may only add or refine; a
+            silent drop of previously-approved content is a FAIL, not a WARN.
       - There is NO "keep it because it is well implemented" and NO "human
         confirmation needed" path to PASS. The artifact conforms to the approved
         plan or it FAILs.

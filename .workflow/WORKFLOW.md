@@ -34,6 +34,16 @@ Follow these steps when extending or creating an ontology. Align your suggestion
 
 **Path convention**: Throughout this document, `<project_dir>` refers to the **project name only** (e.g. `conference-management`), not a full path. All paths starting with `projects/` are **relative to the workspace root**. For example, `projects/<project_dir>/queries/` means `projects/conference-management/queries/` at the workspace root — never nested inside the project directory itself.
 
+### Step 0 — Iteration Baseline (mandatory when a project already exists or a source is added)
+
+**Before re-scoping, decide whether this is a new build or an iteration, and never silently start over.** A task is an **iteration** whenever a `projects/<project_dir>/` already exists, an approved `PROPOSAL-*.md` exists, a project ontology exists, or the user is adding/replacing a guideline for a topic that has been modeled before. For iterations:
+
+1. **Do not fork the project.** Reuse the **existing** `<project_dir>` and its namespace/prefix. Do **not** invent a new project name (e.g. renaming `glp1-ade-monitoring` → `glp1-adverse-effects`) — a rename discards the baseline and is the most common cause of regressions. Write the new draft to `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md`, never to a scratch/Downloads location.
+2. **Load the baseline.** Read the latest approved `projects/<project_dir>/plans/PROPOSAL-*.md`, the current project ontology, and recall prior extractions with `semlocal search … --collection <project_dir>`. If the collection is empty, treat the newest approved proposal (and the authoritative example) as the baseline.
+3. **Build a carry-forward checklist.** Enumerate every previously-modeled element: each therapy `Action` and its **State Achievement Goal (including every `avoid` goal and the top-plan `treat` goal)**, every Enquiry `Data`/`Source` item, every Decision `Candidate`/`Argument`/criterion/recommendation, and every monitoring `Action` (with its canonical IRI). This checklist is an input to the Step 4 pruning checkpoint's regression check.
+
+**A new source may only add or refine.** Adding a guideline must never drop a baseline element. Every checklist item must reappear in the new draft (retained or refined) **or** be listed in §10 Excluded Candidates with an explicit, source-grounded reason. Re-anchoring scope on the newest guideline alone is a defect.
+
 ### Step 1 — Scope Definition
 
 Help clarify the change the user wants. Analyze and structure it. Search semlocal for prior scope, CQs, or decisions from earlier sessions.
@@ -104,8 +114,9 @@ Before presenting the draft to the user, apply these checks to every proposed el
 4. **Abstract parent necessity** — For each abstract parent class that was not mentioned in any CQ or user story: remove it. Let children be direct subclasses of their nearest ancestor that IS mentioned, or of owl:Thing. Do not fabricate grouping classes for taxonomic neatness when no CQ references the group.
 5. **Property necessity** — Do not create inverse properties, cardinality constraints, disjointness axioms, or property chains unless a CQ explicitly requires them. Each axiom must be traceable to a CQ.
 6. **Class count sanity** — For N competency questions, expect roughly N ± 5 classes. If the draft significantly exceeds this, revisit each class against the CQs. The goal is the **minimum viable TBox** — the smallest set of classes and properties that answers all CQs.
+7. **Regression check (iterations only — mandatory)** — Walk the Step 0 carry-forward checklist against the new draft. Every baseline element (each therapy Action and its goal, **every `avoid` goal and the top-plan `treat` goal**, each Enquiry `Data`/`Source`, each Decision `Candidate`/`Argument`/criterion/recommendation, each monitoring Action + canonical IRI) must be **retained/refined in the draft** or **listed in §10 with a source-grounded reason**. A baseline element that is neither retained nor explicitly excluded is a **silent drop and a defect** — restore it. Pruning removes CQ-unjustified *new* candidates; it may never quietly delete previously-approved content.
 
-List all removed candidates in section 10 (Excluded Candidates) with the check number that eliminated them (e.g. "Removed by check 4: no CQ references this grouping concept").
+List all removed candidates in section 10 (Excluded Candidates) with the check number that eliminated them (e.g. "Removed by check 4: no CQ references this grouping concept"; "Removed by check 7: baseline element dropped and restored").
 
 **Precision review (recommended):** After pruning, delegate a final review to a fast subagent. Provide it with the CQs and pruned element lists; ask it to flag any element not tied to a specific CQ.
 

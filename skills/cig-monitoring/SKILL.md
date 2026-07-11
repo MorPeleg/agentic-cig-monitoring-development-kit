@@ -73,6 +73,8 @@ Use the PDFs the user has placed in `cig/guidelines/` as primary sources (no ext
 
 ### Step 3 — Extract recommendations, goals, and monitoring
 
+**If this is an iteration (WORKFLOW Step 0), start from the baseline.** Load the latest approved proposal + `semlocal --collection <project_dir>` recall and carry every previously-extracted therapy goal, Enquiry/Decision element, and monitoring action forward as a checklist. A newly added guideline extends and refines that set — it does not reset it. Extraction from the newest guideline is *added to* the baseline, not substituted for it.
+
 From the guideline collection extract, citing the source PDF and page/section for each finding:
 
 1. **Therapy recommendations.** If a recommendation is vague (e.g. "offer pharmacotherapy with health behaviour changes"), complete it from other guidelines in the collection or the web (e.g. "hypocaloric diet 500–600 kcal/d deficit; 150 min/week activity + 2×/week strengthening"). Mark completions as proposed and cite the source.
@@ -87,6 +89,8 @@ From the guideline collection extract, citing the source PDF and page/section fo
    - **Operationalize, don't just name:** for each rare harm, map the syndrome to observable manifestations and specify *what to ask/observe, which instrument/exam, what frequency (+basis), and what triggers urgent assessment* — naming an action `Monitor_<harm>` is not enough.
 9. **Unmentioned harms and benefits**, derived from the **mechanism of action**. Propose monitoring plans and note cost, danger, and prevalence. Example: GLP-1 appetite regulation is linked to reward circuits, so anhedonia/reduced enjoyment of life is a candidate harm — decide whether existing QoL questionnaires cover it or a short added instrument is needed, and at what frequency.
 
+**Systematic coverage is not label-only.** The "enumerate and account for each" discipline in item 7 applies equally to **guideline recommendations, therapy goals, and narrative harms/benefits** — not just numbered package-insert sections. When a guideline's prose flags a harm or a therapy goal (e.g. ADA Rec 2.20 muscle loss and, alongside it, lower bone mineral density; nutritional/micronutrient adequacy; cardiometabolic benefit), each must surface as a therapy goal, a desired/undesired monitor, **or** an explicit §10 Excluded Candidate — never dropped by omission. Cover the whole guideline library, not only the newest or most detailed source.
+
 **Source-fidelity discipline (mandatory — the content must match what the cited source actually says).** Generating a populated, well-cited monitoring action is not enough; the action must be *faithful* to the source. For every monitored item record:
 
 - **Applicability condition** → `applies_when`. If the source qualifies the harm to a sub-population (the label flags **hypoglycemia** only with *concomitant insulin or an insulin secretagogue*; **diabetic retinopathy** only in *type 2 diabetes*), the action must carry that condition and a PROforma `precondition` — **never** model a conditional ADE as universal. Use `all_patients_on_therapy` only when the source truly applies it to everyone.
@@ -95,7 +99,7 @@ From the guideline collection extract, citing the source PDF and page/section fo
 
 Each of these is checked by the `cig-monitoring-review` source-fidelity phase (Step 7).
 
-Store extraction summaries via `semlocal --collection <project_dir>` per `WORKFLOW.md`.
+**Persist the extraction — non-optional.** After each of Steps 2, 3, 5, and 6, store a summary via `semlocal write … --collection <project_dir>` (therapy goals incl. `avoid`/`treat`, Enquiry/Decision items, and the monitoring action set with canonical IRIs). This is what makes the next run's Step 0 baseline recall possible; skipping it forces the next run to re-derive from scratch and is the root cause of run-to-run regressions. On any iteration, `semlocal search … --collection <project_dir>` **before** extracting.
 
 ### Step 4 — Formalize the top-level structure (after draft approval)
 
@@ -122,6 +126,8 @@ For **each therapy intervention**, create an `Action` and a matching `Component`
 
 - Example (achieve): action `Prescribe_GLP1` → goal `verb=achieve`, `noun_phrase="body-weight reduction of 5-10 percent"`.
 - Example (avoid): action `Prescribe_physical_exercise` → goal `verb=avoid`, `noun_phrase="muscle loss"` (150 min/week activity + 2×/week strengthening).
+
+**Keep both goal polarities and their traceability (mandatory).** A therapy plan almost always needs **both** `achieve` and `avoid` State Achievement Goals — do not collapse it into `achieve`-only actions. Whenever a guideline recommends preventing/minimizing a harm of therapy (e.g. ADA Rec 2.20: adequate protein + muscle-strengthening to minimize muscle loss), model the dedicated therapy action with a `verb=avoid` goal (e.g. `Prescribe_Resistance_Exercise` → `avoid` "lean-mass loss"); do not silently fold it into a lifestyle `achieve` action or demote it to a monitor-only concern. Every desired/undesired **monitor's** `monitored_target` must trace to an existing therapy goal — if you keep a monitor (e.g. lean-mass/body-composition) you must keep the goal it traces to. On an iteration, an `avoid` goal or `treat` top-plan goal present in the baseline may not disappear (WORKFLOW Step 0 / Step 4 check 7).
 
 See `references/ActionComponent.md` and `references/StateAchievementGoal.md`.
 

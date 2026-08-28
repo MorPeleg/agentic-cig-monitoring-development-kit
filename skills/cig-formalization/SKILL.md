@@ -2,18 +2,14 @@
 name: cig-formalization
 description: >-
   Deterministic Step 6 emitter that materializes an APPROVED PROforma CIG
-  monitoring proposal into a fresh OWL ABox via the ontology-editor (OWL-MCP)
-  tools. Use this skill — alongside ontology-editor — whenever an approved
-  `projects/<project_dir>/plans/PROPOSAL-*.md` must be turned into (or
-  regenerated as) the project ontology: "formalize the approved proposal",
-  "emit the OWL", "build the CIG ontology", "run Step 6", or when the
-  cig-formalizer subagent is invoked. This is the HOW-to-emit half of the CIG
-  workflow; the clinical WHAT-to-model decisions are already fixed in the
-  approved proposal, which is the single source of truth. Treat formalization
-  as a near-mechanical transcription, not a creative step — its job is to make
-  the emit reproducible and free of the recurring mechanical failures (building
-  on a stale file, duplicate/renamed IRIs, residual or missing actions,
-  ServiceRequest fields dropped, a hand-written count that drifts).
+  monitoring proposal into OWL via the ontology-editor (OWL-MCP) tools. Default
+  is a fresh-file full re-emit. Coding-only requests (add SNOMED/OMOP/LOINC
+  codes) use coding-patch mode: do not delete the OWL; add typed coding keys on
+  existing Actions only. Use this skill — alongside ontology-editor — whenever
+  an approved `projects/<project_dir>/plans/PROPOSAL-*.md` must be turned into
+  (or regenerated as) the project ontology, or when the user asks only to add
+  terminology codes to an existing CIG. Treat formalization as a near-mechanical
+  transcription, not a creative step.
 ---
 
 # CIG Formalization (Step 6 — deterministic emit)
@@ -58,10 +54,10 @@ that — do not emit from an unapproved draft.
 - **Worked example to imitate (authoritative):** `cig/examples/obesity-glp1-monitoring.owl`.
 - **Meta-ontology (reuse by IRI; never edit):** `cig/proforma.owl`, prefix
   `pf:` = `http://www.owl-ontologies.com/Ontology1779030093.owl#`.
-- **Canonical `pf:metaprops` grammar (ordered keys, controlled vocab, anti-placeholder rules):**
+- **Canonical `pf:metaprops` grammar (ordered keys, controlled vocab, anti-placeholder rules, typed coding keys):**
   `skills/cig-monitoring/references/MetapropsSyntax.md` — this file is the single
   source for the metaprops contract; do not re-invent or duplicate it.
-- **Goal side + case-report source rule + rare-harm skeletons:**
+- **Goal side + opt-in case-report source rule + labeled-ADE skeleton:**
   `skills/cig-monitoring/references/ActionEnactmentGoal.md`.
 - **Structural patterns (only when the approved scope includes them):**
   `references/TopLevelPlan.md`, `MonitoringPlan.md`, `ActionComponent.md`,
@@ -73,9 +69,27 @@ Do all OWL editing through the **ontology-editor** tools (OWL-MCP). Read
 first. **Never edit an OWL file by hand.** If a tool call fails, diagnose and
 retry — never fall back to writing the file manually.
 
-## Prime directive: regenerate from empty
+## Choose the emit mode first
 
-**Build into a fresh/empty ontology file every time.** If a project ontology
+**Full re-emit (default).** New CIG, first emit of an approved proposal, or any request that changes the clinical action set. Follow *Prime directive: regenerate from empty* below.
+
+**Coding-patch mode.** Use this when the user asks **only** to add terminology codes (SNOMED / OMOP / LOINC / RxNorm / finding codes) to an **existing** CIG — or the proposal header marks `mode: coding-patch`. This is **not** a rebuild. Detect it before touching the file. If the request could be either a rebuild or a patch, **stop and ask**; never assume a full rebuild for a coding request.
+
+Coding-patch rules (MUST / MUST NOT):
+
+1. **Do not delete the ontology file.** Load the existing project OWL.
+2. **Do not add, remove, or rename individuals.** The `pf:Action` IRI set, Goal IRIs, Component IRIs, Decision candidates, Enquiry data items, and plan structure MUST stay identical to the file you loaded.
+3. **Do not change captions, `noun_phrase` strings, `occurrenceTiming`, `source=`, `literature_basis`, `applies_when`, Decision criteria, or `rdfs:comment`.** Those strings are frozen from the prior approved emit.
+4. **Only add or replace the typed coding keys** on existing monitoring Actions: `ServiceRequest.supportingInfo.findingCodes`, `labCodes`, `conditionCodes`, `medicationCodes` (see `MetapropsSyntax.md`). Insert them after `performerInstruction` (or after `patientInstruction` if there is no performer step). Leave every other `key=value` pair byte-for-byte.
+5. Patch a `metaprops` literal by `remove_axiom` of the old assertion then `add_data_property_assertion` of the new string. Never append a second `metaprops` on the same Action.
+6. If the approved proposal's action set **differs** from the existing OWL, this is **not** a coding patch — stop and report. Do not silently switch to a full rebuild.
+7. Do **not** rename the project directory.
+
+After the patch, run the End-of-Step-6 check **plus** the coding-patch freeze check: action count, IRIs, captions, and Decision candidates equal the pre-patch file.
+
+## Prime directive: regenerate from empty (full re-emit only)
+
+**On a full re-emit, build into a fresh/empty ontology file.** If a project ontology
 already exists at the output path, **delete it first** and regenerate from
 scratch. Never append to, merge into, or extend an ontology produced by a
 different plan or a prior run — *even if its content looks "well implemented" or
@@ -84,10 +98,14 @@ pre-existing artifact. A clean rebuild from the approved proposal is impossible 
 corrupt with residue, and makes the emit idempotent (running it twice yields the
 same ontology, with no duplicates).
 
+**This directive does not apply in coding-patch mode.** Deleting the file to "add SNOMED" is how captions, Decision candidates, and provenance strings drift. Patch; do not rebuild.
+
 ## Hard rules (MUST / MUST NOT)
 
-1. **Fresh file.** Delete any existing project ontology and build from empty.
-   MUST NOT append to/merge a prior run's artifact.
+These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rules in *Choose the emit mode first*.
+
+1. **Fresh file (full re-emit only).** Delete any existing project ontology and build from empty.
+   MUST NOT append to/merge a prior run's artifact. MUST NOT do this for a coding-only request.
 2. **Exact action set.** The emitted `pf:Action` set MUST EQUAL the approved
    proposal's action set exactly — no extras, no prior-session residue, none
    missing.
@@ -116,25 +134,26 @@ same ontology, with no duplicates).
 
 ## The deterministic recipe
 
-1. **Read** the approved proposal and the worked example `cig/examples/obesity-glp1-monitoring.owl`.
+1. **Choose the emit mode.** If this is coding-only, follow *Coding-patch mode* (do not delete the file; patch coding keys only) and skip steps 3–8 of this recipe. Still read the approved proposal, then run the freeze check in step 9. Otherwise continue as a full re-emit.
+2. **Read** the approved proposal and the worked example `cig/examples/obesity-glp1-monitoring.owl`.
    Confirm `status: approved`; note the output path and the §6 IRI tables.
-2. **Fresh file.** Delete any existing ontology at the output path; start empty.
-3. **`set_ontology_iri`** with the **full** ontology IRI from the proposal header
+3. **Fresh file.** Delete any existing ontology at the output path; start empty.
+4. **`set_ontology_iri`** with the **full** ontology IRI from the proposal header
    (e.g. `https://w3id.org/agentic-cig-monitoring/<project>`) and a version IRI
    (e.g. `.../1.0`). Never a CURIE, never leave it anonymous.
-4. **`add_prefix`** for the PROforma namespace
+5. **`add_prefix`** for the PROforma namespace
    (`http://www.owl-ontologies.com/Ontology1779030093.owl#`), the project
    namespace, and `owl`/`rdf`/`rdfs`/`xsd`/`dcterms`. Add
    `Import(<http://www.owl-ontologies.com/Ontology1779030093.owl>)` for PROforma.
-5. **Emit the plan skeleton** for the approved scope (root plan; for a full CIG
+6. **Emit the plan skeleton** for the approved scope (root plan; for a full CIG
    also the Enquiry/Decision/Therapy/Monitoring sub-plans and the
    `Schedule_Constraint`/`conref` sequencing — see *Structural backbone* below).
    Reuse PROforma classes/properties by IRI; do not redeclare them.
-6. **For each action in the §6 table (and only those), emit the fixed bundle**
+7. **For each action in the §6 table (and only those), emit the fixed bundle**
    (next section). Iterate the table top to bottom; do not add or skip rows.
-7. **Annotations** — exactly one `rdfs:label` and one `rdfs:comment` on the
+8. **Annotations** — exactly one `rdfs:label` and one `rdfs:comment` on the
    ontology IRI; per-individual `rdfs:label`s. See *Annotation discipline*.
-8. **Self-verify** with the *End-of-Step-6 determinism check*. Fix any failure
+9. **Self-verify** with the *End-of-Step-6 determinism check*. Fix any failure
    before handing off to Step 7.
 
 ## The fixed per-action bundle
@@ -234,6 +253,10 @@ must hold; fix and re-emit if any fails:
       hand-written count or stale drug/section list in prose.
 - [ ] No empty placeholder components; for a full CIG the Enquiry and Decision
       are populated.
+- [ ] **Coding-patch freeze (coding-only runs):** `count(pf:Action)`, Action IRIs,
+      captions, Decision candidates, Goal `noun_phrase`s, `source=` strings, and
+      `occurrenceTiming` equal the pre-patch file. The only metaprops pairs that
+      may differ are the four `ServiceRequest.supportingInfo.*Codes` keys.
 
 This skill ends at a clean, self-verified ABox. Step 7 (the blocking
 `cig-monitoring-review` value-quality gate and `cq-verification`) is run

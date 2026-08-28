@@ -44,13 +44,15 @@ skills:
       path: ./skills/cig-formalization
       description: >-
         Deterministic Step 6 emitter: materialize an APPROVED PROforma CIG
-        monitoring proposal into a FRESH OWL ABox via the ontology-editor tools.
-        The proposal is the single source of truth; emit the approved action set
-        exactly (canonical IRIs, the fixed per-action bundle, ServiceRequest on
-        both the Goal noun_phrase and the Action metaprops), regenerate from
-        empty (never append to a prior run), keep one rdfs:label/comment with no
-        hand-written counts, and self-apply the end-of-Step-6 determinism check.
-        Use whenever an approved proposal must be formalized/regenerated as OWL.
+        monitoring proposal into OWL via the ontology-editor tools. Default is
+        a fresh-file full re-emit (canonical IRIs, fixed per-action bundle,
+        ServiceRequest on both the Goal noun_phrase and the Action metaprops).
+        Coding-only requests use coding-patch mode: do not delete the OWL; add
+        typed coding keys on existing Actions only. Keep one rdfs:label/comment
+        with no hand-written counts, and self-apply the end-of-Step-6
+        determinism check. Use whenever an approved proposal must be
+        formalized/regenerated, or when adding SNOMED/OMOP/LOINC codes to an
+        existing CIG.
       requires:
         - '@owl.add_axioms'
         - '@owl.add_data_property_assertion'
@@ -96,9 +98,11 @@ skills:
         that every monitoring Action's pf:metaprops has real content (rejects
         placeholders like source=s), that the ServiceRequest order is on BOTH
         the Goal noun_phrase and the Action metaprops, that case-report sources
-        document a drug harm, that each action traces to a monitored target, and
-        that no empty placeholder components or unpopulated Enquiry/Decision
-        remain. Replaces the gameable presence-only metaprops check.
+        document a drug harm and are in approved-proposal scope, that each
+        action traces to a monitored target, that no empty placeholder
+        components or unpopulated Enquiry/Decision remain, and that coding-only
+        runs do not rewrite IRIs, captions, or Decision candidates. Replaces
+        the gameable presence-only metaprops check.
       requires:
         - '@owl.find_axioms'
         - '@owl.get_all_axioms'
@@ -181,20 +185,25 @@ agents:
         literature_basis, assistant_invention, instrument,
         monitoring_frequency_basis, trigger, cq) so sourced facts are separable
         from self-designed ones and each action traces to the harm/goal it
-        monitors. Case-report sources must document a drug harm (not symptom
-        resolution after stopping). Write long metaprops/noun_phrase literals
+        monitors. Case-report sources are opt-in (only if the user/proposal
+        includes them) and must document a drug harm (not symptom resolution
+        after stopping). Write long metaprops/noun_phrase literals
         with the structured assertion tools so they are not truncated. Step 6 is
-        a DETERMINISTIC, regenerate-from-empty emit: delegate it to the
+        a DETERMINISTIC emit: delegate it to the
         cig-formalizer subagent, which treats the approved proposal as the
-        single source of truth, builds into a FRESH/EMPTY file (never appends to
-        a prior run), uses the canonical IRI fixed in the proposal (one IRI per
-        ADE/label section), and emits the approved action set EXACTLY with no
-        duplicates, no shared Goals, the ontology IRI set, and a single
-        rdfs:label/comment. Step 7 is a BLOCKING gate: delegate to the
+        single source of truth. Full re-emits build into a FRESH/EMPTY file
+        (never append to a prior run). Coding-only requests (add SNOMED/OMOP/
+        LOINC) use coding-patch mode: do not delete the OWL; freeze IRIs,
+        captions, Decision candidates, occurrenceTiming, and source= strings;
+        add only typed coding keys. Use the canonical IRI fixed in the proposal
+        (one IRI per ADE/label section), and emit the approved action set
+        EXACTLY with no duplicates, no shared Goals, the ontology IRI set, and
+        a single rdfs:label/comment. Step 7 is a BLOCKING gate: delegate to the
         cig-monitoring-reviewer subagent (runs cig-monitoring-review, which
         inspects metaprops VALUES not just keys) and the cig-cq-verifier
         subagent. The gate re-runs the FULL check set every time, treats
-        scope/residue/duplicate mismatches and missing ServiceRequest fields as
+        scope/residue/duplicate mismatches, missing ServiceRequest fields, out-
+        of-scope case-report actions, and coding-only caption/IRI drift as
         hard FAILs, never waives a FAIL or inherits a prior PASS, and PASSes
         only when zero FAILs remain. Reuse PROforma classes/properties by IRI
         and imitate cig/examples/obesity-glp1-monitoring.owl plus
@@ -217,11 +226,11 @@ subagents:
   - id: cig-formalizer
     description: >-
       Deterministic PROforma OWL emitter for Step 6 of a CIG monitoring build.
-      Use to formalize an APPROVED proposal into an OWL ABox: it regenerates the
-      project ontology from an empty file (never appends to a prior run),
-      materializes the approved action set exactly, and asserts the full
-      ServiceRequest block on both the Goal noun_phrase and the Action
-      metaprops. Delegate the formalization step to this subagent.
+      Use to formalize an APPROVED proposal into an OWL ABox. Full re-emits
+      regenerate from an empty file (never append to a prior run). Coding-only
+      requests patch typed coding keys on the existing file without deleting it
+      or rewriting captions, IRIs, or Decision candidates. Delegate the
+      formalization step to this subagent.
     skills:
       - cig-formalization
       - ontology-editor
@@ -243,9 +252,11 @@ subagents:
     instructions: |
       You are the cig-formalizer. You run Step 6 (Formalization) of a CIG
       monitoring build and nothing else. FOLLOW THE `cig-formalization` SKILL
-      (loaded for you) as the authoritative recipe — it defines the fresh-file
-      rule, canonical IRIs, the fixed per-action bundle, ServiceRequest-on-both-
-      sides, the annotation discipline, and the end-of-Step-6 determinism check.
+      (loaded for you) as the authoritative recipe — it defines emit-mode
+      selection (full re-emit vs coding-patch), the fresh-file rule for full
+      re-emits, canonical IRIs, the fixed per-action bundle, ServiceRequest-on-
+      both-sides, the annotation discipline, and the end-of-Step-6 determinism
+      check.
 
       The APPROVED proposal (`projects/<project_dir>/plans/PROPOSAL-*.md`,
       status: approved) is your SINGLE SOURCE OF TRUTH; its §6 Individuals tables
@@ -254,11 +265,18 @@ subagents:
       ontology-editor tools only — never edit OWL by hand. If the proposal is
       missing or not approved, stop and report instead of emitting.
 
-      Non-negotiables (the skill expands each): build into a FRESH/EMPTY file
-      (delete any existing project ontology first; never append to a prior run);
-      emit the approved action set EXACTLY (no residue, no renames, no
-      duplicates, no two Actions sharing a Goal, single plan root); every
-      monitoring Goal noun_phrase AND Action metaprops carries all five
+      Choose the emit mode first. If the user asked only to add terminology
+      codes (SNOMED/OMOP/LOINC) or the proposal marks `mode: coding-patch`, do
+      NOT delete the file. Patch only `ServiceRequest.supportingInfo.*Codes` on
+      existing Actions. MUST NOT rename IRIs, change captions, Decision
+      candidates, occurrenceTiming, or source= strings. If the proposal action
+      set differs from the existing OWL, stop — that is not a coding patch.
+
+      Non-negotiables for a full re-emit (the skill expands each): build into a
+      FRESH/EMPTY file (delete any existing project ontology first; never append
+      to a prior run); emit the approved action set EXACTLY (no residue, no
+      renames, no duplicates, no two Actions sharing a Goal, single plan root);
+      every monitoring Goal noun_phrase AND Action metaprops carries all five
       ServiceRequest.* fields (incl. performerInstruction for triggered/urgent
       steps); no placeholder values; write long literals with
       add_data_property_assertion. Before returning, run the skill's
@@ -308,6 +326,12 @@ subagents:
             exists);
           * placeholder values, ServiceRequest inconsistency between Goal and
             Action, untraceable monitored_target, or a stance↔schedule conflict;
+          * a case-report Action that is not explicitly in the approved
+            proposal's scope;
+          * CODING-ONLY DRIFT: on a coding-patch run, any change to Action IRIs,
+            captions, Decision candidates, Goal noun_phrase, occurrenceTiming,
+            or source= strings (only the four supportingInfo.*Codes keys may be
+            added/updated);
           * BASELINE REGRESSION (iterations only): a therapy Action or goal —
             especially an `avoid` State Achievement Goal or the top-plan `treat`
             goal — an Enquiry Data/Source item, a Decision

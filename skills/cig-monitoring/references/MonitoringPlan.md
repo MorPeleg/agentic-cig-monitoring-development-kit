@@ -4,7 +4,7 @@
 
 1. **Monitor Actions** — monitor completion/enactment of the therapy recommendations.
 2. **Monitor Desired Outcome States** — monitor whether desired states are achieved (the `achieve` goals from the Therapy Plan).
-3. **Monitor Undesired ADEs** — monitor undesired states / adverse drug effects (the `avoid` goals, plus ADEs, case-report risks, and mechanism-of-action harms).
+3. **Monitor Undesired ADEs** — monitor undesired states / adverse drug effects (the `avoid` goals, plus labeled ADEs, mechanism-of-action harms, and — only if the user opted in — case-report risks).
 
 The three sub-plans are parallel: they are all `components` of the Monitoring Plan with **no** `scheduled_constraints` between them.
 
@@ -47,18 +47,18 @@ Each of the three sub-plans then contains monitoring `Action`s (one per item to 
 
 - **Monitor Actions** ← therapy recommendations whose *enactment* is tracked (e.g. did the patient fill/take the GLP-1; did they do the prescribed activity).
 - **Monitor Desired Outcome States** ← `achieve` goals and clinical goals (e.g. 5–10% weight reduction; reduced cardiometabolic risk computed from BP, lipids, glucose, A1C).
-- **Monitor Undesired ADEs** ← `avoid` goals, ADEs from package inserts, case-report risks (e.g. Wernicke encephalopathy), and mechanism-of-action harms (e.g. reduced enjoyment of life / anhedonia).
+- **Monitor Undesired ADEs** ← `avoid` goals, ADEs from package inserts (e.g. acute pancreatitis), mechanism-of-action harms (e.g. reduced enjoyment of life / anhedonia), and case-report risks **only when the user explicitly includes them in scope**.
 
 ## Operationalizing the Undesired-ADE sub-plan (required)
 
 Each action in **Monitor Undesired ADEs** must be **operationalized**, not just named. For every harm:
 
-1. Map the harm/syndrome to **observable manifestations** (e.g. Wernicke → confusion, ataxia, ophthalmoplegia; anhedonia/depression → loss of interest/motivation, possible suicidality).
+1. Map the harm/syndrome to **observable manifestations** (e.g. acute pancreatitis → severe persistent abdominal pain radiating to the back; anhedonia/depression → loss of interest/motivation, possible suicidality).
 2. Choose an **instrument**: patient symptom report, named lab test, validated questionnaire (e.g. PHQ-9 and C-SSRS for mood/suicidality; CoEQ for cravings), or clinician exam.
 3. Set a **frequency** with justification, and an **urgent trigger** for same-day assessment.
-4. **Document provenance on the Action via `pf:metaprops`** (full schema in `ActionEnactmentGoal.md`): `source` (cite each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` order — plus `monitored_target` linking the action back to the harm/therapy it addresses (**traceability**: a reviewer can see which monitoring task each case report/source drove).
+4. **Document provenance on the Action via `pf:metaprops`** (full schema in `ActionEnactmentGoal.md`): `source` (cite each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` order — plus `monitored_target` linking the action back to the harm/therapy it addresses (**traceability**: a reviewer can see which monitoring task each source drove).
 
-**Case-report sources** used here must document a harm *caused by/occurring during* the drug — not merely that symptoms resolve after stopping it (see the source-quality rule in `ActionEnactmentGoal.md`). You may find suitable case reports independently; record that in `knowledge_origin`/`provenance_type`.
+**Case-report sources are opt-in.** Do not instantiate them unless the user (or approved proposal) includes them. When used, they must document a harm *caused by/occurring during* the drug — not merely that symptoms resolve after stopping it (see the source-quality rule in `ActionEnactmentGoal.md`).
 
 ## Worked example (`cig/examples/obesity-glp1.owl`)
 

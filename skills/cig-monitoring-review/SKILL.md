@@ -1,6 +1,6 @@
 ---
 name: cig-monitoring-review
-description: Mandatory value-quality review gate for a CIG monitoring instantiation. Checks that every monitoring Action's pf:metaprops has real content (not placeholders), that the ServiceRequest order appears on BOTH the Goal noun_phrase and the Action metaprops, that case-report sources document a drug harm, that each action traces to a monitored target, and that no empty placeholder components or unpopulated Enquiry/Decision remain. Use during Step 7 (Automated Review) of a CIG monitoring build, or whenever the user asks to review/validate a PROforma monitoring ontology, check metaprops quality, or asks "is this CIG monitoring ontology good?". Replaces the gameable presence-only metaprops check.
+description: Mandatory value-quality review gate for a CIG monitoring instantiation. Checks that every monitoring Action's pf:metaprops has real content (not placeholders), that the ServiceRequest order appears on BOTH the Goal noun_phrase and the Action metaprops, that case-report sources document a drug harm and are in approved-proposal scope, that each action traces to a monitored target, that no empty placeholder components or unpopulated Enquiry/Decision remain, and that coding-only runs do not rewrite IRIs, captions, or Decision candidates. Use during Step 7 (Automated Review) of a CIG monitoring build, or whenever the user asks to review/validate a PROforma monitoring ontology, check metaprops quality, or asks "is this CIG monitoring ontology good?". Replaces the gameable presence-only metaprops check.
 ---
 
 # CIG Monitoring Review Skill
@@ -97,7 +97,9 @@ For every Q1 row, apply the `MetapropsSyntax.md` value constraints. Mark the act
 
 ## Phase 3 — Case-report harm judgment (LLM)
 
-For every action whose `source_kind` contains `case_report`, read its `literature_basis` and `monitored_target` and **judge the harm-not-reversibility rule**: the case report must document a **harm caused by / occurring during** the drug — **not** a report whose point is that symptoms resolve after stopping the drug (reversibility is not a monitorable harm). Flag any case-report action that fails this test. List each case-report action with its sources so a human reviewer can confirm.
+**Out-of-scope FAIL.** A monitoring Action whose `source_kind` contains `case_report` is a **FAIL** unless the approved proposal **explicitly lists that action in scope** (named in §6, or marked in-scope in the request). Skill examples are not scope. Default sources are guidelines and package inserts.
+
+For every **in-scope** action whose `source_kind` contains `case_report`, read its `literature_basis` and `monitored_target` and **judge the harm-not-reversibility rule**: the case report must document a **harm caused by / occurring during** the drug — **not** a report whose point is that symptoms resolve after stopping the drug (reversibility is not a monitorable harm). Flag any case-report action that fails this test. List each case-report action with its sources so a human reviewer can confirm.
 
 ## Phase 3b — Source fidelity (LLM judgment)
 
@@ -128,13 +130,26 @@ These are judgment calls (like the case-report phase): list each action with the
 - Report any Q2/Q3/Q4/Q5 rows as **FAIL** (empty placeholder components, unpopulated Enquiry/Decision, empty sub-plans).
 - Confirm the built structure matches the **requested scope** (from the proposal). An "ADE monitoring only" request that produced a full plan with empty stubs is a FAIL even if the ADE actions are fine.
 
+## Phase 4b — Coding-only freeze
+
+If this is a **coding-only** run (proposal `mode: coding-patch`, or the user asked only to add SNOMED/OMOP/LOINC/finding codes), compare the current OWL to the **previous project ontology** (and to the approved proposal §6):
+
+- **FAIL** if the `pf:Action` IRI set changed (added, removed, or renamed).
+- **FAIL** if any Action `caption` changed.
+- **FAIL** if Decision candidates, arguments, or criteria changed.
+- **FAIL** if any Goal `noun_phrase`, `occurrenceTiming`, or `source=` string changed.
+- **FAIL** if `metaprops` changed except by adding/updating `ServiceRequest.supportingInfo.findingCodes`, `labCodes`, `conditionCodes`, and/or `medicationCodes`.
+
+A coding request that regenerated the file from empty and rewrote captions or the action set is a FAIL even if the new codes are well-formed.
+
 ## Phase 5 — Emit the report
 
 Write a readable report to `projects/<project_dir>/reviews/cig-monitoring-review-<YYYYMMDD-HHmmss>.md` (this is the concrete artifact a human reads instead of trusting a green check). Include:
 
 - A top-line **PASS/FAIL** and counts.
 - A per-action table: `Action | category | ServiceRequest on Goal? | ServiceRequest on Action? | citations ok? | placeholders? | monitored_target ok? | applies_when ok? | stance↔schedule ok? | verdict`.
-- A **case-report section**: each case-report action with `monitored_target`, `literature_basis`, sources, and the harm-judgment verdict.
+- A **case-report section**: each case-report action with `monitored_target`, `literature_basis`, sources, in-scope?, and the harm-judgment verdict. Out-of-scope case-report actions are FAILs.
+- A **coding-only freeze section** (when applicable): IRI/caption/candidate/provenance drift vs the previous OWL.
 - A **source-fidelity section**: applicability/precondition gaps, negative-recommendation contradictions, ignored label monitoring instructions, and label-coverage gaps (Phase 3b).
 - A **structure section**: any empty components, unpopulated Enquiry/Decision, empty sub-plans, scope mismatches.
 - A **fix list**: the specific actions/fields to correct.
@@ -144,6 +159,6 @@ If anything FAILs, return to Step 6, fix via the ontology-editor tools, and re-r
 ## Related
 
 - `skills/cig-monitoring/references/MetapropsSyntax.md` (the contract this enforces)
-- `skills/cig-monitoring/references/ActionEnactmentGoal.md` (Goal side + case-report rule)
+- `skills/cig-monitoring/references/ActionEnactmentGoal.md` (Goal side + opt-in case-report rule)
 - `skills/cq-verification/SKILL.md` (the parallel CQ gate)
 - `cig/examples/obesity-glp1-monitoring.owl` (a build that should PASS this gate)

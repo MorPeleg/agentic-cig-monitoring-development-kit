@@ -60,6 +60,8 @@ Sometimes the clinical goals refer to **clinical abstractions**, and you would n
 
 > **Example:** a patient case report about a patient who took GLP-1 for weight reduction and experienced extreme vomiting and weight loss that resulted in Wernicke encephalopathy, manifested in confusion, ataxia, and ophthalmoplegia.
 
+**Operationalization (this kit):** case-report ADEs are **opt-in**. Do not search for or instantiate them unless the user explicitly includes them in scope. Default monitoring actions come from clinical guidelines and package inserts. Skill/know-how examples are not an action checklist.
+
 **Unmentioned benefits and harms.** Check whether the guidelines forgot to mention potential benefits and harms of the therapy recommendations. Suggest to the user MONITORING PLANS for them, and how expensive monitoring is, and how dangerous and how prevalent the harms may be. You can determine these unmentioned harms and benefits by thinking about the mechanism of action of the therapy.
 
 > **Example:** GLP-1 promotes weight loss by a mechanism of action of appetite regulation in the brain. Because this regulation is linked to reward circuits, other rewards could also be down-regulated and patients may experience that they enjoy life less. How can appetite inhibition but also enjoyment-of-life inhibition be assessed? Is it assessed via the quality-of-life questionnaires mentioned in the guidelines, or do additional questionnaires need to be added? How many questions (not too many) and at what frequency?

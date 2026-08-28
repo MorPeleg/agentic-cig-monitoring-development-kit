@@ -66,33 +66,35 @@ Every monitoring `Action` **must** carry a `pf:metaprops` assertion (PROforma `m
 - `trigger` = what prompts urgent/same-day assessment (for harms); omit or `none` for routine surveillance.
 - `cq` = the competency-question ids this action supports.
 
-## Case-report source quality (important)
+## Case-report source quality (opt-in only)
 
-When you cite a **case report** as evidence of a harm:
+**Do not search for or instantiate case-report monitoring actions unless the user explicitly includes them in scope** (or they are listed in the approved proposal). Default sources are clinical guidelines and package inserts. Skill examples are not an action checklist.
+
+When case reports *are* in scope and you cite one as evidence of a harm:
 
 - It **must document a harm caused by, or occurring during, the drug** (an adverse drug event). A report whose point is merely that **symptoms resolve/disappear after the drug is stopped** is **not** valid evidence of a monitorable harm — reversibility is not a harm. Reject such a source and search for a better case report that documents the harm itself.
-- Prefer reports relevant to the **same drug/class and indication** (e.g. semaglutide/GLP-1 for obesity). You may (and should) find suitable case reports **independently**, beyond any examples the skill provides — record `knowledge_origin=assistant found source independently` and `guideline_status=not_specified_as_a_guideline_monitoring_task`.
+- Prefer reports relevant to the **same drug/class and indication**. Record `knowledge_origin=assistant found source independently` and `guideline_status=not_specified_as_a_guideline_monitoring_task`.
 - Record the report and what it shows in `source=` and `literature_basis=`, and tie it to the action via `monitored_target=` (traceability).
 
-## Operationalizing rare-harm monitoring (do not just name the action)
+## Operationalizing ADE monitoring (do not just name the action)
 
-A name like `Monitor_Thiamine_Deficiency_Wernicke_Risk` does **not** say *how* to monitor. For each rare harm you must specify, in the Goal `noun_phrase` and the Action `metaprops`:
+A name like `Monitor_Pancreatitis` does **not** say *how* to monitor. For each ADE you must specify, in the Goal `noun_phrase` and the Action `metaprops`:
 
-1. **What to ask/observe** — map the syndrome to observable manifestations (e.g. Wernicke encephalopathy → confusion, ataxia, ophthalmoplegia) → `ServiceRequest.patientInstruction`.
+1. **What to ask/observe** — map the syndrome to observable manifestations (e.g. acute pancreatitis → severe persistent abdominal pain radiating to the back) → `ServiceRequest.patientInstruction`.
 2. **Which instrument/exam** — patient symptom report, named lab test, validated questionnaire, or clinician exam → `instrument` (+ `ServiceRequest.performerInstruction` for labs).
 3. **When** — frequency with justification → `ServiceRequest.occurrenceTiming` + `monitoring_frequency_basis`.
 4. **What triggers urgent/same-day assessment** → `trigger`.
 5. **Source vs. invention** — cite a source for each choice where possible; mark anything you designed as `assistant_invention`.
 
-**Worked skeleton (independently-found rare harm — rhabdomyolysis):**
+**Worked skeleton (labeled ADE — acute pancreatitis from the package insert):**
 
 ```
-ClassAssertion(pf:Action :Monitor_Rhabdomyolysis_Risk)
-ObjectPropertyAssertion(pf:goal :Monitor_Rhabdomyolysis_Risk :Goal_order_rhabdo_screen)
-ClassAssertion(pf:Goal :Goal_order_rhabdo_screen)
-DataPropertyAssertion(pf:verb :Goal_order_rhabdo_screen "order")
-DataPropertyAssertion(pf:noun_phrase :Goal_order_rhabdo_screen "ServiceRequest.intent = order; ServiceRequest.code = rhabdomyolysis symptom screen and triggered CK/renal safety testing; ServiceRequest.occurrenceTiming = at each visit and around dose escalation; ServiceRequest.patientInstruction = report severe/unexpected muscle pain, cramps, weakness, exercise intolerance, muscle swelling, dark tea/cola-colored urine, or reduced urine output urgently; ServiceRequest.performerInstruction = if symptoms occur, order serum CK/CPK, creatinine/eGFR, electrolytes (K, phosphate), urinalysis for blood/myoglobin, assess hydration/AKI")
-DataPropertyAssertion(pf:metaprops :Monitor_Rhabdomyolysis_Risk "category=undesired_ade; monitored_target=semaglutide-associated rhabdomyolysis (muscle injury, AKI risk) relating to the GLP-1 therapy recommendation; ServiceRequest.intent=order; ServiceRequest.code=rhabdomyolysis symptom screen + triggered CK/renal testing; ServiceRequest.occurrenceTiming=each visit and around dose escalation; ServiceRequest.patientInstruction=report severe muscle pain/cramps/weakness/dark urine urgently; ServiceRequest.performerInstruction=if symptoms occur, order CK/CPK, creatinine/eGFR, electrolytes, urinalysis; provenance_type=assistant_independent_literature_search_and_operationalized; source_kind=case_report_plus_clinical_safety_source; source=PMC12690205 From weight loss to muscle loss: rhabdomyolysis linked to semaglutide; source=Cureus Rhabdomyolysis Associated With Semaglutide Therapy: A Case Report; source=CDC/NIOSH Signs and Symptoms of Rhabdomyolysis; source=StatPearls Rhabdomyolysis; knowledge_origin=assistant found source independently, not from skill examples; guideline_status=not_specified_as_a_guideline_monitoring_task; literature_basis=case report described bilateral lower-extremity pain/cramping and dark urine days after dose increase 1.7->2.4 mg, advising CK when muscle pain/dark urine occur; CDC: main symptoms muscle pain/dark urine/weakness, CK is the accurate test; instrument=patient symptom report plus triggered serum CK/CPK, creatinine/eGFR, electrolytes, urinalysis; assistant_invention=screening frequency adapted to GLP-1 dose escalation and routine obesity follow-up; monitoring_frequency_basis=case onset shortly after dose increase + Endocrine Society follow-up monthly x3 then q3mo; trigger=severe/unexpected muscle pain/cramps/weakness/dark urine/reduced urine output; cq=CQ7")
+ClassAssertion(pf:Action :Monitor_Pancreatitis)
+ObjectPropertyAssertion(pf:goal :Monitor_Pancreatitis :Goal_order_pancreatitis)
+ClassAssertion(pf:Goal :Goal_order_pancreatitis)
+DataPropertyAssertion(pf:verb :Goal_order_pancreatitis "order")
+DataPropertyAssertion(pf:noun_phrase :Goal_order_pancreatitis "ServiceRequest.intent = order; ServiceRequest.code = acute pancreatitis symptom screen with triggered lipase; ServiceRequest.occurrenceTiming = each visit, with testing on symptoms; ServiceRequest.patientInstruction = report severe, persistent abdominal pain that may radiate to the back, with or without vomiting; ServiceRequest.performerInstruction = if suspected, discontinue GLP-1, measure serum lipase, and evaluate for pancreatitis")
+DataPropertyAssertion(pf:metaprops :Monitor_Pancreatitis "ServiceRequest.intent=order; ServiceRequest.code=acute pancreatitis symptom screen with triggered lipase; ServiceRequest.occurrenceTiming=each visit, with testing on symptoms; ServiceRequest.patientInstruction=report severe, persistent abdominal pain that may radiate to the back, with or without vomiting; ServiceRequest.performerInstruction=if suspected, discontinue GLP-1, measure serum lipase, and evaluate for pancreatitis; category=undesired_ade; monitored_target=acute pancreatitis as a labeled adverse effect of the GLP-1 prescription (Prescribe_GLP1); applies_when=all_patients_on_therapy; provenance_type=package_insert_specified; source_kind=package_insert; source=Wegovy (semaglutide) US Prescribing Information, Warnings and Precautions: Acute Pancreatitis; knowledge_origin=drug label warning; guideline_status=not_specified_as_a_guideline_monitoring_task; monitoring_stance=symptom_triggered_only; literature_basis=label warns of acute pancreatitis and advises discontinuation and evaluation if suspected; the label does not call for routine pancreatic-enzyme surveillance; assistant_invention=none; instrument=patient symptom report with triggered serum lipase; monitoring_frequency_basis=symptom-triggered because pancreatitis presents acutely; trigger=severe persistent abdominal pain prompts drug hold and lipase testing; cq=CQ7")
 ```
 
 ## Guidance
@@ -100,7 +102,7 @@ DataPropertyAssertion(pf:metaprops :Monitor_Rhabdomyolysis_Risk "category=undesi
 - Create one monitoring action (+ Action Enactment Goal) **per item to monitor** identified in Step 3, placed in the matching Monitoring sub-plan:
   - completion of a therapy recommendation → **Monitor Actions**
   - a desired state / `achieve` goal → **Monitor Desired Outcome States**
-  - an undesired state / `avoid` goal / ADE / case-report risk / mechanism-of-action harm → **Monitor Undesired ADEs**
+  - an undesired state / `avoid` goal / labeled ADE / (opt-in) case-report risk / mechanism-of-action harm → **Monitor Undesired ADEs**
 - Always include a **frequency** (`ServiceRequest.occurrenceTiming`). Use the guideline's frequency if present; otherwise propose one and record the justification in `monitoring_frequency_basis`.
 - Capture the **measurement method** in `ServiceRequest.code`/`patientInstruction`/`performerInstruction` and in `instrument` (lab test, questionnaire such as CoEQ/SF-36/IWQOL-Lite/PHQ-9/C-SSRS, BIA scale, or clinician interview).
 - **Every monitoring Action gets a `metaprops` string** (schema above): the full ServiceRequest order plus provenance/operationalization. Keep the ServiceRequest fields consistent between the Goal `noun_phrase` and the Action `metaprops`.
@@ -108,7 +110,7 @@ DataPropertyAssertion(pf:metaprops :Monitor_Rhabdomyolysis_Risk "category=undesi
 
 ## Worked example (`cig/examples/obesity-glp1-monitoring.owl` — authoritative)
 
-`Monitor_Rhabdomyolysis` (an independently-found case-report harm) and `Monitor_Body_Weight` (a guideline-specified desired outcome) each have an Action Enactment Goal (`verb=order`) whose `noun_phrase` spells out the full `ServiceRequest.*` block, and a matching `pf:metaprops` string that repeats that block and adds the provenance/operationalization keys per `MetapropsSyntax.md`. All twelve monitoring Actions in that file pass the `cig-monitoring-review` gate — imitate them; `Monitor_Hypoglycemia` shows the conditional `applies_when` + `precondition` pattern, and several actions show `monitoring_stance=symptom_triggered_only`. (The older `cig/examples/obesity-glp1.owl` predates the `metaprops` convention and is kept only as a frozen earlier example.)
+`Monitor_Pancreatitis` (a labeled ADE) and `Monitor_Body_Weight` (a guideline-specified desired outcome) each have an Action Enactment Goal (`verb=order`) whose `noun_phrase` spells out the full `ServiceRequest.*` block, and a matching `pf:metaprops` string that repeats that block and adds the provenance/operationalization keys per `MetapropsSyntax.md`. All ten monitoring Actions in that file pass the `cig-monitoring-review` gate — imitate them; `Monitor_Hypoglycemia` shows the conditional `applies_when` + `precondition` pattern, and several actions show `monitoring_stance=symptom_triggered_only`. Do **not** add case-report-only actions just because an older example had them. (The older `cig/examples/obesity-glp1.owl` predates the `metaprops` convention and is kept only as a frozen earlier example.)
 
 ## Related patterns
 

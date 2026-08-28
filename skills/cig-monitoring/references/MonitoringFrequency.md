@@ -16,15 +16,13 @@ This table is the **default lookup** for an obesity GLP-1 CIG. Each row gives a 
 | Quality of life (IWQOL-Lite / SF-36) | desired_outcome | baseline then q6mo | marked QoL decline | QoL changes slowly | assistant_independent_literature_search_and_operationalized |
 | GI adverse effects (nausea/vomiting/diarrhea) | undesired_ade | each visit and around dose escalation | persistent vomiting / dehydration | label: GI effects cluster at titration | package_insert_specified |
 | Acute pancreatitis | undesired_ade | each visit; **test on symptoms** | severe persistent abdominal pain | label warning; presents acutely | package_insert_specified |
-| Rhabdomyolysis | undesired_ade | each visit and around dose escalation; **CK/renal on symptoms** | severe muscle pain/cramps/weakness or dark urine | case report onset after dose increase + obesity follow-up | assistant_independent_literature_search_and_operationalized |
 | Mood / anhedonia / suicidality (PHQ-9, C-SSRS) | undesired_ade | baseline then each visit (monthly x3, then q3mo) | positive depression screen or any suicidal ideation | label monitoring advice; screened whenever drug reviewed | mechanism_prompted_then_assistant_independent_literature_search_and_operationalized |
-| Wernicke encephalopathy | undesired_ade | **event-driven** (whenever prolonged vomiting / reduced intake) | persistent vomiting + confusion/ataxia/eye signs | risk follows prolonged vomiting, not time on drug | assistant_independent_literature_search_and_operationalized |
 
 ## Choosing a frequency when none is given
 
 1. Tie routine items to the **therapy follow-up cadence** (here: monthly x3, then q3mo) so monitoring happens whenever the drug is reviewed.
 2. Make **acute/rare harms event-driven** with an explicit urgent trigger rather than a fixed calendar.
-3. Place safety screens **around dose escalation** when the harm clusters there (GI, rhabdomyolysis).
+3. Place safety screens **around dose escalation** when the harm clusters there (GI effects).
 4. Use **slower cadences** (q6mo) for slowly-changing outcomes (QoL).
 5. Always write the justification into `monitoring_frequency_basis` in `metaprops` (see `MetapropsSyntax.md`).
 

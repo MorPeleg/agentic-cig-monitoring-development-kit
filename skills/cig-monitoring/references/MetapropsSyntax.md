@@ -82,6 +82,8 @@ DataPropertyAssertion(pf:string_representation PC_On_Insulin_Or_Secretagogue "co
 
 The `cig-monitoring-review` source-fidelity phase checks that an action whose cited source qualifies the harm carries both a faithful `applies_when` and (for a sub-population) a `precondition`.
 
+The free-text form above documents the scoping but cannot execute. When the CIG is exported to PROforma (`cig-proforma-export` skill), a precondition only becomes executable if its `string_representation` is a PROforma expression over data items the Enquiry collects, e.g. `on_insulin_or_secretagogue = true` with a matching `pf:Data` + `pf:Source`. Otherwise the export lists it under "needs formalization".
+
 ## Worked value (labeled ADE — acute pancreatitis)
 
 Coding keys are optional; the first line is a complete Action without codes. The second line shows the same Action after a coding-only patch (IRIs, captions, `source=`, and `occurrenceTiming` unchanged).

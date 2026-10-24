@@ -16,16 +16,22 @@ flowchart TB
 
     Agent --> Editing["ontology-editor &plus; cq-verification<br/><small>skills</small>"]
     Agent --> Memory["semlocal<br/><small>long-term memory</small>"]
+    Agent --> Export["cig-proforma-export<br/><small>skill</small>"]
 
     Editing -->|MCP| MCP["OWL-MCP Server<br/><small>axioms · pitfalls · quality · SPARQL</small>"]
     Memory --> Idx[".semlocal/ vector index"]
 
     MCP --> OWL
 
+    Export -->|MCP / CLI| PFMCP["proforma MCP Server<br/><small>lint · expressions · Mermaid</small>"]
+    OWL -.->|owl2pf export| PF
+    PFMCP --> PF
+
     subgraph Project ["projects/‹name›/"]
         OWL["ontology/*.owl"]
         Res["resources/"]
         Plans["plans/"]
+        PF["proforma/*.pf"]
     end
 
     CIG["cig/<br/><small>proforma.owl · examples · guidelines</small>"] -.-|reused by| OWL
@@ -45,7 +51,7 @@ Install these before starting:
 
 | Requirement             | Purpose                                                                                                                                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Node.js** (v18+)      | Used to run the capa CLI and the OWL-MCP server (via `npx`). [Install Node.js](https://nodejs.org/).                                             |
+| **Node.js** (v18+)      | Used to run the capa CLI, the OWL-MCP server and the [proforma](https://www.npmjs.com/package/proforma-mcp) MCP server (via `npx`). [Install Node.js](https://nodejs.org/). |
 | **semlocal**            | Local semantic memory. Install with `npm install -g semlocal`. Index stored in `.semlocal/`. [semlocal](https://github.com/Minitour/semlocal) |
 | **capa**                | Syncs the agent’s skills and tools from this project. [CAPA](https://capa.infragate.ai/). After cloning, run `capa install` in the project root. |
 
@@ -63,6 +69,32 @@ Install these before starting:
 
 PROforma reference material — the meta-ontology (`cig/proforma.owl`), worked examples (`cig/examples/`), and the guideline PDF library (`cig/guidelines/`) — lives under `cig/`. You do not redeclare PROforma terms yourself; the agent references them by IRI.
 
+## Executable PROforma export
+
+The CIG ontology can be exported to an executable **PROforma 1.9 guideline** (`.pf`, the
+format that Deontics Composer and PROforma engines run). The **`cig-proforma-export`** skill
+does this, and is optional Step 8 of the workflow. A deterministic script maps the PROforma
+individuals to PROforma text. The [`proforma`](https://www.npmjs.com/package/proforma-mcp)
+CLI/MCP server then lints the result the way Composer does, type-checks every condition and
+draws a Mermaid diagram:
+
+```bash
+node skills/cig-proforma-export/scripts/owl2pf.mjs projects/<project_dir>/ontology/<name>.owl \
+  --out projects/<project_dir>/proforma/<name>.pf --mermaid projects/<project_dir>/proforma/<name>.mmd
+```
+
+The script reports every `PROforma_Condition` that is free text rather than an executable
+expression (e.g. a precondition about a fact the Enquiry never collects). The OWL stays the
+source of truth: fix those in the ontology and export again. See
+[`cig/examples/obesity-glp1-monitoring.pf`](cig/examples/obesity-glp1-monitoring.pf) and its
+[diagram](cig/examples/obesity-glp1-monitoring.mmd) for the worked example. The same
+`proforma` commands also work on their own:
+
+```bash
+npx -y proforma-mcp lint --file cig/examples/obesity-glp1-monitoring.pf
+npx -y proforma-mcp mermaid --file cig/examples/obesity-glp1-monitoring.pf --mode drilldown
+```
+
 ## Project layout (reference)
 
 ```
@@ -71,14 +103,15 @@ ontology-builder/
 ├── WORKFLOW.md         # Agent instructions (for the agent, not you)
 ├── cig/                # Shared CIG reference material (reusable across projects)
 │   ├── proforma.owl    # PROforma CIG meta-ontology to instantiate (do not edit)
-│   ├── examples/       # Worked instantiations (e.g. obesity-glp1.owl)
+│   ├── examples/       # Worked instantiations (e.g. obesity-glp1.owl) and their PROforma export (.pf, .mmd)
 │   ├── guidelines/     # Shared clinical guideline PDF library
 │   └── know-how/       # CIG monitoring domain know-how
 ├── projects/           # One directory per ontology project
 │   └── <project_dir>/  # e.g. obesity-glp1-monitoring, my-ontology
 │       ├── ontology/   # e.g. projects/<project_dir>/ontology/my-ontology.owl
 │       ├── plans/      # Draft proposals made by the agent
+│       ├── proforma/   # Executable PROforma export (.pf) and diagrams (derived from ontology/)
 │       └── resources/  # Resources to give to the agent (PDFs, CSVs, etc.)
-└── skills/             # Agent skills (incl. cig-monitoring)
+└── skills/             # Agent skills (incl. cig-monitoring, cig-proforma-export)
 ```
 

@@ -2,7 +2,7 @@ options:
   toolExposure: on-demand
   requiresCommands:
     - cli: npx
-      description: Launches the owl-mcp MCP server (ships with Node.js)
+      description: Launches the owl-mcp and proforma-mcp MCP servers (ships with Node.js)
     - cli: semlocal
       description: Required for local semantic memory (npm install -g semlocal)
 skills:
@@ -107,6 +107,29 @@ skills:
         - '@owl.find_axioms'
         - '@owl.get_all_axioms'
         - '@owl.sparql_query'
+  - id: cig-proforma-export
+    type: local
+    def:
+      path: ./skills/cig-proforma-export
+      description: >-
+        Export a PROforma CIG ontology (ABox on cig/proforma.owl) to an
+        executable PROforma 1.9 guideline (.pf) with a deterministic script,
+        then validate it with the proforma CLI/MCP (Composer-equivalent lint,
+        expression type checking) and render it as a Mermaid flowchart. Use
+        when the user asks to export, compile, run, lint, validate or diagram
+        a CIG as PROforma, wants a .pf / Composer file, or asks whether the
+        CIG's conditions are executable; optional Step 8 after the Step 7 gate
+        PASSes. The OWL stays the source of truth.
+      requires:
+        - '@proforma.lint'
+        - '@proforma.check_expression'
+        - '@proforma.to_mermaid'
+        - '@proforma.outline'
+        - '@proforma.get_component'
+        - '@proforma.plan_graph'
+        - '@proforma.find_references'
+        - '@proforma.search'
+        - '@proforma.proforma_reference'
   - id: ontology-editor
     type: local
     def:
@@ -208,6 +231,21 @@ agents:
         only when zero FAILs remain. Reuse PROforma classes/properties by IRI
         and imitate cig/examples/obesity-glp1-monitoring.owl plus
         skills/cig-monitoring/references/ActionEnactmentGoal.md.
+    - type: inline
+      id: proforma_export
+      content: >-
+        To get an executable PROforma guideline (.pf) from a CIG ontology, or to
+        lint/diagram a CIG as PROforma, follow the cig-proforma-export skill:
+        run `node skills/cig-proforma-export/scripts/owl2pf.mjs <ontology.owl>
+        --out projects/<project_dir>/proforma/<name>.pf --mermaid
+        projects/<project_dir>/proforma/<name>.mmd --report
+        projects/<project_dir>/proforma/<name>.export.json`, then report the
+        lint result and every "needs formalization" condition. Use the proforma
+        MCP tools (lint, check_expression, to_mermaid, outline) to inspect the
+        result. The OWL remains the source of truth: never hand-edit the .pf;
+        fix problems in the ontology (via the ontology-editor tools and, for
+        approved content, a proposal revision) and export again. Export is an
+        optional Step 8 and never replaces the Step 7 gate.
     - type: inline
       id: capa_tool_usage
       content: >-
@@ -383,6 +421,18 @@ servers:
         - -y
         - owl-mcp@1.0.11
         - serve
+  # proforma-mcp (Rust): PROforma (.pf) guideline CLI + MCP server
+  # https://www.npmjs.com/package/proforma-mcp
+  - id: proforma
+    type: mcp
+    description: PROforma guideline files (.pf) via MCP (lint, expression type
+      checking, Mermaid export, outline, CRUD)
+    def:
+      cmd: npx
+      args:
+        - -y
+        - proforma-mcp@0.1.0
+        - serve
 tools:
   - id: add_axioms
     type: mcp
@@ -485,3 +535,66 @@ tools:
     def:
       server: '@owl'
       tool: sparql_query
+  - id: pf_lint
+    type: mcp
+    description: >-
+      Validate a PROforma .pf guideline like Deontics Composer (syntax,
+      reference resolution, verifier type checks) plus extra checks
+    def:
+      server: '@proforma'
+      tool: lint
+  - id: pf_check_expression
+    type: mcp
+    description: >-
+      Parse and type-check a PROforma expression against a .pf file (what each
+      name resolves to, inferred type). Use before writing a condition back to
+      the OWL.
+    def:
+      server: '@proforma'
+      tool: check_expression
+  - id: pf_to_mermaid
+    type: mcp
+    description: Export a PROforma plan as a Mermaid flowchart
+    def:
+      server: '@proforma'
+      tool: to_mermaid
+  - id: pf_outline
+    type: mcp
+    description: >-
+      Overview of a .pf guideline: task tree from the root plan with
+      scheduling and decision candidates, data items
+    def:
+      server: '@proforma'
+      tool: outline
+  - id: pf_get_component
+    type: mcp
+    description: Get one component or nested element of a .pf file as text or JSON
+    def:
+      server: '@proforma'
+      tool: get_component
+  - id: pf_plan_graph
+    type: mcp
+    description: A plan's components, layout and dependencies as JSON
+    def:
+      server: '@proforma'
+      tool: plan_graph
+  - id: pf_find_references
+    type: mcp
+    description: Find every reference to a task, data item or function in a .pf file
+    def:
+      server: '@proforma'
+      tool: find_references
+  - id: pf_search
+    type: mcp
+    description: Search names, captions, descriptions and expressions in a .pf file
+    def:
+      server: '@proforma'
+      tool: search
+  - id: pf_reference
+    type: mcp
+    description: >-
+      PROforma language reference (syntax, semantics, built-in functions,
+      editing conventions)
+    def:
+      server: '@proforma'
+      tool: proforma_reference

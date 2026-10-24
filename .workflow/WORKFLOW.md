@@ -192,6 +192,14 @@ Run automated checks using the actual tools — **never fabricate or assume resu
 
 When a check fails, **report the specific error** and return to Step 6 (hand the fix list to `cig-formalizer`), then re-run the **full** gate. Do not mark the build done until the gate PASSes with zero FAILs.
 
+### Step 8 — Executable PROforma export (optional, CIG only)
+
+After the Step 7 gate PASSes, or whenever the user asks for an executable guideline, a `.pf` file, a lint of the CIG as PROforma, or a flowchart, follow the **`cig-proforma-export`** skill (`skills/cig-proforma-export/SKILL.md`). It exports the project ontology to a PROforma 1.9 guideline (`projects/<project_dir>/proforma/<name>.pf`) with a deterministic script. It then validates the result with the **proforma** MCP server/CLI (Composer-equivalent lint, expression type checking) and writes a Mermaid diagram.
+
+- The OWL stays the **source of truth**. The `.pf` is a derived artifact: never hand-edit it. Fix problems in the ontology (ontology-editor tools; a proposal revision for approved content), then export again.
+- Report the lint result and every condition listed under **needs formalization**: free-text `PROforma_Condition` strings that cannot execute, e.g. a precondition that refers to a fact the Enquiry never collects. Propose an executable expression only from approved content, and type-check it with `check_expression` first.
+- Step 8 never replaces or relaxes the Step 7 gate.
+
 ---
 
 ## Modeling quality and enrichment

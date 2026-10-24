@@ -1,0 +1,526 @@
+/** PROforma version 1.9 (plain text) **/
+
+/** IMPORTANT: Keep all your comments below the engine_version line **/
+engine_version :: '1.9' ;
+
+metadata  :: 'Obesity_GLP1_Plan' ;
+     title :: 'Obesity GLP-1 Therapy and Monitoring CIG (authoritative example)' ;
+     desc :: 'Authoritative worked PROforma instantiation for the cig-monitoring skill. Demonstrates a populated Enquiry and Decision, State Achievement goals on therapy actions, and monitoring Actions that carry BOTH a ServiceRequest order on the Goal noun_phrase AND a full pf:metaprops string per references/MetapropsSyntax.md. Reuses PROforma classes/properties by IRI.' ;
+end metadata.
+
+metaprops :: 'goal.iri=Goal_treat_obesity
+goal.noun_phrase=obesity in adults with BMI >\\= 30, or BMI >\\= 27 with a weight-related comorbidity
+goal.verb=treat
+owl.iri=Obesity_GLP1_Plan
+owl.ontology=https\\://w3id.org/agentic-cig-monitoring/obesity-glp1-monitoring
+' ;
+
+plan  :: 'Obesity_GLP1_Plan' ;
+     caption :: 'Manage obesity with GLP-1 therapy and monitor enactment, desired outcomes, and undesired effects' ;
+     metaprops :: 'goal.iri=Goal_treat_obesity
+goal.noun_phrase=obesity in adults with BMI >\\= 30, or BMI >\\= 27 with a weight-related comorbidity
+goal.verb=treat
+owl.iri=Obesity_GLP1_Plan
+owl.ontology=https\\://w3id.org/agentic-cig-monitoring/obesity-glp1-monitoring
+' ;
+     component :: 'Get_Eligibility_Data' ;
+          task_definition :: 'Get_Eligibility_Data' ;
+          ltwh :: 40,40,0,0;
+     component :: 'Eligibility_Decision' ;
+          task_definition :: 'Eligibility_Decision' ;
+          schedule_constraint :: completed('Get_Eligibility_Data') ;
+          ltwh :: 40,140,0,0;
+     component :: 'Monitoring_Plan' ;
+          task_definition :: 'Monitoring_Plan' ;
+          schedule_constraint :: completed('Obesity_Therapy') ;
+          ltwh :: 40,340,0,0;
+     component :: 'Obesity_Therapy' ;
+          task_definition :: 'Obesity_Therapy' ;
+          schedule_constraint :: completed('Eligibility_Decision') ;
+          ltwh :: 40,240,0,0;
+end plan.
+
+enquiry  :: 'Get_Eligibility_Data' ;
+     caption :: 'Retrieve baseline data needed to judge GLP-1 eligibility and to set monitoring baselines' ;
+     description :: 'Eligibility and baseline data items: BMI; weight-related comorbidity (type 2 diabetes, hypertension, dyslipidemia, OSA, NAFLD); contraindications (personal/family history of medullary thyroid carcinoma or MEN2, prior pancreatitis, pregnancy/planned pregnancy); current medications; renal function (eGFR); thyroid history; mood/psychiatric history including prior depression or suicidality; baseline weight; baseline body composition (lean vs fat mass); baseline cardiometabolic labs (HbA1c, fasting glucose, lipid panel, blood pressure); baseline quality of life. Six are wired below as Source->Data; the rest are enumerated here.' ;
+     metaprops :: 'owl.iri=Get_Eligibility_Data
+' ;
+     source :: 'baseline_body_composition' ;
+          data_definition :: 'baseline_body_composition' ;
+     source :: 'baseline_cardiometabolic_labs' ;
+          data_definition :: 'baseline_cardiometabolic_labs' ;
+     source :: 'baseline_weight' ;
+          data_definition :: 'baseline_weight' ;
+     source :: 'BMI' ;
+          data_definition :: 'BMI' ;
+     source :: 'contraindications' ;
+          data_definition :: 'contraindications' ;
+     source :: 'weight_related_comorbidity' ;
+          data_definition :: 'weight_related_comorbidity' ;
+end enquiry.
+
+decision  :: 'Eligibility_Decision' ;
+     caption :: 'Decide whether the patient is eligible for GLP-1 obesity therapy' ;
+     metaprops :: 'owl.iri=Eligibility_Decision
+' ;
+     candidate :: 'Eligible' ;
+          metaprops :: 'owl.iri=Eligible
+owl.recommendation=start GLP-1 obesity therapy plan and enroll in monitoring
+' ;
+          argument :: for,(BMI >= 30 or (BMI >= 27 and weight_related_comorbidity = true)) and contraindications = none attributes
+               argument_name :: 'Arg_Eligible' ;
+               metaprops :: 'owl.iri=Arg_Eligible
+' ;
+          end attributes
+          ;
+          recommendation ::netsupport() > 0;
+     candidate :: 'Not_Eligible' ;
+          metaprops :: 'owl.iri=Not_Eligible
+owl.recommendation=do not start GLP-1 therapy; consider alternatives and re-evaluate
+' ;
+          argument :: against,BMI < 27 or (BMI < 30 and weight_related_comorbidity = false) or contraindications <> none attributes
+               argument_name :: 'Arg_Not_Eligible' ;
+               metaprops :: 'owl.iri=Arg_Not_Eligible
+' ;
+          end attributes
+          ;
+          recommendation ::netsupport() > 0;
+end decision.
+
+action  :: 'Monitor_GLP1_Adherence' ;
+     caption :: 'Monitor GLP-1 prescription fill and dose-escalation adherence' ;
+     metaprops :: 'ServiceRequest.code=GLP-1 prescription fill and dose-escalation adherence
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (baseline, monthly x3, then q3mo)
+ServiceRequest.patientInstruction=report missed doses, injection technique problems, and reasons for non-adherence
+applies_when=all_patients_on_therapy
+assistant_invention=none
+category=action_completion
+cq=CQ4
+goal.iri=Goal_order_glp1_adherence
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= GLP-1 prescription fill and dose-escalation adherence; ServiceRequest.occurrenceTiming \\= each visit (baseline, monthly x3, then q3mo); ServiceRequest.patientInstruction \\= report missed doses, injection technique problems, and reasons for non-adherence
+goal.verb=order
+guideline_status=specified_as_a_guideline_monitoring_task
+instrument=pharmacy refill records plus patient self-report
+knowledge_origin=guideline-based follow-up cadence
+literature_basis=obesity pharmacotherapy guidelines recommend regular follow-up to assess adherence and response and to titrate dose
+monitored_target=enactment of the GLP-1 prescription therapy recommendation (Prescribe_GLP1)
+monitoring_frequency_basis=aligns with monthly x3 then q3mo obesity-pharmacotherapy follow-up
+monitoring_stance=recommended
+owl.iri=Monitor_GLP1_Adherence
+provenance_type=assistant_completed_from_guidelines
+source=Endocrine Society Pharmacological Management of Obesity Clinical Practice Guideline (J Clin Endocrinol Metab 2015;100\\:342)
+source_kind=clinical_guideline
+trigger=none
+' ;
+end action.
+
+action  :: 'Monitor_Lifestyle_Adherence' ;
+     caption :: 'Monitor adherence to diet and physical-activity prescription' ;
+     metaprops :: 'ServiceRequest.code=diet and physical-activity adherence
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (monthly x3, then q3mo)
+ServiceRequest.patientInstruction=keep a food and activity log and report typical weekly activity minutes
+applies_when=all_patients_on_therapy
+assistant_invention=none
+category=action_completion
+cq=CQ4
+goal.iri=Goal_order_lifestyle_adherence
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= diet and physical-activity adherence; ServiceRequest.occurrenceTiming \\= each visit (monthly x3, then q3mo); ServiceRequest.patientInstruction \\= keep a food and activity log and report typical weekly activity minutes
+goal.verb=order
+guideline_status=specified_as_a_guideline_monitoring_task
+instrument=patient food/activity log plus self-report
+knowledge_origin=guideline-based lifestyle co-therapy follow-up
+literature_basis=guidelines advise lifestyle intervention alongside pharmacotherapy with ongoing reinforcement
+monitored_target=enactment of the lifestyle therapy recommendation (Prescribe_Lifestyle)
+monitoring_frequency_basis=tied to obesity-pharmacotherapy follow-up visits
+monitoring_stance=recommended
+owl.iri=Monitor_Lifestyle_Adherence
+provenance_type=assistant_completed_from_guidelines
+source=Endocrine Society Pharmacological Management of Obesity Clinical Practice Guideline (J Clin Endocrinol Metab 2015;100\\:342)
+source_kind=clinical_guideline
+trigger=none
+' ;
+end action.
+
+plan  :: 'Monitor_Actions' ;
+     caption :: 'Monitor enactment of the therapy recommendations' ;
+     metaprops :: 'owl.iri=Monitor_Actions
+' ;
+     component :: 'Monitor_GLP1_Adherence' ;
+          task_definition :: 'Monitor_GLP1_Adherence' ;
+          ltwh :: 40,40,0,0;
+     component :: 'Monitor_Lifestyle_Adherence' ;
+          task_definition :: 'Monitor_Lifestyle_Adherence' ;
+          ltwh :: 240,40,0,0;
+end plan.
+
+action  :: 'Monitor_Body_Composition' ;
+     caption :: 'Monitor body composition (lean vs fat mass)' ;
+     metaprops :: 'ServiceRequest.code=body composition (bioelectrical impedance analysis) lean and fat mass
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline then q3mo
+ServiceRequest.patientInstruction=use home BIA scale under standardized conditions (fasting, hydrated, same time of day)
+applies_when=all_patients_on_therapy
+assistant_invention=quarterly BIA cadence chosen to match clinic follow-up
+category=desired_outcome
+cq=CQ6
+goal.iri=Goal_order_body_composition
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= body composition (bioelectrical impedance analysis) lean and fat mass; ServiceRequest.occurrenceTiming \\= baseline then q3mo; ServiceRequest.patientInstruction \\= use home BIA scale under standardized conditions (fasting, hydrated, same time of day)
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=bioelectrical impedance analysis (BIA)
+knowledge_origin=mechanism (rapid weight loss causes lean-mass loss) plus guideline emphasis on preserving function
+literature_basis=rapid weight loss reduces lean mass; resistance training and protein preserve it
+monitored_target=preservation of lean mass / avoidance of sarcopenia during weight loss (Goal_avoid_muscle_loss on Prescribe_Resistance_Exercise)
+monitoring_frequency_basis=quarterly to track lean-mass trend without over-testing
+monitoring_stance=proposed_by_assistant
+owl.iri=Monitor_Body_Composition
+provenance_type=assistant_completed_from_guidelines
+source=Endocrine Society Pharmacological Management of Obesity Clinical Practice Guideline (J Clin Endocrinol Metab 2015;100\\:342)
+source_kind=clinical_guideline_plus_mechanism_reasoning
+trigger=disproportionate lean-mass loss prompts intensified resistance/protein plan
+' ;
+end action.
+
+action  :: 'Monitor_Body_Weight' ;
+     caption :: 'Monitor body weight and percent weight change' ;
+     metaprops :: 'ServiceRequest.code=body weight measurement and percent change from baseline
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline, monthly x3, then q3mo
+ServiceRequest.patientInstruction=weigh under standardized conditions (morning, after voiding, light clothing)
+applies_when=all_patients_on_therapy
+assistant_invention=none
+category=desired_outcome
+cq=CQ5
+goal.iri=Goal_order_body_weight
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= body weight measurement and percent change from baseline; ServiceRequest.occurrenceTiming \\= baseline, monthly x3, then q3mo; ServiceRequest.patientInstruction \\= weigh under standardized conditions (morning, after voiding, light clothing)
+goal.verb=order
+guideline_status=specified_as_a_guideline_monitoring_task
+instrument=calibrated clinic scale and home scale
+knowledge_origin=guideline-specified efficacy assessment
+literature_basis=guidelines assess percent weight loss at intervals and reconsider therapy if less than 5 percent at 3 months
+monitored_target=desired outcome of 5-10 percent body-weight reduction (Goal_achieve_bw_reduction on Prescribe_GLP1)
+monitoring_frequency_basis=guideline 3-month efficacy checkpoint then quarterly
+monitoring_stance=recommended
+owl.iri=Monitor_Body_Weight
+provenance_type=guideline_specified
+source=Endocrine Society Pharmacological Management of Obesity Clinical Practice Guideline (J Clin Endocrinol Metab 2015;100\\:342)
+source_kind=clinical_guideline
+trigger=weight regain or less than 5 percent loss at 3 months prompts therapy review
+' ;
+end action.
+
+action  :: 'Monitor_Cardiometabolic' ;
+     caption :: 'Monitor cardiometabolic risk markers (HbA1c, lipids, blood pressure)' ;
+     metaprops :: 'ServiceRequest.code=HbA1c, fasting lipid panel, fasting glucose, blood pressure
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline then q3-6mo
+ServiceRequest.patientInstruction=fast 9-12 hours before the lipid and glucose draw
+applies_when=all_patients_on_therapy
+assistant_invention=composition of the four markers into a single cardiometabolic-risk abstraction
+category=desired_outcome
+cq=CQ5
+goal.iri=Goal_order_cardiometabolic
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= HbA1c, fasting lipid panel, fasting glucose, blood pressure; ServiceRequest.occurrenceTiming \\= baseline then q3-6mo; ServiceRequest.patientInstruction \\= fast 9-12 hours before the lipid and glucose draw
+goal.verb=order
+guideline_status=specified_as_a_guideline_monitoring_task
+instrument=laboratory panel plus office blood-pressure measurement
+knowledge_origin=guideline-specified comorbidity monitoring
+literature_basis=guidelines monitor glycemic, lipid, and blood-pressure response to weight-loss therapy
+monitored_target=reduced cardiometabolic risk abstraction computed from HbA1c, lipids, glucose, blood pressure (Goal_achieve_cardiometabolic on Prescribe_Lifestyle)
+monitoring_frequency_basis=quarterly-to-semiannual labs typical for metabolic follow-up
+monitoring_stance=recommended
+owl.iri=Monitor_Cardiometabolic
+provenance_type=guideline_specified
+source=Endocrine Society Pharmacological Management of Obesity Clinical Practice Guideline (J Clin Endocrinol Metab 2015;100\\:342)
+source_kind=clinical_guideline
+trigger=worsening glycemia or blood pressure prompts comorbidity management
+' ;
+end action.
+
+action  :: 'Monitor_QoL' ;
+     caption :: 'Monitor obesity-related quality of life' ;
+     metaprops :: 'ServiceRequest.code=obesity-related quality-of-life questionnaire (IWQOL-Lite)
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline then q6mo
+ServiceRequest.patientInstruction=complete the IWQOL-Lite questionnaire before the visit
+applies_when=all_patients_on_therapy
+assistant_invention=semiannual QoL cadence and choice of IWQOL-Lite
+category=desired_outcome
+cq=CQ5
+goal.iri=Goal_order_qol
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= obesity-related quality-of-life questionnaire (IWQOL-Lite); ServiceRequest.occurrenceTiming \\= baseline then q6mo; ServiceRequest.patientInstruction \\= complete the IWQOL-Lite questionnaire before the visit
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=IWQOL-Lite questionnaire (SF-36 acceptable alternative)
+knowledge_origin=assistant selected a validated QoL instrument independently
+literature_basis=IWQOL-Lite is a validated obesity-specific QoL measure responsive to weight change
+monitored_target=improved quality of life as a desired benefit of weight reduction (supports Goal_achieve_bw_reduction)
+monitoring_frequency_basis=QoL changes slowly so semiannual is sufficient
+monitoring_stance=proposed_by_assistant
+owl.iri=Monitor_QoL
+provenance_type=assistant_independent_literature_search_and_operationalized
+source=IWQOL-Lite Impact of Weight on Quality of Life-Lite validated instrument (Kolotkin RL, Obes Res 2001;9\\:102)
+source_kind=screening_instrument
+trigger=marked QoL decline prompts psychosocial review
+' ;
+end action.
+
+plan  :: 'Monitor_Desired_State' ;
+     caption :: 'Monitor whether desired outcome states are achieved' ;
+     metaprops :: 'owl.iri=Monitor_Desired_State
+' ;
+     component :: 'Monitor_Body_Composition' ;
+          task_definition :: 'Monitor_Body_Composition' ;
+          ltwh :: 40,40,0,0;
+     component :: 'Monitor_Body_Weight' ;
+          task_definition :: 'Monitor_Body_Weight' ;
+          ltwh :: 240,40,0,0;
+     component :: 'Monitor_Cardiometabolic' ;
+          task_definition :: 'Monitor_Cardiometabolic' ;
+          ltwh :: 440,40,0,0;
+     component :: 'Monitor_QoL' ;
+          task_definition :: 'Monitor_QoL' ;
+          ltwh :: 640,40,0,0;
+end plan.
+
+action  :: 'Monitor_Anhedonia' ;
+     caption :: 'Monitor mood, anhedonia, and suicidality' ;
+     metaprops :: 'ServiceRequest.code=mood and anhedonia screen (PHQ-9) with suicidality screen (C-SSRS)
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline then each visit (monthly x3, then q3mo)
+ServiceRequest.patientInstruction=report loss of interest or pleasure, low mood, reduced motivation, or thoughts of self-harm
+ServiceRequest.performerInstruction=if PHQ-9 elevated or any suicidality, administer C-SSRS and refer per protocol
+applies_when=all_patients_on_therapy
+assistant_invention=operationalization as PHQ-9 plus C-SSRS at the GLP-1 follow-up cadence
+category=undesired_ade
+cq=CQ7
+goal.iri=Goal_order_anhedonia
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= mood and anhedonia screen (PHQ-9) with suicidality screen (C-SSRS); ServiceRequest.occurrenceTiming \\= baseline then each visit (monthly x3, then q3mo); ServiceRequest.patientInstruction \\= report loss of interest or pleasure, low mood, reduced motivation, or thoughts of self-harm; ServiceRequest.performerInstruction \\= if PHQ-9 elevated or any suicidality, administer C-SSRS and refer per protocol
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=PHQ-9 and C-SSRS questionnaires
+knowledge_origin=skill prompted the mechanism (reward-pathway modulation reducing enjoyment) then assistant selected validated instruments independently
+literature_basis=GLP-1 acts on central reward pathways and labels advise monitoring for depression and suicidal ideation; PHQ-9 and C-SSRS are validated mood/suicidality screens
+monitored_target=reduced enjoyment of life / anhedonia and possible mood change as a mechanism-of-action harm of GLP-1 reward-pathway modulation (Prescribe_GLP1)
+monitoring_frequency_basis=mirrors GLP-1 follow-up visits so mood is screened whenever the drug is reviewed
+monitoring_stance=recommended
+owl.iri=Monitor_Anhedonia
+provenance_type=mechanism_prompted_then_assistant_independent_literature_search_and_operationalized
+source.1=FDA Wegovy label Warnings and Precautions on monitoring for depression, mood changes, and suicidal ideation
+source.2=PHQ-9 Patient Health Questionnaire-9 (Kroenke K, J Gen Intern Med 2001;16\\:606)
+source.3=Columbia-Suicide Severity Rating Scale (C-SSRS, Posner K, Am J Psychiatry 2011;168\\:1266)
+source_kind=safety_source_plus_screening_instrument
+trigger=positive depression screen or any suicidal ideation prompts same-day C-SSRS and referral
+' ;
+end action.
+
+action  :: 'Monitor_GI_ADE' ;
+     caption :: 'Monitor gastrointestinal adverse effects (nausea, vomiting, diarrhea, constipation)' ;
+     metaprops :: 'ServiceRequest.code=gastrointestinal symptom screen (nausea, vomiting, diarrhea, constipation, dehydration)
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit and around dose escalation
+ServiceRequest.patientInstruction=report persistent vomiting, inability to keep fluids down, or signs of dehydration
+ServiceRequest.performerInstruction=if persistent vomiting or dehydration, assess volume status and renal function and consider dose reduction
+applies_when=all_patients_on_therapy
+assistant_invention=none
+category=undesired_ade
+cq=CQ7
+goal.iri=Goal_order_gi_ade
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= gastrointestinal symptom screen (nausea, vomiting, diarrhea, constipation, dehydration); ServiceRequest.occurrenceTiming \\= each visit and around dose escalation; ServiceRequest.patientInstruction \\= report persistent vomiting, inability to keep fluids down, or signs of dehydration
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=patient symptom report and clinician interview
+knowledge_origin=drug label
+literature_basis=label lists GI effects as the most common adverse reactions, most frequent during dose escalation
+monitored_target=GLP-1 gastrointestinal adverse effects from the GLP-1 prescription (Prescribe_GLP1)
+monitoring_frequency_basis=GI effects cluster around titration so screen each visit and at escalation
+monitoring_stance=recommended
+owl.iri=Monitor_GI_ADE
+provenance_type=package_insert_specified
+source=Wegovy (semaglutide) US Prescribing Information, Adverse Reactions (nausea, vomiting, diarrhea, constipation)
+source_kind=package_insert
+trigger=persistent vomiting or dehydration prompts same-visit assessment
+' ;
+end action.
+
+action  :: 'Monitor_Hypoglycemia' ;
+     caption :: 'Monitor for hypoglycemia in patients on concomitant insulin or an insulin secretagogue' ;
+     metaprops :: 'ServiceRequest.code=hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit and on dose change of concomitant insulin or insulin secretagogue
+ServiceRequest.patientInstruction=report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic
+ServiceRequest.performerInstruction=if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol
+applies_when=concomitant insulin or insulin secretagogue therapy (not patients on GLP-1 monotherapy)
+assistant_invention=SMBG operationalization and visit-based screening cadence for the at-risk subgroup
+category=undesired_ade
+cq=CQ7
+goal.iri=Goal_order_hypoglycemia
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients; ServiceRequest.occurrenceTiming \\= each visit and on dose change of concomitant insulin or insulin secretagogue; ServiceRequest.patientInstruction \\= report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic; ServiceRequest.performerInstruction \\= if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=patient symptom report plus self-monitored blood glucose (SMBG)
+knowledge_origin=drug label warning, which scopes the risk to concomitant insulin/secretagogue use
+literature_basis=label states concomitant use with insulin or an insulin secretagogue may increase the risk of hypoglycemia and that reducing the insulin/secretagogue dose may be necessary
+monitored_target=hypoglycemia as a labeled adverse effect when GLP-1 is combined with insulin or an insulin secretagogue, tracing to the GLP-1 prescription therapy recommendation (Prescribe_GLP1)
+monitoring_frequency_basis=tied to follow-up visits and to insulin/secretagogue dose changes when the interaction risk is highest
+monitoring_stance=recommended
+owl.iri=Monitor_Hypoglycemia
+owl.precondition=concomitant insulin or insulin secretagogue therapy \\= true
+provenance_type=package_insert_specified
+source=Wegovy (semaglutide) US Prescribing Information, Warnings and Precautions\\: Hypoglycemia (5.4)
+source_kind=package_insert
+trigger=symptomatic hypoglycemia (shakiness, sweating, confusion, palpitations) or low SMBG
+' ;
+end action.
+
+action  :: 'Monitor_Pancreatitis' ;
+     caption :: 'Monitor for acute pancreatitis' ;
+     metaprops :: 'ServiceRequest.code=acute pancreatitis symptom screen with triggered lipase
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit, with testing on symptoms
+ServiceRequest.patientInstruction=report severe, persistent abdominal pain that may radiate to the back, with or without vomiting
+ServiceRequest.performerInstruction=if suspected, discontinue GLP-1, measure serum lipase, and evaluate for pancreatitis
+applies_when=all_patients_on_therapy
+assistant_invention=none
+category=undesired_ade
+cq=CQ7
+goal.iri=Goal_order_pancreatitis
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= acute pancreatitis symptom screen with triggered lipase; ServiceRequest.occurrenceTiming \\= each visit, with testing on symptoms; ServiceRequest.patientInstruction \\= report severe, persistent abdominal pain that may radiate to the back, with or without vomiting; ServiceRequest.performerInstruction \\= if suspected, discontinue GLP-1, measure serum lipase, and evaluate for pancreatitis
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=patient symptom report with triggered serum lipase
+knowledge_origin=drug label warning
+literature_basis=label warns of acute pancreatitis and advises discontinuation and evaluation if suspected; the label does not call for routine pancreatic-enzyme surveillance
+monitored_target=acute pancreatitis as a labeled adverse effect of the GLP-1 prescription (Prescribe_GLP1)
+monitoring_frequency_basis=symptom-triggered because pancreatitis presents acutely
+monitoring_stance=symptom_triggered_only
+owl.iri=Monitor_Pancreatitis
+provenance_type=package_insert_specified
+source=Wegovy (semaglutide) US Prescribing Information, Warnings and Precautions\\: Acute Pancreatitis
+source_kind=package_insert
+trigger=severe persistent abdominal pain prompts drug hold and lipase testing
+' ;
+end action.
+
+plan  :: 'Monitor_Undesired_State' ;
+     caption :: 'Monitor undesired states and adverse drug effects' ;
+     metaprops :: 'owl.iri=Monitor_Undesired_State
+' ;
+     component :: 'Monitor_Anhedonia' ;
+          task_definition :: 'Monitor_Anhedonia' ;
+          ltwh :: 40,40,0,0;
+     component :: 'Monitor_GI_ADE' ;
+          task_definition :: 'Monitor_GI_ADE' ;
+          ltwh :: 240,40,0,0;
+     component :: 'Monitor_Hypoglycemia' ;
+          task_definition :: 'Monitor_Hypoglycemia' ;
+          ltwh :: 440,40,0,0;
+     component :: 'Monitor_Pancreatitis' ;
+          task_definition :: 'Monitor_Pancreatitis' ;
+          ltwh :: 640,40,0,0;
+end plan.
+
+plan  :: 'Monitoring_Plan' ;
+     caption :: 'Monitor therapy enactment, desired outcomes, and undesired effects in parallel' ;
+     metaprops :: 'owl.iri=Monitoring_Plan
+' ;
+     component :: 'Monitor_Actions' ;
+          task_definition :: 'Monitor_Actions' ;
+          ltwh :: 40,40,0,0;
+     component :: 'Monitor_Desired_State' ;
+          task_definition :: 'Monitor_Desired_State' ;
+          ltwh :: 240,40,0,0;
+     component :: 'Monitor_Undesired_State' ;
+          task_definition :: 'Monitor_Undesired_State' ;
+          ltwh :: 440,40,0,0;
+end plan.
+
+action  :: 'Prescribe_GLP1' ;
+     caption :: 'Prescribe GLP-1 receptor agonist (semaglutide) with dose escalation' ;
+     metaprops :: 'goal.iri=Goal_achieve_bw_reduction
+goal.noun_phrase=body-weight reduction of 5-10 percent within 6-12 months
+goal.verb=achieve
+owl.iri=Prescribe_GLP1
+' ;
+end action.
+
+action  :: 'Prescribe_Lifestyle' ;
+     caption :: 'Prescribe reduced-calorie diet and increased physical activity' ;
+     metaprops :: 'goal.iri=Goal_achieve_cardiometabolic
+goal.noun_phrase=reduced cardiometabolic risk (improved HbA1c, lipids, blood pressure)
+goal.verb=achieve
+owl.iri=Prescribe_Lifestyle
+' ;
+end action.
+
+action  :: 'Prescribe_Resistance_Exercise' ;
+     caption :: 'Prescribe resistance training and adequate protein intake to preserve lean mass' ;
+     metaprops :: 'goal.iri=Goal_avoid_muscle_loss
+goal.noun_phrase=muscle / lean-mass loss (sarcopenia) during rapid weight loss
+goal.verb=avoid
+owl.iri=Prescribe_Resistance_Exercise
+' ;
+end action.
+
+plan  :: 'Obesity_Therapy' ;
+     caption :: 'GLP-1 pharmacotherapy plus lifestyle and lean-mass-preserving therapy' ;
+     metaprops :: 'owl.iri=Obesity_Therapy
+' ;
+     precondition ::result_of(Eligibility_Decision) = Eligible;
+     component :: 'Prescribe_GLP1' ;
+          task_definition :: 'Prescribe_GLP1' ;
+          ltwh :: 40,40,0,0;
+     component :: 'Prescribe_Lifestyle' ;
+          task_definition :: 'Prescribe_Lifestyle' ;
+          ltwh :: 240,40,0,0;
+     component :: 'Prescribe_Resistance_Exercise' ;
+          task_definition :: 'Prescribe_Resistance_Exercise' ;
+          ltwh :: 440,40,0,0;
+end plan.
+
+
+data  :: 'BMI' ;
+     type :: real ;
+     description :: 'Body mass index; primary eligibility threshold' ;
+     metaprops :: 'owl.iri=Data_BMI
+' ;
+     unit :: 'kg/m2' ;
+end data.
+
+data  :: 'baseline_body_composition' ;
+     type :: text ;
+     description :: 'Baseline lean vs fat mass (BIA); reference for muscle-loss avoidance monitoring' ;
+     metaprops :: 'owl.iri=Data_Baseline_Body_Composition
+' ;
+end data.
+
+data  :: 'baseline_cardiometabolic_labs' ;
+     type :: text ;
+     description :: 'HbA1c, fasting glucose, lipid panel, and blood pressure; reference for cardiometabolic-risk desired-outcome monitoring' ;
+     metaprops :: 'owl.iri=Data_Baseline_Cardiometabolic_Labs
+' ;
+end data.
+
+data  :: 'baseline_weight' ;
+     type :: text ;
+     description :: 'Baseline body weight; reference for percent weight change desired-outcome monitoring' ;
+     metaprops :: 'owl.iri=Data_Baseline_Weight
+' ;
+     unit :: 'kg' ;
+end data.
+
+data  :: 'contraindications' ;
+     type :: text ;
+     description :: 'Personal/family history of medullary thyroid carcinoma or MEN2, prior pancreatitis, pregnancy/planned pregnancy' ;
+     metaprops :: 'owl.iri=Data_Contraindications
+' ;
+end data.
+
+data  :: 'weight_related_comorbidity' ;
+     type :: boolean ;
+     description :: 'Presence of type 2 diabetes, hypertension, dyslipidemia, OSA, or NAFLD; lowers BMI threshold to 27' ;
+     metaprops :: 'owl.iri=Data_Weight_Related_Comorbidity
+' ;
+end data.

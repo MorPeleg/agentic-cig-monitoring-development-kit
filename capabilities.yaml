@@ -29,13 +29,13 @@ skills:
         when turning a guideline into a CIG or building a therapy + monitoring
         plan.
       requires:
-        - '@proforma.proforma_reference'
-        - '@proforma.outline'
-        - '@proforma.get_component'
-        - '@proforma.export_json'
-        - '@proforma.lint'
-        - '@proforma.check_expression'
-        - '@proforma.to_mermaid'
+        - '@proforma.pf_reference'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_lint'
+        - '@proforma.pf_check_expression'
+        - '@proforma.pf_to_mermaid'
   - id: cig-formalization
     type: local
     def:
@@ -53,26 +53,26 @@ skills:
         approved proposal must be formalized/regenerated, or when adding
         SNOMED/OMOP/LOINC codes to an existing CIG.
       requires:
-        - '@proforma.proforma_reference'
-        - '@proforma.create_guideline'
-        - '@proforma.set_metadata'
-        - '@proforma.add_task'
-        - '@proforma.add_component'
-        - '@proforma.add_data_item'
-        - '@proforma.add_source'
-        - '@proforma.add_candidate'
-        - '@proforma.add_argument'
-        - '@proforma.set_attribute'
-        - '@proforma.remove_attribute'
-        - '@proforma.upsert_component'
-        - '@proforma.schedule_constraint'
-        - '@proforma.check_expression'
-        - '@proforma.get_component'
-        - '@proforma.export_json'
-        - '@proforma.outline'
-        - '@proforma.format'
-        - '@proforma.lint'
-        - '@proforma.to_mermaid'
+        - '@proforma.pf_reference'
+        - '@proforma.pf_create_guideline'
+        - '@proforma.pf_set_metadata'
+        - '@proforma.pf_add_task'
+        - '@proforma.pf_add_component'
+        - '@proforma.pf_add_data_item'
+        - '@proforma.pf_add_source'
+        - '@proforma.pf_add_candidate'
+        - '@proforma.pf_add_argument'
+        - '@proforma.pf_set_attribute'
+        - '@proforma.pf_remove_attribute'
+        - '@proforma.pf_upsert_component'
+        - '@proforma.pf_schedule_constraint'
+        - '@proforma.pf_check_expression'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_format'
+        - '@proforma.pf_lint'
+        - '@proforma.pf_to_mermaid'
   - id: proforma-editor
     type: local
     def:
@@ -82,34 +82,34 @@ skills:
         export as JSON, lint, type-check expressions, diagram, and edit
         (tasks, data items, candidates, arguments, attributes, metadata).
       requires:
-        - '@proforma.proforma_reference'
-        - '@proforma.outline'
-        - '@proforma.list_components'
-        - '@proforma.get_component'
-        - '@proforma.find_references'
-        - '@proforma.plan_graph'
-        - '@proforma.search'
-        - '@proforma.export_json'
-        - '@proforma.lint'
-        - '@proforma.check_expression'
-        - '@proforma.to_mermaid'
-        - '@proforma.create_guideline'
-        - '@proforma.upsert_component'
-        - '@proforma.add_task'
-        - '@proforma.add_component'
-        - '@proforma.remove_component'
-        - '@proforma.rename'
-        - '@proforma.set_attribute'
-        - '@proforma.add_attributes'
-        - '@proforma.remove_attribute'
-        - '@proforma.remove_element'
-        - '@proforma.schedule_constraint'
-        - '@proforma.add_candidate'
-        - '@proforma.add_argument'
-        - '@proforma.add_source'
-        - '@proforma.add_data_item'
-        - '@proforma.set_metadata'
-        - '@proforma.format'
+        - '@proforma.pf_reference'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_list_components'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_find_references'
+        - '@proforma.pf_plan_graph'
+        - '@proforma.pf_search'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_lint'
+        - '@proforma.pf_check_expression'
+        - '@proforma.pf_to_mermaid'
+        - '@proforma.pf_create_guideline'
+        - '@proforma.pf_upsert_component'
+        - '@proforma.pf_add_task'
+        - '@proforma.pf_add_component'
+        - '@proforma.pf_remove_component'
+        - '@proforma.pf_rename'
+        - '@proforma.pf_set_attribute'
+        - '@proforma.pf_add_attributes'
+        - '@proforma.pf_remove_attribute'
+        - '@proforma.pf_remove_element'
+        - '@proforma.pf_schedule_constraint'
+        - '@proforma.pf_add_candidate'
+        - '@proforma.pf_add_argument'
+        - '@proforma.pf_add_source'
+        - '@proforma.pf_add_data_item'
+        - '@proforma.pf_set_metadata'
+        - '@proforma.pf_format'
   - id: cq-verification
     type: local
     def:
@@ -120,10 +120,10 @@ skills:
         Use during Step 7, or whenever the user asks to test, validate, or
         verify a CIG against its CQs.
       requires:
-        - '@proforma.export_json'
-        - '@proforma.outline'
-        - '@proforma.get_component'
-        - '@proforma.search'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_search'
   - id: cig-monitoring-review
     type: local
     def:
@@ -137,11 +137,11 @@ skills:
         phases (case-report harm and scope, source fidelity, label coverage)
         in the same report. Rejects placeholders like source=s.
       requires:
-        - '@proforma.export_json'
-        - '@proforma.get_component'
-        - '@proforma.outline'
-        - '@proforma.lint'
-        - '@proforma.search'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_lint'
+        - '@proforma.pf_search'
   - id: semlocal
     type: github
     def:

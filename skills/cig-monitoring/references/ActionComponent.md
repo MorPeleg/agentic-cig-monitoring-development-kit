@@ -1,42 +1,58 @@
 # Design Pattern: Action + Component
 
-**Intent:** The reusable building block for putting a task into a plan. Every task that appears in a plan does so through a `Component` that `taskref`s it; the plan lists the component under `components`. Used for both therapy actions (Therapy Plan) and monitoring actions (Monitoring sub-plans).
+**Intent:** The reusable building block for putting a task into a plan. Every task that appears in a plan does so through a `component` in that plan whose `task_definition` names the task. Used for both therapy actions (Therapy Plan) and monitoring actions (Monitoring sub-plans).
 
 ## PROforma elements
 
-- Classes: `Component`, `Action` (or any `Task`: `Plan`, `Decision`, `Enquiry`), `Schedule_Constraint`
-- Properties: `components` (Plan→Component), `taskref` (Component→Task, functional), `goal` (Task→Goal), `scheduled_constraints` (Component→Schedule_Constraint), `conref` (Schedule_Constraint→Task)
+- Task blocks: `action` (or any task: `plan`, `decision`, `enquiry`)
+- In the parent plan: `component :: 'X' ;` with `task_definition :: 'X' ;`, optional `schedule_constraint :: completed('Y') ;`
+- Tools: `add_task` (creates the task **and** its component in the given plan; component name = task name), `add_component` (instantiates an existing task definition in another plan; rarely needed), `schedule_constraint` / `after` for ordering
 
 ## Rule of thumb
 
-- The **Component** carries plan-membership and scheduling (`scheduled_constraints`/`conref`, `param_values`, `number_of_cycles`).
-- The **Task** (`Action`, sub-`Plan`, `Decision`, `Enquiry`) carries clinical meaning (`goal`, `precondition`, `name`, `caption`).
-- `taskref` is functional: one component points to exactly one task.
+- The **component** carries plan membership and scheduling (`schedule_constraint`, `optional`, `cycle_repeat`, `number_of_cycles`, `ltwh` layout).
+- The **task** (`action`, sub-`plan`, `decision`, `enquiry`) carries clinical meaning (`caption`, `description`, `metaprops` with `goal.verb` / `goal.noun_phrase`, `precondition`).
+- One component points to exactly one task. Let `add_task` create both so the names match.
 
-## OWL functional-syntax skeleton
+## Tool calls
 
-Prefixes: `pf:` = `http://www.owl-ontologies.com/Ontology1779030093.owl#`, `:` = project namespace.
+Every call also takes `file`.
 
 ```
-# Add an Action to a Plan via a Component
-ObjectPropertyAssertion(pf:components :Some_Plan :Prescribe_GLP1_Component)
-ClassAssertion(pf:Component :Prescribe_GLP1_Component)
-ObjectPropertyAssertion(pf:taskref :Prescribe_GLP1_Component :Prescribe_GLP1)
-ClassAssertion(pf:Action :Prescribe_GLP1)
-DataPropertyAssertion(pf:caption :Prescribe_GLP1 "Prescribe GLP-1 analog")
+# Add an action to a plan (task + component in one call)
+add_task(plan: "Obesity_Therapy", kind: "action", name: "Prescribe_GLP1",
+         caption: "Prescribe GLP-1 receptor agonist (semaglutide) with dose escalation")
 
 # The action's goal (State Achievement for therapy, Action Enactment for monitoring)
-ObjectPropertyAssertion(pf:goal :Prescribe_GLP1 :Goal_achieve_bw_reduction)
+set_attribute(selector: "Prescribe_GLP1", attribute: "metaprops",
+              value: "goal.noun_phrase=body-weight reduction of 5-10 percent within 6-12 months\ngoal.verb=achieve")
 
-# Optional ordering: this component runs after another task
-ObjectPropertyAssertion(pf:scheduled_constraints :Prescribe_GLP1_Component :SC_x)
-ClassAssertion(pf:Schedule_Constraint :SC_x)
-ObjectPropertyAssertion(pf:conref :SC_x :Some_Earlier_Task)
+# Optional ordering: this component runs after a sibling in the same plan
+add_task(plan: "<plan>", kind: "action", name: "<later_task>", after: ["<earlier_sibling>"])
 ```
 
-## Worked example (`cig/examples/obesity-glp1.owl`)
+## `.pf` text (from the example)
 
-`GLP1_Prescription_Component` (Component) `taskref` → `Prescribe_GLP1` (Action), added to `Obesity_Therapy` via `components`. The same shape is used for `Weight_Monitoring_Component` → `Monitor_Weight` (Action).
+```
+action  :: 'Prescribe_GLP1' ;
+     caption :: 'Prescribe GLP-1 receptor agonist (semaglutide) with dose escalation' ;
+     metaprops :: 'goal.noun_phrase=body-weight reduction of 5-10 percent within 6-12 months
+goal.verb=achieve
+' ;
+end action.
+
+plan  :: 'Obesity_Therapy' ;
+     ...
+     component :: 'Prescribe_GLP1' ;
+          task_definition :: 'Prescribe_GLP1' ;
+          ltwh :: 40,40,0,0;
+     ...
+end plan.
+```
+
+## Worked example (`cig/examples/obesity-glp1-monitoring.pf`)
+
+Component `Prescribe_GLP1` in `Obesity_Therapy` → action `Prescribe_GLP1`. The same shape is used for component `Monitor_Body_Weight` in `Monitor_Desired_State` → action `Monitor_Body_Weight`. A sequenced component looks like `Eligibility_Decision` in the root plan, which carries `schedule_constraint :: completed('Get_Eligibility_Data') ;`.
 
 ## Related patterns
 

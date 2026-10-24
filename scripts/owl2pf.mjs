@@ -1,37 +1,36 @@
 #!/usr/bin/env node
-// owl2pf.mjs: export a PROforma CIG ABox (OWL functional syntax, built on
-// cig/proforma.owl) to an executable PROforma 1.9 guideline (.pf).
+// owl2pf.mjs: migrate a CIG built by earlier versions of the kit (an OWL ABox
+// on the PROforma meta-ontology) to a PROforma 1.9 guideline (.pf), once.
 //
-// Input: OWL functional syntax (what the owl MCP server writes) or RDF/XML.
+// Input: OWL functional syntax (what owl-mcp wrote) or RDF/XML.
 //
 // Usage:
-//   node owl2pf.mjs <ontology.owl> [--out <file.pf>] [--root <PlanName>]
-//                   [--mermaid <file.mmd|file.md>] [--report <file.json>]
+//   node scripts/owl2pf.mjs <ontology.owl> [--out <file.pf>] [--root <PlanName>]
+//                   [--mermaid <file.mmd|file.md>] [--report <file.json>] [--native]
 //
-// The OWL file stays the source of truth: the .pf is a derived artifact.
-// The export is deterministic: the same OWL always gives the same .pf.
+// --native drops the OWL provenance keys (owl.iri, goal.iri, owl.ontology) so the
+// result looks like a guideline the kit builds today; without it the .pf keeps
+// them for tracing back to the OWL file. The conversion is deterministic.
 // Free-text PROforma_Condition strings that do not type-check as PROforma
-// expressions are not written as expressions. Each one is kept in the task's
-// metaprops (owl.precondition, owl.recommendation, ...) and listed in the
-// report under "needs_formalization".
+// expressions are not written as expressions: each is kept in the task's
+// metaprops (owl.precondition, ...) and listed under "needs formalization";
+// scripts/check_cig.mjs fails on these leftovers until they are formalized.
+// With --native, a free-text recommendation becomes the candidate description.
 //
-// The proforma CLI (npm: proforma-mcp) is resolved from, in order: PROFORMA_BIN
-// (a native binary or bin/proforma.js), a global npm install of proforma-mcp,
-// a native `proforma` binary on PATH, and finally a private npm install
-// of the pinned version (in ~/.cache/proforma-mcp).
+// The proforma CLI is resolved by scripts/lib/proforma.mjs (PROFORMA_BIN, a global
+// npm install of proforma-mcp, `proforma` on PATH, or a private install).
 
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { proforma as runProforma } from "./lib/proforma.mjs";
 
-const PROFORMA_MCP_VERSION = "0.1.0";
 const PF = "http://www.owl-ontologies.com/Ontology1779030093.owl#";
 
 // ---------------------------------------------------------------- arguments
 
 function parseArgs(argv) {
-  const opts = { input: null, out: null, root: null, mermaid: null, report: null };
+  const opts = { input: null, out: null, root: null, mermaid: null, report: null, native: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => {
@@ -42,9 +41,10 @@ function parseArgs(argv) {
     else if (a === "--root") opts.root = next();
     else if (a === "--mermaid") opts.mermaid = next();
     else if (a === "--report") opts.report = next();
+    else if (a === "--native") opts.native = true;
     else if (a === "-h" || a === "--help") {
       console.log(
-        "usage: node owl2pf.mjs <ontology.owl> [--out file.pf] [--root PlanName] [--mermaid file.mmd] [--report file.json]"
+        "usage: node scripts/owl2pf.mjs <ontology.owl> [--out file.pf] [--root PlanName] [--mermaid file.mmd] [--report file.json] [--native]"
       );
       process.exit(0);
     } else if (a.startsWith("--")) die(`unknown option ${a}`);
@@ -382,53 +382,12 @@ function parseKitMetaprops(s) {
   return pairs;
 }
 
-// ----------------------------------------------------- proforma CLI resolution
-
-function resolveCli() {
-  const asCmd = (file) =>
-    file.endsWith(".js") ? { cmd: process.execPath, pre: [file] } : { cmd: file, pre: [] };
-  const env = process.env.PROFORMA_BIN || process.env.PROFORMA_BINARY;
-  if (env && fs.existsSync(env)) return asCmd(env);
-  const roots = [];
-  if (process.env.APPDATA) roots.push(path.join(process.env.APPDATA, "npm", "node_modules"));
-  roots.push(path.join(path.dirname(process.execPath), "node_modules"));
-  roots.push(path.join(path.dirname(process.execPath), "..", "lib", "node_modules"));
-  if (process.env.npm_config_prefix) {
-    roots.push(path.join(process.env.npm_config_prefix, "node_modules"));
-    roots.push(path.join(process.env.npm_config_prefix, "lib", "node_modules"));
-  }
-  for (const r of roots) {
-    const js = path.join(r, "proforma-mcp", "bin", "proforma.js");
-    if (fs.existsSync(js)) return asCmd(js);
-  }
-  const exe = process.platform === "win32" ? "proforma.exe" : "proforma";
-  for (const dir of (process.env.PATH || "").split(path.delimiter)) {
-    const f = path.join(dir, exe);
-    if (dir && fs.existsSync(f) && fs.statSync(f).isFile()) {
-      // Skip npm's shell shim on unix: it is a symlink to proforma.js, which also works.
-      return asCmd(f);
-    }
-  }
-  const cache = path.join(os.homedir(), ".cache", "proforma-mcp", PROFORMA_MCP_VERSION);
-  const js = path.join(cache, "node_modules", "proforma-mcp", "bin", "proforma.js");
-  if (!fs.existsSync(js)) {
-    console.error(`owl2pf: installing proforma-mcp@${PROFORMA_MCP_VERSION} into ${cache}`);
-    fs.mkdirSync(cache, { recursive: true });
-    const r = spawnSync("npm", ["install", "--no-save", "--prefix", cache, `proforma-mcp@${PROFORMA_MCP_VERSION}`], {
-      stdio: ["ignore", 2, 2], // keep stdout for the summary
-      shell: process.platform === "win32", // npm is npm.cmd on Windows; the arguments are constants
-    });
-    if (r.status !== 0 || !fs.existsSync(js)) die("could not install proforma-mcp; set PROFORMA_BIN");
-  }
-  return asCmd(js);
-}
-
-let CLI = null;
 function proforma(args) {
-  CLI = CLI || resolveCli();
-  const r = spawnSync(CLI.cmd, [...CLI.pre, ...args], { encoding: "utf8", maxBuffer: 64 << 20 });
-  if (r.error) die(`failed to run proforma: ${r.error.message}`);
-  return { status: r.status, stdout: r.stdout || "", stderr: r.stderr || "" };
+  try {
+    return runProforma(args);
+  } catch (e) {
+    die(e.message);
+  }
 }
 
 // ------------------------------------------------------------- conversion
@@ -578,6 +537,7 @@ function convert(g, opts) {
 
   // ---- emit
   const extraProps = new Map(); // owner -> [[k, v]] added to the individual's metaprops
+  const descOverride = new Map(); // native mode: free-text recommendation -> candidate description
   const addExtra = (owner, k, v) => {
     if (!extraProps.has(owner)) extraProps.set(owner, []);
     extraProps.get(owner).push([k, v]);
@@ -605,8 +565,8 @@ function convert(g, opts) {
   L.push("end metadata.", "");
   // Composer stores the guideline-level metaprops on the root plan, so the
   // ontology IRIs go there too.
-  if (ontIri) addExtra(root, "owl.ontology", ontIri);
-  if (g.versionIri) addExtra(root, "owl.versionIRI", g.versionIri);
+  if (ontIri && !opts.native) addExtra(root, "owl.ontology", ontIri);
+  if (g.versionIri && !opts.native) addExtra(root, "owl.versionIRI", g.versionIri);
   L.push("metaprops :: '' ;", "");
 
   // metaprops for an individual: its kit metaprops + its goal + OWL provenance
@@ -619,7 +579,7 @@ function convert(g, opts) {
     }
     const goal = o1(ind, "goal");
     if (goal) {
-      pairs.push(["goal.iri", goal]);
+      if (!opts.native) pairs.push(["goal.iri", goal]);
       for (const p of ["verb", "noun_phrase", "caption", "evidence_grade", "ID", "lifestatus_cycle"]) {
         const v = d1(goal, p);
         if (v !== undefined) pairs.push([`goal.${p}`, v]);
@@ -632,7 +592,7 @@ function convert(g, opts) {
       if (v !== undefined && !(p === "priority" && is(ind, "Candidate"))) pairs.push([`owl.${p}`, v]);
     }
     pairs.push(...(extraProps.get(ind) || []));
-    pairs.push(["owl.iri", ind]);
+    if (!opts.native) pairs.push(["owl.iri", ind]);
     // repeated keys (e.g. source) become key.1, key.2, ...
     const counts = new Map();
     for (const [k] of pairs) counts.set(k, (counts.get(k) || 0) + 1);
@@ -652,7 +612,7 @@ function convert(g, opts) {
   const generic = (ind, indent) => {
     const out = [];
     const cap = d1(ind, "caption");
-    const des = d1(ind, "description");
+    const des = d1(ind, "description") ?? descOverride.get(ind);
     if (cap !== undefined) out.push(`${indent}caption :: ${atom(oneLine(cap))} ;`);
     if (des !== undefined) out.push(`${indent}description :: ${atom(oneLine(des))} ;`);
     out.push(`${indent}metaprops :: ${propsAtom(metapropsOf(ind))} ;`);
@@ -878,7 +838,8 @@ function convert(g, opts) {
         tried: e.expr,
         reason,
       });
-      addExtra(e.owner, `owl.${e.slot}`, e.text);
+      if (opts.native && e.slot === "recommendation" && d1(e.owner, "description") === undefined) descOverride.set(e.owner, e.text);
+      else addExtra(e.owner, `owl.${e.slot}`, e.text);
       if (e.slot === "argument") addExtra(e.owner, "owl.argument.support", d1(e.owner, "support") || "for");
     } else e.ok = true;
   }

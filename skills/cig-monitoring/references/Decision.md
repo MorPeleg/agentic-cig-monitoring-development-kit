@@ -4,53 +4,72 @@
 
 ## PROforma elements
 
-- Classes: `Decision` (a `Task`), `Candidate`, `Argument`, `PROforma_Condition`
-- Properties: `candidates` (Decision→Candidate), `arguments` (Candidate→Argument), `proforma_condition` (Argument→PROforma_Condition, functional), `recommendation` (Candidate→PROforma_Condition, functional)
-- Decision data properties: `choice_mode` (`single`/`multiple`), `support_mode` (`symbolic`/`numeric`)
-- Argument data property: `support` (`for`/`against`/`confirming`/`excluding`)
-- Condition data property: `string_representation` (the human-readable rule)
+- Task: `decision`, with `choice_mode` (`single` / `multiple`) and `support_mode` (`symbolic` default / `numeric`)
+- `candidate` (name, `caption`, `description`, `recommendation`, optional `priority`)
+- `argument :: <support>,<condition>` on a candidate, with optional `argument_name`. Symbolic support: `for` (+1), `against` (−1), `confirming` (+1000), `excluding` (−1000)
+- `recommendation` — the rule that recommends the candidate; default `netsupport() > 0` (the candidate's net support)
+- Tools: `add_task`, `add_candidate`, `add_argument`, `set_attribute` (`choice_mode`, candidate `description`)
 
 ## What to populate (do not leave empty)
 
 For each candidate:
 
-1. The `Candidate` individual with a `name`.
-2. One or more `Argument`s (`arguments`), each with a `support` value and a `proforma_condition` whose `string_representation` is the **actual eligibility rule** referencing the Enquiry's data items (e.g. `BMI >= 30 OR (BMI >= 27 AND weight_related_comorbidity)`).
-3. A `recommendation` condition describing what happens if the candidate is chosen (e.g. "start therapy" / "do not start").
+1. The candidate, with a name (identifier) and a caption or description.
+2. One or more arguments, each with a support value and a **condition that is a PROforma expression over the Enquiry's data items** — the actual eligibility rule, e.g. `(BMI >= 30 or (BMI >= 27 and weight_related_comorbidity = true)) and contraindications = none`. Not prose: `and`/`or` lower-case, `not(x)` for negation, `<>` for not-equal. `check_expression` each condition against the file.
+3. A recommendation (keep the default `netsupport() > 0` unless the guideline needs another rule). The free-text consequence of choosing the candidate ("start therapy" / "do not start") goes in the candidate's `description`, not in the recommendation.
 
-Also set `choice_mode` and `support_mode` on the Decision.
+Support is relative to the candidate it sits on: a condition that describes ineligibility is a `for` argument on `Not_Eligible` (or an `against` argument on `Eligible`). With `netsupport() > 0`, a candidate whose only argument is `against` can never be recommended.
 
-## OWL functional-syntax skeleton
+Also set `choice_mode` on the Decision.
 
-Prefixes: `pf:` = PROforma, project prefix shown as `og:`.
+## Tool calls
+
+Every call also takes `file`.
 
 ```
-ClassAssertion(pf:Decision og:Eligibility_Decision)
-DataPropertyAssertion(pf:choice_mode og:Eligibility_Decision "single")
-DataPropertyAssertion(pf:support_mode og:Eligibility_Decision "symbolic")
+add_task(plan: "<root>", kind: "decision", name: "Eligibility_Decision",
+         caption: "Decide whether the patient is eligible for GLP-1 obesity therapy",
+         after: ["Get_Eligibility_Data"])
+set_attribute(selector: "Eligibility_Decision", attribute: "choice_mode", value: "single")
 
-ObjectPropertyAssertion(pf:candidates og:Eligibility_Decision og:Eligible)
-ClassAssertion(pf:Candidate og:Eligible)
-DataPropertyAssertion(pf:name og:Eligible "Eligible")
-ObjectPropertyAssertion(pf:arguments og:Eligible og:Arg_Eligible)
-ClassAssertion(pf:Argument og:Arg_Eligible)
-DataPropertyAssertion(pf:support og:Arg_Eligible "for")
-ObjectPropertyAssertion(pf:proforma_condition og:Arg_Eligible og:Cond_Eligible)
-ClassAssertion(pf:PROforma_Condition og:Cond_Eligible)
-DataPropertyAssertion(pf:string_representation og:Cond_Eligible "(BMI >= 30 OR (BMI >= 27 AND weight_related_comorbidity = true)) AND contraindications = none")
-ObjectPropertyAssertion(pf:recommendation og:Eligible og:Rec_Start_Therapy)
-ClassAssertion(pf:PROforma_Condition og:Rec_Start_Therapy)
-DataPropertyAssertion(pf:string_representation og:Rec_Start_Therapy "start GLP-1 obesity therapy plan and enroll in monitoring")
+add_candidate(decision: "Eligibility_Decision", name: "Eligible")
+set_attribute(selector: "Eligibility_Decision/candidate:Eligible", attribute: "description",
+              value: "start GLP-1 obesity therapy plan and enroll in monitoring")
+add_argument(decision: "Eligibility_Decision", candidate: "Eligible", support: "for", name: "Arg_Eligible",
+             condition: "(BMI >= 30 or (BMI >= 27 and weight_related_comorbidity = true)) and contraindications = none")
+
+add_candidate(decision: "Eligibility_Decision", name: "Not_Eligible")
+set_attribute(selector: "Eligibility_Decision/candidate:Not_Eligible", attribute: "description",
+              value: "do not start GLP-1 therapy; consider alternatives and re-evaluate")
+add_argument(decision: "Eligibility_Decision", candidate: "Not_Eligible", support: "for", name: "Arg_Not_Eligible",
+             condition: "BMI < 27 or (BMI < 30 and weight_related_comorbidity = false) or contraindications <> none")
+```
+
+## `.pf` text (from the example, `Eligible` candidate)
+
+```
+decision  :: 'Eligibility_Decision' ;
+     caption :: 'Decide whether the patient is eligible for GLP-1 obesity therapy' ;
+     candidate :: 'Eligible' ;
+          description :: 'start GLP-1 obesity therapy plan and enroll in monitoring' ;
+          argument :: for,(BMI >= 30 or (BMI >= 27 and weight_related_comorbidity = true)) and contraindications = none attributes
+               argument_name :: 'Arg_Eligible' ;
+          end attributes
+          ;
+          recommendation ::netsupport() > 0;
+     candidate :: 'Not_Eligible' ;
+          ...
+end decision.
 ```
 
 ## Sequencing and gating
 
-- The Decision component runs after the Enquiry: give it a `Schedule_Constraint` whose `conref` → the Enquiry (see `TopLevelPlan.md`).
-- The Therapy Plan is gated on the result: `precondition` `result_of(Eligibility_Decision) = Eligible`.
+- The Decision component runs after the Enquiry: `add_task(..., after: ["Get_Eligibility_Data"])` → `schedule_constraint :: completed('Get_Eligibility_Data')` (see `TopLevelPlan.md`).
+- The Therapy Plan is gated on the result: `precondition :: result_of(Eligibility_Decision) = Eligible` (`result_set(D) includes C` for a `multiple` decision).
 
-## Worked example (`cig/examples/obesity-glp1-monitoring.owl`)
+## Worked example (`cig/examples/obesity-glp1-monitoring.pf`)
 
-`Eligibility_Decision` (`choice_mode=single`, `support_mode=symbolic`) has candidates `Eligible` and `Not_Eligible`, each with a `for`/`against` Argument carrying the real BMI/comorbidity/contraindication rule and a recommendation. Imitate this — never emit a Decision whose candidates have no arguments or criteria.
+`Eligibility_Decision` has candidates `Eligible` and `Not_Eligible`, each with a description and an argument whose condition is the real BMI/comorbidity/contraindication rule over the Enquiry's data items. Imitate this — never emit a Decision whose candidates have no arguments or criteria.
 
 ## Related patterns
 

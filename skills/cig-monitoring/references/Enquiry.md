@@ -1,56 +1,75 @@
 # Design Pattern: Enquiry (populated)
 
-**Intent:** The first task of the Top-Level Plan: retrieve the **data items** needed to decide eligibility and to set monitoring baselines. An Enquiry that lists no data items is a **defect** — the agent must study the data the guideline needs and populate the items (this was a concrete failure Mor flagged: "the Enquiry had no data items").
+**Intent:** The first task of the Top-Level Plan: retrieve the **data items** needed to decide eligibility and to set monitoring baselines. An Enquiry with no sources is a **defect** — the agent must study the data the guideline needs and populate the items (this was a concrete failure Mor flagged: "the Enquiry had no data items").
 
 ## PROforma elements
 
-- Classes: `Enquiry` (a `Task`), `Source`, `Data`
-- Properties: `sources` (Enquiry→Source), `sref` (Source→Data, functional), and on `Data`: `name`, `description`, `unit`, `value`, `defaulty_value`, `derivation`
-- `Task` data properties usable on the Enquiry: `name`, `caption`, `description`
+- Task: `enquiry` (with `caption`, `description`)
+- Data item: `data` block with `type` (`real`, `integer`, `boolean`, `text`, `date`, …), `caption`, `description`, optional `unit`, `range`, `default_value`, `derivation`
+- Link: a `source` in the enquiry whose `data_definition` names the data item (the enquiry asks for it)
+- Tools: `add_task`, `add_data_item`, `add_source` (can create the data item itself with `create_type`), `set_attribute` (data item `description`)
 
-## How data items attach (PROforma has no direct Enquiry→Data property)
+## Types matter
 
-Each retrieved data item is a `Data` individual reached through a `Source`:
+The data items are what the Decision's arguments and the monitoring preconditions compute over, so give each a real type:
 
-```
-Enquiry --sources--> Source_X --sref--> Data_X
-```
+- `real` (or `integer`) for numeric thresholds, with `unit` (e.g. `BMI`, kg/m2);
+- `boolean` for yes/no facts (e.g. `weight_related_comorbidity`, `on_insulin_or_secretagogue`);
+- `text` otherwise (e.g. `contraindications`, compared with `= none`).
 
-So per data item you assert: a `Source`, `sources` from the Enquiry to it, `sref` to a `Data`, the `Data` class assertion, and at least `name` + `description` on the `Data`.
+A data item that a precondition or argument uses must be asked for by an Enquiry; `check_cig.mjs` fails a sub-population precondition over a data item no Enquiry asks for.
 
 ## What to populate (do not leave empty)
 
 Enumerate every item the eligibility Decision and the monitoring baselines need. For an obesity GLP-1 CIG that is, at minimum:
 
-- **Eligibility**: BMI; weight-related comorbidity (T2DM, hypertension, dyslipidemia, OSA, NAFLD); contraindications (personal/family MTC or MEN2, prior pancreatitis, pregnancy/planned pregnancy); current medications.
+- **Eligibility**: BMI; weight-related comorbidity (T2DM, hypertension, dyslipidemia, OSA, NAFLD); contraindications (personal/family MTC or MEN2, prior pancreatitis, pregnancy/planned pregnancy); current medications (including concomitant insulin or an insulin secretagogue, which scopes hypoglycemia monitoring).
 - **Safety baselines**: renal function (eGFR); thyroid history; mood/psychiatric history (prior depression/suicidality).
 - **Monitoring baselines**: baseline weight; baseline body composition (lean vs fat mass); baseline cardiometabolic labs (HbA1c, fasting glucose, lipid panel, blood pressure); baseline quality of life.
 
 Each baseline item should have a corresponding desired/undesired monitoring action later, so the Enquiry, the Decision, and the Monitoring Plan stay consistent.
 
-## OWL functional-syntax skeleton
+## Tool calls
 
-Prefixes: `pf:` = `http://www.owl-ontologies.com/Ontology1779030093.owl#`, project prefix shown as `og:`.
+Every call also takes `file`. One data item:
 
 ```
-ObjectPropertyAssertion(pf:taskref og:Eligibility_Data_Component og:Get_Eligibility_Data)
-ClassAssertion(pf:Enquiry og:Get_Eligibility_Data)
-DataPropertyAssertion(pf:caption og:Get_Eligibility_Data "Retrieve baseline data needed to judge eligibility and set monitoring baselines")
-
-# one data item
-ClassAssertion(pf:Source og:Src_BMI)
-ObjectPropertyAssertion(pf:sources og:Get_Eligibility_Data og:Src_BMI)
-ObjectPropertyAssertion(pf:sref og:Src_BMI og:Data_BMI)
-ClassAssertion(pf:Data og:Data_BMI)
-DataPropertyAssertion(pf:name og:Data_BMI "BMI")
-DataPropertyAssertion(pf:unit og:Data_BMI "kg/m2")
-DataPropertyAssertion(pf:description og:Data_BMI "Body mass index; primary eligibility threshold")
+add_task(plan: "<root>", kind: "enquiry", name: "Get_Eligibility_Data",
+         caption: "Retrieve baseline data needed to judge GLP-1 eligibility and to set monitoring baselines")
+add_data_item(name: "BMI", type: "real", unit: "kg/m2")
+set_attribute(selector: "BMI", attribute: "description", value: "Body mass index; primary eligibility threshold")
+add_source(task: "Get_Eligibility_Data", data: "BMI")
 ```
 
-## Worked example (`cig/examples/obesity-glp1-monitoring.owl`)
+## `.pf` text (from the example)
 
-`Get_Eligibility_Data` (Enquiry) wires BMI, weight-related comorbidity, contraindications, baseline weight, baseline body composition, and baseline cardiometabolic labs as `Source`→`Data` pairs, and enumerates the full item list in its `description`. Imitate this — never emit an Enquiry with no data items.
+```
+enquiry  :: 'Get_Eligibility_Data' ;
+     caption :: 'Retrieve baseline data needed to judge GLP-1 eligibility and to set monitoring baselines' ;
+     description :: '...' ;
+     source :: 'BMI' ;
+          data_definition :: 'BMI' ;
+     source :: 'weight_related_comorbidity' ;
+          data_definition :: 'weight_related_comorbidity' ;
+     ...
+end enquiry.
+
+data  :: 'BMI' ;
+     type :: real ;
+     description :: 'Body mass index; primary eligibility threshold' ;
+     unit :: 'kg/m2' ;
+end data.
+
+data  :: 'weight_related_comorbidity' ;
+     type :: boolean ;
+     description :: 'Presence of type 2 diabetes, hypertension, dyslipidemia, OSA, or NAFLD; lowers BMI threshold to 27' ;
+end data.
+```
+
+## Worked example (`cig/examples/obesity-glp1-monitoring.pf`)
+
+`Get_Eligibility_Data` (enquiry) has sources for `BMI`, `weight_related_comorbidity`, `contraindications`, `on_insulin_or_secretagogue`, `baseline_weight`, `baseline_body_composition`, and `baseline_cardiometabolic_labs`, and enumerates the full item list in its `description`. Imitate this — never emit an Enquiry with no sources. Prefer wiring every item the Decision or a precondition uses as a typed data item over listing it only in the description.
 
 ## Related patterns
 
-- `Decision.md` (consumes these data items), `TopLevelPlan.md`, `MonitoringPlan.md`.
+- `Decision.md` (consumes these data items), `TopLevelPlan.md`, `MonitoringPlan.md`, `MetapropsSyntax.md` (population-scoped preconditions).

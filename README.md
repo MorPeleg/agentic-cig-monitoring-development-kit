@@ -1,8 +1,8 @@
 # Agentic CIG Monitoring Development Kit
 
-Build or edit ontologies with AI assistance in Cursor or Claude Code. You install the required tools, put your ontology files in the right place, and tell the agent what you want. The agent handles scope, proposals, PROforma-based formalization, and checks.
+Build computer-interpretable clinical guidelines (CIGs) with AI assistance in Cursor or Claude Code. You install the required tools, put your guideline sources in the right place, and tell the agent what you want. The agent handles scope, proposals, PROforma formalization, and checks.
 
-**Primary use case — CIG monitoring:** this kit specializes in instantiating the **PROforma computer-interpretable guideline (CIG) ontology** (`cig/proforma.owl`) for a clinical guideline, focusing on monitoring completion of therapy recommendations (Action Enactment goals) and monitoring desired/undesired effects of therapy (State Achievement goals). For CIG tasks the agent follows the **`cig-monitoring`** skill, reads guideline PDFs from the shared `cig/guidelines/` library, and builds a PROforma Top-Level Plan (Enquiry → Decision → Therapy Plan → Monitoring Plan). See `cig/know-how/READNE.md` for the domain know-how and `cig/examples/obesity-glp1.owl` for a worked example.
+**Primary use case — CIG monitoring:** this kit formalizes a clinical guideline as an **executable PROforma guideline** (a PROforma 1.9 `.pf` file, the format Deontics Composer and PROforma engines run). It focuses on monitoring completion of therapy recommendations (Action Enactment goals) and monitoring desired/undesired effects of therapy (State Achievement goals). For CIG tasks the agent follows the **`cig-monitoring`** skill, reads guidelines from the shared `cig/guidelines/` library, and builds a PROforma Top-Level Plan (Enquiry → Decision → Therapy Plan → Monitoring Plan). See `cig/know-how/README.md` for the domain know-how and `cig/examples/obesity-glp1-monitoring.pf` for a worked example.
 
 ## Architecture
 
@@ -14,104 +14,94 @@ flowchart TB
 
     Agent -.-|configured by| Config["WORKFLOW.md &plus; capabilities.yaml<br/><i>workflow rules &amp; skill registry (capa)</i>"]
 
-    Agent --> Editing["ontology-editor &plus; cq-verification<br/><small>skills</small>"]
+    Agent --> Skills["cig-monitoring &plus; cig-formalization &plus; proforma-editor<br/><small>skills</small>"]
+    Agent --> Gates["cig-monitoring-review &plus; cq-verification<br/><small>Step 7 gates</small>"]
     Agent --> Memory["semlocal<br/><small>long-term memory</small>"]
-    Agent --> Export["cig-proforma-export<br/><small>skill</small>"]
 
-    Editing -->|MCP| MCP["OWL-MCP Server<br/><small>axioms · pitfalls · quality · SPARQL</small>"]
+    Skills -->|MCP| MCP["proforma MCP Server<br/><small>edit · lint · expressions · JSON export · Mermaid</small>"]
+    Gates --> Scripts["scripts/check_cig.mjs &plus; scripts/run_cqs.mjs"]
+    Scripts -->|CLI| MCP
     Memory --> Idx[".semlocal/ vector index"]
 
-    MCP --> OWL
-
-    Export -->|MCP / CLI| PFMCP["proforma MCP Server<br/><small>lint · expressions · Mermaid</small>"]
-    OWL -.->|owl2pf export| PF
-    PFMCP --> PF
+    MCP --> PF
 
     subgraph Project ["projects/‹name›/"]
-        OWL["ontology/*.owl"]
-        Res["resources/"]
+        PF["guideline/*.pf"]
         Plans["plans/"]
-        PF["proforma/*.pf"]
+        CQs["cqs/"]
+        Reviews["reviews/"]
+        Res["resources/"]
     end
 
-    CIG["cig/<br/><small>proforma.owl · examples · guidelines</small>"] -.-|reused by| OWL
+    CIG["cig/<br/><small>examples · guidelines · know-how</small>"] -.-|imitated by| PF
 ```
 
 ## What you need to do
 
 1. **Install prerequisites** (below).
 2. **Run `capa install`** once in the project root after cloning.
-3. **Put existing OWL files under `projects/<project_dir>/`** (e.g. `projects/my-ontology/ontology/my-ontology.owl`) if you are editing an existing ontology. For a new one, create an empty OWL file under `projects/<project_dir>/ontology/` and describe what you want.
-4. **Chat with the agent**—describe your goal and approve proposals. It will edit the ontology, reuse PROforma, and run checks for you.
+3. **Add your sources**: put guideline PDFs in `cig/guidelines/` (shared) or `projects/<project_dir>/resources/` (one project). To continue an existing CIG, put its `.pf` at `projects/<project_dir>/guideline/<name>.pf`.
+4. **Chat with the agent**—describe your goal and approve proposals. It will build the guideline, keep it lint-clean, and run the checks for you.
 
 ## Prerequisites
 
 Install these before starting:
 
-
 | Requirement             | Purpose                                                                                                                                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Node.js** (v18+)      | Used to run the capa CLI, the OWL-MCP server and the [proforma](https://www.npmjs.com/package/proforma-mcp) MCP server (via `npx`). [Install Node.js](https://nodejs.org/). |
+| **Node.js** (v18+)      | Runs the capa CLI, the [proforma](https://www.npmjs.com/package/proforma-mcp) MCP server (via `npx`) and the kit's gate scripts. [Install Node.js](https://nodejs.org/). |
 | **semlocal**            | Local semantic memory. Install with `npm install -g semlocal`. Index stored in `.semlocal/`. [semlocal](https://github.com/Minitour/semlocal) |
 | **capa**                | Syncs the agent’s skills and tools from this project. [CAPA](https://capa.infragate.ai/). After cloning, run `capa install` in the project root. |
 
-
 ## Setup
 
-1. Clone the this repository and open it with your agent of choice
+1. Clone this repository and open it with your agent of choice
 2. Run `capa install` and ensure your agent has access to the capa MCP server.
 3. Add any relevant files you have to `projects/<project_dir>/resources`.
 
-## Where to put your ontology files
+## How a CIG is built
 
-- **Existing ontology**: Put your OWL file(s) under **`projects/<project_dir>/`**, for example `projects/my-ontology/ontology/my-ontology.owl`. The agent will work with whatever you put there.
-- **New CIG instantiation**: Create an empty OWL file in `projects/<project_dir>/ontology/` and describe the clinical guideline you want to model. The agent reuses the PROforma classes/properties from `cig/proforma.owl` by IRI and follows the `cig-monitoring` skill.
+1. **Scope and CQs**: the agent agrees with you on the population, therapy and the competency questions (CQs) the CIG must answer.
+2. **Extraction**: therapy recommendations, goals, monitoring, ADEs and the data each condition depends on, with citations.
+3. **Proposal**: `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md`, an executable spec with canonical task names, data items, conditions written as PROforma expressions, and a `cig-actions` list. Nothing is built until you approve it.
+4. **Formalization**: the `cig-formalizer` subagent builds `projects/<project_dir>/guideline/<name>.pf` from the approved proposal with the proforma tools. It keeps the file lint-clean and draws a Mermaid diagram of it.
+5. **Blocking review**: `scripts/check_cig.mjs` (structure, metaprops contract, executable preconditions, approved action set, regressions) plus the reviewer's source-fidelity judgment, and `scripts/run_cqs.mjs` (one query per CQ). The build is done only when both pass with zero FAILs.
 
-PROforma reference material — the meta-ontology (`cig/proforma.owl`), worked examples (`cig/examples/`), and the guideline PDF library (`cig/guidelines/`) — lives under `cig/`. You do not redeclare PROforma terms yourself; the agent references them by IRI.
-
-## Executable PROforma export
-
-The CIG ontology can be exported to an executable **PROforma 1.9 guideline** (`.pf`, the
-format that Deontics Composer and PROforma engines run). The **`cig-proforma-export`** skill
-does this, and is optional Step 8 of the workflow. A deterministic script maps the PROforma
-individuals to PROforma text. The [`proforma`](https://www.npmjs.com/package/proforma-mcp)
-CLI/MCP server then lints the result the way Composer does, type-checks every condition and
-draws a Mermaid diagram:
+You can run the gates yourself on the worked example:
 
 ```bash
-node skills/cig-proforma-export/scripts/owl2pf.mjs projects/<project_dir>/ontology/<name>.owl \
-  --out projects/<project_dir>/proforma/<name>.pf --mermaid projects/<project_dir>/proforma/<name>.mmd
+node scripts/check_cig.mjs cig/examples/obesity-glp1-monitoring.pf
+node scripts/run_cqs.mjs cig/examples/obesity-glp1-monitoring.pf cig/examples/obesity-glp1-monitoring.cqs.mjs
+npx -y proforma-mcp@0.2.0 mermaid --file cig/examples/obesity-glp1-monitoring.pf --mode drilldown
 ```
 
-The script reports every `PROforma_Condition` that is free text rather than an executable
-expression (e.g. a precondition about a fact the Enquiry never collects). The OWL stays the
-source of truth: fix those in the ontology and export again. See
-[`cig/examples/obesity-glp1-monitoring.pf`](cig/examples/obesity-glp1-monitoring.pf) and its
-[diagram](cig/examples/obesity-glp1-monitoring.mmd) for the worked example. The same
-`proforma` commands also work on their own:
+The scripts find the `proforma` CLI automatically (`PROFORMA_BIN`, a global `npm install -g proforma-mcp`, a `proforma` binary on PATH, or a private install of the pinned version).
+
+## Migrating an OWL CIG
+
+Earlier versions of the kit produced an OWL ABox on the PROforma meta-ontology. `scripts/owl2pf.mjs` converts such a file once. It reads OWL functional syntax or RDF/XML, writes a lint-checked `.pf`, and lists every free-text condition that still needs to be written as an expression:
 
 ```bash
-npx -y proforma-mcp lint --file cig/examples/obesity-glp1-monitoring.pf
-npx -y proforma-mcp mermaid --file cig/examples/obesity-glp1-monitoring.pf --mode drilldown
+node scripts/owl2pf.mjs old/ontology.owl --native --out projects/<project_dir>/guideline/<name>.pf
 ```
 
 ## Project layout (reference)
 
 ```
-ontology-builder/
+agentic-cig-monitoring-development-kit/
 ├── capabilities.yaml   # Agent skills and tools (managed by capa)
-├── WORKFLOW.md         # Agent instructions (for the agent, not you)
+├── .workflow/WORKFLOW.md  # Agent instructions (for the agent, not you)
 ├── cig/                # Shared CIG reference material (reusable across projects)
-│   ├── proforma.owl    # PROforma CIG meta-ontology to instantiate (do not edit)
-│   ├── examples/       # Worked instantiations (e.g. obesity-glp1.owl) and their PROforma export (.pf, .mmd)
-│   ├── guidelines/     # Shared clinical guideline PDF library
+│   ├── examples/       # Worked PROforma CIGs (.pf), their diagrams (.mmd) and CQ queries (.cqs.mjs)
+│   ├── guidelines/     # Shared clinical guideline library
 │   └── know-how/       # CIG monitoring domain know-how
-├── projects/           # One directory per ontology project
-│   └── <project_dir>/  # e.g. obesity-glp1-monitoring, my-ontology
-│       ├── ontology/   # e.g. projects/<project_dir>/ontology/my-ontology.owl
-│       ├── plans/      # Draft proposals made by the agent
-│       ├── proforma/   # Executable PROforma export (.pf) and diagrams (derived from ontology/)
+├── projects/           # One directory per CIG project (not tracked by git)
+│   └── <project_dir>/  # e.g. obesity-glp1-monitoring
+│       ├── guideline/  # <name>.pf, <name>.mmd, baseline/ snapshots
+│       ├── plans/      # Proposals made by the agent
+│       ├── cqs/        # cq-queries.mjs
+│       ├── reviews/    # Step 7 reports
 │       └── resources/  # Resources to give to the agent (PDFs, CSVs, etc.)
-└── skills/             # Agent skills (incl. cig-monitoring, cig-proforma-export)
+├── scripts/            # check_cig.mjs, run_cqs.mjs, owl2pf.mjs
+└── skills/             # Agent skills (cig-monitoring, cig-formalization, proforma-editor, cig-monitoring-review, cq-verification)
 ```
-

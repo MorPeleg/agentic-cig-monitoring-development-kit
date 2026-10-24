@@ -1,47 +1,55 @@
 # Design Pattern: Monitoring Plan
 
-**Intent:** A sub-`Plan` of the Top-Level Plan composed of **three parallel** sub-`Plan`s:
+**Intent:** A sub-`plan` of the Top-Level Plan composed of **three parallel** sub-plans:
 
-1. **Monitor Actions** — monitor completion/enactment of the therapy recommendations.
-2. **Monitor Desired Outcome States** — monitor whether desired states are achieved (the `achieve` goals from the Therapy Plan).
-3. **Monitor Undesired ADEs** — monitor undesired states / adverse drug effects (the `avoid` goals, plus labeled ADEs, mechanism-of-action harms, and — only if the user opted in — case-report risks).
+1. **Monitor Actions** (`Monitor_Actions`) — monitor completion/enactment of the therapy recommendations.
+2. **Monitor Desired Outcome States** (`Monitor_Desired_State`) — monitor whether desired states are achieved (the `achieve` goals from the Therapy Plan).
+3. **Monitor Undesired ADEs** (`Monitor_Undesired_State`) — monitor undesired states / adverse drug effects (the `avoid` goals, plus labeled ADEs, mechanism-of-action harms, and — only if the user opted in — case-report risks).
 
-The three sub-plans are parallel: they are all `components` of the Monitoring Plan with **no** `scheduled_constraints` between them.
+The three sub-plans are parallel: they are all components of the Monitoring Plan with **no** `schedule_constraint` between them.
 
 ## PROforma elements
 
-- Classes: `Plan`, `Component`, `Action`, `Goal`
-- Properties: `components`, `taskref`, `goal`
+- Tasks: `plan` (monitoring plan and its three sub-plans), `action` (monitoring actions)
+- Tools: `add_task` (no `after` between the sub-plans), `set_attribute` (metaprops, precondition)
 
-## OWL functional-syntax skeleton
+## Tool calls
 
-Prefixes: `pf:` = `http://www.owl-ontologies.com/Ontology1779030093.owl#`, `:` = project namespace.
+Every call also takes `file`.
 
 ```
-# Monitoring plan (referenced from the top-level plan's Monitoring_Component)
-Declaration(NamedIndividual(:Monitoring_Plan))
-ClassAssertion(pf:Plan :Monitoring_Plan)
+# Monitoring plan in the root plan, after therapy (see TopLevelPlan.md)
+add_task(plan: "<root>", kind: "plan", name: "Monitoring_Plan",
+         caption: "Monitor therapy enactment, desired outcomes, and undesired effects in parallel",
+         after: ["Obesity_Therapy"])
 
-# --- parallel sub-plan 1: Monitor Actions ---
-ObjectPropertyAssertion(pf:components :Monitoring_Plan :MonitorActions_Component)
-ClassAssertion(pf:Component :MonitorActions_Component)
-ObjectPropertyAssertion(pf:taskref :MonitorActions_Component :Monitor_Actions)
-ClassAssertion(pf:Plan :Monitor_Actions)
-
-# --- parallel sub-plan 2: Monitor Desired Outcome States ---
-ObjectPropertyAssertion(pf:components :Monitoring_Plan :MonitorDesired_Component)
-ClassAssertion(pf:Component :MonitorDesired_Component)
-ObjectPropertyAssertion(pf:taskref :MonitorDesired_Component :Monitor_Desired_State)
-ClassAssertion(pf:Plan :Monitor_Desired_State)
-
-# --- parallel sub-plan 3: Monitor Undesired ADEs ---
-ObjectPropertyAssertion(pf:components :Monitoring_Plan :MonitorUndesired_Component)
-ClassAssertion(pf:Component :MonitorUndesired_Component)
-ObjectPropertyAssertion(pf:taskref :MonitorUndesired_Component :Monitor_Undesired_State)
-ClassAssertion(pf:Plan :Monitor_Undesired_State)
+# three parallel sub-plans (no `after`)
+add_task(plan: "Monitoring_Plan", kind: "plan", name: "Monitor_Actions",
+         caption: "Monitor enactment of the therapy recommendations")
+add_task(plan: "Monitoring_Plan", kind: "plan", name: "Monitor_Desired_State",
+         caption: "Monitor whether desired outcome states are achieved")
+add_task(plan: "Monitoring_Plan", kind: "plan", name: "Monitor_Undesired_State",
+         caption: "Monitor undesired states and adverse drug effects")
 ```
 
-Each of the three sub-plans then contains monitoring `Action`s (one per item to monitor), each with an Action Enactment Goal — see `ActionEnactmentGoal.md`.
+Each sub-plan then gets its monitoring actions (`add_task(plan: "Monitor_Undesired_State", kind: "action", ...)`, one per item to monitor), each with an Action Enactment Goal and the full metaprops — see `ActionEnactmentGoal.md` and `MetapropsSyntax.md`. Never leave a sub-plan without actions; if a sub-plan has nothing to hold within the requested scope, omit it.
+
+## `.pf` text (from the example)
+
+```
+plan  :: 'Monitoring_Plan' ;
+     caption :: 'Monitor therapy enactment, desired outcomes, and undesired effects in parallel' ;
+     component :: 'Monitor_Actions' ;
+          task_definition :: 'Monitor_Actions' ;
+          ltwh :: 40,40,0,0;
+     component :: 'Monitor_Desired_State' ;
+          task_definition :: 'Monitor_Desired_State' ;
+          ltwh :: 240,40,0,0;
+     component :: 'Monitor_Undesired_State' ;
+          task_definition :: 'Monitor_Undesired_State' ;
+          ltwh :: 440,40,0,0;
+end plan.
+```
 
 ## Mapping Step-3 findings to the three sub-plans
 
@@ -56,13 +64,14 @@ Each action in **Monitor Undesired ADEs** must be **operationalized**, not just 
 1. Map the harm/syndrome to **observable manifestations** (e.g. acute pancreatitis → severe persistent abdominal pain radiating to the back; anhedonia/depression → loss of interest/motivation, possible suicidality).
 2. Choose an **instrument**: patient symptom report, named lab test, validated questionnaire (e.g. PHQ-9 and C-SSRS for mood/suicidality; CoEQ for cravings), or clinician exam.
 3. Set a **frequency** with justification, and an **urgent trigger** for same-day assessment.
-4. **Document provenance on the Action via `pf:metaprops`** (full schema in `ActionEnactmentGoal.md`): `source` (cite each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` order — plus `monitored_target` linking the action back to the harm/therapy it addresses (**traceability**: a reviewer can see which monitoring task each source drove).
+4. **Document provenance in the action's metaprops** (full contract in `MetapropsSyntax.md`): `source` / `source.1..n` (cite each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` order — plus `monitored_target` naming the therapy task the action traces to (**traceability**: a reviewer can see which monitoring task each source drove).
+5. If the source limits the harm to a sub-population, set `applies_when` accordingly and add an executable `precondition` over an Enquiry data item (e.g. `Monitor_Hypoglycemia` → `on_insulin_or_secretagogue = true`).
 
-**Case-report sources are opt-in.** Do not instantiate them unless the user (or approved proposal) includes them. When used, they must document a harm *caused by/occurring during* the drug — not merely that symptoms resolve after stopping it (see the source-quality rule in `ActionEnactmentGoal.md`).
+**Case-report sources are opt-in.** Do not build them unless the user (or approved proposal) includes them. When used, they must document a harm *caused by/occurring during* the drug — not merely that symptoms resolve after stopping it (see the source-quality rule in `ActionEnactmentGoal.md`).
 
-## Worked example (`cig/examples/obesity-glp1.owl`)
+## Worked example (`cig/examples/obesity-glp1-monitoring.pf`)
 
-`Monitoing` (Plan) has three parallel components → `Monitor_Actions` (goal `achieve "actions monitored"`), `Monitor_Desired_State`, and `Monitor_Undesired_State`. The standalone `Monitor_Weight` Action (with a FHIR ServiceRequest goal) illustrates a monitoring action that would sit inside one of these sub-plans.
+`Monitoring_Plan` has three parallel components → `Monitor_Actions` (`Monitor_GLP1_Adherence`, `Monitor_Lifestyle_Adherence`), `Monitor_Desired_State` (`Monitor_Body_Weight`, `Monitor_Body_Composition`, `Monitor_Cardiometabolic`, `Monitor_QoL`), and `Monitor_Undesired_State` (`Monitor_GI_ADE`, `Monitor_Pancreatitis`, `Monitor_Anhedonia`, `Monitor_Hypoglycemia` with its precondition).
 
 ## Related patterns
 

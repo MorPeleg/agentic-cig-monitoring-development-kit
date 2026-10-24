@@ -142,6 +142,18 @@ skills:
         - '@proforma.pf_outline'
         - '@proforma.pf_lint'
         - '@proforma.pf_search'
+  # PROforma authoring skill and the HTML guideline viewer. Minitour/proforma is
+  # private for now: run `capa auth github.com` once with an account that can read it.
+  - id: proforma
+    type: github
+    def:
+      repo: Minitour/proforma@proforma
+      description: >-
+        PROforma (.pf) authoring with the proforma CLI, and the interactive
+        HTML guideline viewer (scripts/build_report.mjs: task tree, plan
+        canvas with pan/zoom/drill-down, properties, data and decision views).
+        Use to render a CIG's guideline/<name>.html after every emit.
+      requires: []
   - id: semlocal
     type: github
     def:

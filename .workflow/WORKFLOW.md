@@ -38,7 +38,7 @@ Follow these steps when creating or extending a CIG. Align your suggestions with
 projects/<project_dir>/
   guideline/<name>.pf          # the CIG
   guideline/<name>.mmd         # its Mermaid diagram (regenerated after every emit)
-  guideline/<name>.html        # interactive viewer (scripts/build_report.mjs, regenerated after every emit)
+  guideline/<name>.html        # self-contained interactive viewer (proforma skill, regenerated after every emit)
   guideline/baseline/          # snapshot of the previous .pf, taken before every re-emit or coding patch
   plans/PROPOSAL-<YYYYMMDD-HHmmss>.md
   cqs/cq-queries.mjs           # competency-question queries
@@ -157,7 +157,7 @@ Build the approved draft as a PROforma guideline with the **proforma-editor** to
 1. **Activate tools**: Read the **proforma-editor** skill (`skills/proforma-editor/SKILL.md`), then call `setup_tools(skills: ["proforma-editor"])`.
 2. **Create the guideline**: `create_guideline` at `projects/<project_dir>/guideline/<name>.pf`, then `set_metadata` (title, version, author, and a qualitative `desc` with no hand-written counts).
 3. **Build top-down**: plans first, then the Enquiry data items, the Decision, therapy actions, monitoring actions.
-4. **Finish**: `format`, `lint` (zero errors), `to_mermaid` → `projects/<project_dir>/guideline/<name>.mmd`, and `node scripts/build_report.mjs projects/<project_dir>/guideline/<name>.pf` → `guideline/<name>.html` (task tree, plan canvas with pan/zoom/drill-down, properties, data and decision views) for the user and reviewers.
+4. **Finish**: `format`, `lint` (zero errors), `to_mermaid` → `projects/<project_dir>/guideline/<name>.mmd`, and the **proforma** skill's `scripts/build_report.mjs projects/<project_dir>/guideline/<name>.pf` → `guideline/<name>.html`, a self-contained viewer (task tree, plan canvas with pan/zoom/drill-down, properties, data and decision views) for the user and reviewers.
 5. **Verify**: `outline` and `export_json` to spot-check the result against the proposal.
 
 **End-of-Step-6 determinism checklist (CIG monitoring — self-apply before handing off to Step 7).** Run `node scripts/check_cig.mjs projects/<project_dir>/guideline/<name>.pf --proposal <approved proposal>` and confirm:
@@ -194,4 +194,4 @@ Apply these when drafting (Step 4) and formalizing (Step 6). Do not add complexi
 - **Structure follows the guideline.** Sequence only what the source orders (`after`); everything else runs in parallel inside its plan. Do not add intermediate plans that hold a single task unless the design pattern requires that level.
 - **Names are stable identifiers.** One canonical name per task, data item and candidate; never two names for one concept, never one name reused for two.
 - **Metadata describes, not counts.** Captions are one line; descriptions explain; the guideline `desc` is qualitative. Counts come from the guideline itself (`export_json`), never from prose.
-- **Diagram after every emit.** Regenerate `guideline/<name>.mmd` with `to_mermaid` and `guideline/<name>.html` with `scripts/build_report.mjs`, so reviewers see the current structure.
+- **Diagram after every emit.** Regenerate `guideline/<name>.mmd` with `to_mermaid` and `guideline/<name>.html` with the proforma skill's `scripts/build_report.mjs`, so reviewers see the current structure.

@@ -245,8 +245,8 @@ omitted from the listings for brevity. Through capa the tool ids are
     the proposal does not explain; run once with `include_info: true` and
     confirm every PF-X060 "treated as text literal" is an intended literal, not
     a misspelt data item), `to_mermaid(output: "<abs>/guideline/<name>.mmd")`,
-    `node scripts/build_report.mjs <guideline.pf>` (writes the
-    `guideline/<name>.html` viewer), then the *End-of-Step-6 determinism check*. Fix any failure before handing
+    `node <proforma skill>/scripts/build_report.mjs <guideline.pf>` (writes the
+    self-contained `guideline/<name>.html` viewer), then the *End-of-Step-6 determinism check*. Fix any failure before handing
     off to Step 7.
 
 ## The fixed per-action bundle
@@ -431,7 +431,7 @@ re-emit if any fails:
       and Decision are populated.
 - [ ] Metadata `title` set; `desc` qualitative, with no hand-written count or
       stale drug/section list.
-- [ ] `guideline/<name>.mmd` regenerated from this file with `to_mermaid`, and `guideline/<name>.html` with `node scripts/build_report.mjs <guideline.pf>`.
+- [ ] `guideline/<name>.mmd` regenerated from this file with `to_mermaid`, and `guideline/<name>.html` with the proforma skill's `scripts/build_report.mjs`.
 - [ ] `node scripts/check_cig.mjs projects/<p>/guideline/<name>.pf --proposal projects/<p>/plans/PROPOSAL-<ts>.md`
       (add `--baseline projects/<p>/guideline/baseline/<newest>.pf` on an
       iteration) exits 0 with no FAIL.

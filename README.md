@@ -51,6 +51,7 @@ Install these before starting:
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Node.js** (v18+)      | Runs the capa CLI, the [proforma](https://www.npmjs.com/package/proforma-mcp) MCP server (via `npx`) and the kit's gate scripts. [Install Node.js](https://nodejs.org/). |
 | **semlocal**            | Local semantic memory. Install with `npm install -g semlocal`. Index stored in `.semlocal/`. [semlocal](https://github.com/Minitour/semlocal) |
+| **Access to Minitour/proforma** | The `proforma` skill (authoring guidance and the HTML viewer) is installed from that repository, which is private for now. Run `capa auth github.com` once with an account that can read it before `capa install`. |
 | **capa**                | Syncs the agent’s skills and tools from this project. [CAPA](https://capa.infragate.ai/). After cloning, run `capa install` in the project root. |
 
 ## Setup
@@ -67,14 +68,14 @@ Install these before starting:
 4. **Formalization**: the `cig-formalizer` subagent builds `projects/<project_dir>/guideline/<name>.pf` from the approved proposal with the proforma tools. It keeps the file lint-clean and draws a Mermaid diagram of it.
 5. **Blocking review**: `scripts/check_cig.mjs` (structure, metaprops contract, executable preconditions, approved action set, regressions) plus the reviewer's source-fidelity judgment, and `scripts/run_cqs.mjs` (one query per CQ). The build is done only when both pass with zero FAILs.
 
-Each build also produces `guideline/<name>.html`, a self-contained viewer laid out like a guideline editor: task tree, plan canvas (stored task positions, scheduling arrows, decision branches; pan, zoom, double-click a plan to open it), properties panel, and data, decision, lint and source views. Open [`cig/examples/ici-irae-monitoring.html`](cig/examples/ici-irae-monitoring.html) or [`obesity-glp1-monitoring.html`](cig/examples/obesity-glp1-monitoring.html) to see it.
+Each build also produces `guideline/<name>.html` with the **proforma** skill's `scripts/build_report.mjs`: a self-contained viewer (one HTML file, nothing fetched) laid out like a guideline editor: task tree, plan canvas (stored task positions, scheduling arrows, decision branches; pan, zoom, double-click a plan to open it), properties panel, and data, decision, lint and source views. Open [`cig/examples/ici-irae-monitoring.html`](cig/examples/ici-irae-monitoring.html) or [`obesity-glp1-monitoring.html`](cig/examples/obesity-glp1-monitoring.html) to see it.
 
 You can run the gates yourself on the worked examples (see [`cig/examples/README.md`](cig/examples/README.md)):
 
 ```bash
 node scripts/check_cig.mjs cig/examples/obesity-glp1-monitoring.pf
 node scripts/run_cqs.mjs cig/examples/obesity-glp1-monitoring.pf cig/examples/obesity-glp1-monitoring.cqs.mjs
-node scripts/build_report.mjs cig/examples/ici-irae-monitoring.pf
+node .claude/skills/proforma/scripts/build_report.mjs cig/examples/ici-irae-monitoring.pf   # path as installed by capa for Claude Code
 ```
 
 The scripts find the `proforma` CLI automatically (`PROFORMA_BIN`, a global `npm install -g proforma-mcp`, a `proforma` binary on PATH, or a private install of the pinned version).
@@ -104,6 +105,6 @@ agentic-cig-monitoring-development-kit/
 │       ├── cqs/        # cq-queries.mjs
 │       ├── reviews/    # Step 7 reports
 │       └── resources/  # Resources to give to the agent (PDFs, CSVs, etc.)
-├── scripts/            # check_cig.mjs, run_cqs.mjs, build_report.mjs, owl2pf.mjs
+├── scripts/            # check_cig.mjs, run_cqs.mjs, owl2pf.mjs
 └── skills/             # Agent skills (cig-monitoring, cig-formalization, proforma-editor, cig-monitoring-review, cq-verification)
 ```

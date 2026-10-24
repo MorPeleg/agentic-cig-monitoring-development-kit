@@ -5,7 +5,7 @@ Each example is a lint-clean PROforma guideline that passes the Step 7 gates (`s
 | File | What it is |
 |---|---|
 | `<name>.pf` | the guideline (PROforma 1.9; opens in Deontics Composer) |
-| `<name>.html` | a self-contained viewer, built with `scripts/build_report.mjs`. It has a task tree, a plan canvas (pan, zoom, double-click a plan to open it), a properties panel, and data, decision, lint and source views |
+| `<name>.html` | a self-contained viewer, built with the proforma skill's `scripts/build_report.mjs` (one file, nothing fetched). It has a task tree, a plan canvas (pan, zoom, double-click a plan to open it), a properties panel, and data, decision, lint and source views |
 | `<name>.mmd` | Mermaid diagram of the plan structure |
 | `<name>.cqs.mjs` | competency-question queries |
 

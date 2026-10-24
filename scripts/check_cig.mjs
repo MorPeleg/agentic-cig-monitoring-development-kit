@@ -317,7 +317,13 @@ for (const t of monitors) {
   }
   ok("serviceRequest");
 
-  // ServiceRequest on the Goal, consistent with the Action
+  // ServiceRequest on the Goal, consistent with the Action. goal.noun_phrase joins the
+  // fields with "; ", so a value containing ";" cannot round-trip.
+  for (const f of SR_FIELDS) {
+    if ((m[`ServiceRequest.${f}`] || "").includes(";")) {
+      bad("goalConsistency", `ServiceRequest.${f} contains ";" (the goal.noun_phrase field separator); use commas inside the value`);
+    }
+  }
   const np = m["goal.noun_phrase"] || "";
   const goalSR = {};
   for (const part of np.split(/;\s*/)) {

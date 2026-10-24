@@ -67,12 +67,14 @@ Install these before starting:
 4. **Formalization**: the `cig-formalizer` subagent builds `projects/<project_dir>/guideline/<name>.pf` from the approved proposal with the proforma tools. It keeps the file lint-clean and draws a Mermaid diagram of it.
 5. **Blocking review**: `scripts/check_cig.mjs` (structure, metaprops contract, executable preconditions, approved action set, regressions) plus the reviewer's source-fidelity judgment, and `scripts/run_cqs.mjs` (one query per CQ). The build is done only when both pass with zero FAILs.
 
-You can run the gates yourself on the worked example:
+Each build also produces `guideline/<name>.html`, a self-contained viewer laid out like a guideline editor: task tree, plan canvas (stored task positions, scheduling arrows, decision branches; pan, zoom, double-click a plan to open it), properties panel, and data, decision, lint and source views. Open [`cig/examples/ici-irae-monitoring.html`](cig/examples/ici-irae-monitoring.html) or [`obesity-glp1-monitoring.html`](cig/examples/obesity-glp1-monitoring.html) to see it.
+
+You can run the gates yourself on the worked examples (see [`cig/examples/README.md`](cig/examples/README.md)):
 
 ```bash
 node scripts/check_cig.mjs cig/examples/obesity-glp1-monitoring.pf
 node scripts/run_cqs.mjs cig/examples/obesity-glp1-monitoring.pf cig/examples/obesity-glp1-monitoring.cqs.mjs
-npx -y proforma-mcp@0.2.0 mermaid --file cig/examples/obesity-glp1-monitoring.pf --mode drilldown
+node scripts/build_report.mjs cig/examples/ici-irae-monitoring.pf
 ```
 
 The scripts find the `proforma` CLI automatically (`PROFORMA_BIN`, a global `npm install -g proforma-mcp`, a `proforma` binary on PATH, or a private install of the pinned version).
@@ -92,16 +94,16 @@ agentic-cig-monitoring-development-kit/
 ├── capabilities.yaml   # Agent skills and tools (managed by capa)
 ├── .workflow/WORKFLOW.md  # Agent instructions (for the agent, not you)
 ├── cig/                # Shared CIG reference material (reusable across projects)
-│   ├── examples/       # Worked PROforma CIGs (.pf), their diagrams (.mmd) and CQ queries (.cqs.mjs)
+│   ├── examples/       # Worked PROforma CIGs (.pf), viewers (.html), diagrams (.mmd) and CQ queries (.cqs.mjs); see examples/README.md
 │   ├── guidelines/     # Shared clinical guideline library
 │   └── know-how/       # CIG monitoring domain know-how
 ├── projects/           # One directory per CIG project (not tracked by git)
 │   └── <project_dir>/  # e.g. obesity-glp1-monitoring
-│       ├── guideline/  # <name>.pf, <name>.mmd, baseline/ snapshots
+│       ├── guideline/  # <name>.pf, <name>.html viewer, <name>.mmd, baseline/ snapshots
 │       ├── plans/      # Proposals made by the agent
 │       ├── cqs/        # cq-queries.mjs
 │       ├── reviews/    # Step 7 reports
 │       └── resources/  # Resources to give to the agent (PDFs, CSVs, etc.)
-├── scripts/            # check_cig.mjs, run_cqs.mjs, owl2pf.mjs
+├── scripts/            # check_cig.mjs, run_cqs.mjs, build_report.mjs, owl2pf.mjs
 └── skills/             # Agent skills (cig-monitoring, cig-formalization, proforma-editor, cig-monitoring-review, cq-verification)
 ```

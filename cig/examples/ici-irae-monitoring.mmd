@@ -1,0 +1,70 @@
+---
+title: ICI immune-related adverse event monitoring (ESMO 2017)
+---
+flowchart TD
+    ici_irae_monitoring__Get_Baseline_Data{"Get_Baseline_Data<br/><i>Assess susceptibility to immune-related adverse events and collect baseline data before ICI therapy</i>"}
+    class ici_irae_monitoring__Get_Baseline_Data enquiry
+    ici_irae_monitoring__Pretreatment_Decision(("Pretreatment_Decision<br/><i>Decide whether ICI can start with standard monitoring or needs specialist review first</i>"))
+    class ici_irae_monitoring__Pretreatment_Decision decision
+    subgraph ici_irae_monitoring__ICI_Therapy["ICI_Therapy<br/><i>Inform the patient, obtain specialist review when indicated, and administer ICI therapy</i>"]
+        ici_irae_monitoring__ICI_Therapy__Inform_Patient_irAE_Risk("Inform_Patient_irAE_Risk<br/><i>Inform the patient of potential irAEs and ask them to report symptoms directly to the treating team</i>")
+        class ici_irae_monitoring__ICI_Therapy__Inform_Patient_irAE_Risk action
+        ici_irae_monitoring__ICI_Therapy__Obtain_Specialist_Review("Obtain_Specialist_Review<br/><i>Discuss irAE risk and benefit with the relevant specialist before starting ICI</i>")
+        class ici_irae_monitoring__ICI_Therapy__Obtain_Specialist_Review action
+        ici_irae_monitoring__ICI_Therapy__Administer_ICI("Administer_ICI<br/><i>Administer immune checkpoint inhibitor therapy (anti-CTLA4, anti-PD-1/PD-L1 or combination)</i>")
+        class ici_irae_monitoring__ICI_Therapy__Administer_ICI action
+        ici_irae_monitoring__ICI_Therapy__Inform_Patient_irAE_Risk --> ici_irae_monitoring__ICI_Therapy__Obtain_Specialist_Review
+        ici_irae_monitoring__ICI_Therapy__Inform_Patient_irAE_Risk --> ici_irae_monitoring__ICI_Therapy__Administer_ICI
+        ici_irae_monitoring__ICI_Therapy__Obtain_Specialist_Review --> ici_irae_monitoring__ICI_Therapy__Administer_ICI
+    end
+    style ici_irae_monitoring__ICI_Therapy fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+    subgraph ici_irae_monitoring__Monitoring_Plan["Monitoring_Plan<br/><i>Monitor pre-infusion surveillance completion and immune-related adverse events in parallel</i>"]
+        subgraph ici_irae_monitoring__Monitoring_Plan__Monitor_Actions["Monitor_Actions<br/><i>Monitor completion of the planned pre-infusion surveillance</i>"]
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_PreInfusion_Surveillance("Monitor_PreInfusion_Surveillance<br/><i>Monitor completion of the pre-infusion blood panel before each ICI infusion</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_PreInfusion_Surveillance action
+        end
+        style ici_irae_monitoring__Monitoring_Plan__Monitor_Actions fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+        subgraph ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State["Monitor_Undesired_State<br/><i>Monitor immune-related adverse events</i>"]
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Thyroid("Monitor_Thyroid<br/><i>Monitor thyroid function (TSH, FT4)</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Thyroid action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Hypophysitis("Monitor_Hypophysitis<br/><i>Monitor for hypophysitis (pituitary symptoms, triggered 9 am cortisol)</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Hypophysitis action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Hepatitis("Monitor_Hepatitis<br/><i>Monitor liver function for immune-related hepatitis (ALT, AST, bilirubin)</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Hepatitis action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Diabetes("Monitor_Diabetes<br/><i>Monitor blood glucose for immune-related type 1 diabetes</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Diabetes action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Nephritis("Monitor_Nephritis<br/><i>Monitor renal function for immune-related nephritis (Na, K, creatinine, urea)</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Nephritis action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Skin("Monitor_Skin<br/><i>Monitor for immune-related skin toxicity</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Skin action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Colitis("Monitor_Colitis<br/><i>Monitor for immune-related diarrhoea and colitis</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Colitis action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Pneumonitis("Monitor_Pneumonitis<br/><i>Monitor for immune-related pneumonitis</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Pneumonitis action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Neurological("Monitor_Neurological<br/><i>Monitor for immune-related neurological toxicity</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Neurological action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Myocarditis("Monitor_Myocarditis<br/><i>Monitor for immune-related myocarditis and cardiac toxicity</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Myocarditis action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Arthralgia("Monitor_Arthralgia<br/><i>Monitor for immune-related arthralgia and myalgia</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Arthralgia action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Autoimmune_Flare("Monitor_Autoimmune_Flare<br/><i>Monitor pre-existing autoimmune disease for flare during ICI therapy</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Autoimmune_Flare action
+            ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Allograft_Rejection("Monitor_Allograft_Rejection<br/><i>Monitor allograft function for rejection during anti-PD-1 therapy</i>")
+            class ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Allograft_Rejection action
+        end
+        style ici_irae_monitoring__Monitoring_Plan__Monitor_Undesired_State fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+    end
+    style ici_irae_monitoring__Monitoring_Plan fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+    ici_irae_monitoring__Get_Baseline_Data --> ici_irae_monitoring__Pretreatment_Decision
+    ici_irae_monitoring__Pretreatment_Decision -->|"?"| ici_irae_monitoring__ICI_Therapy
+    ici_irae_monitoring__ICI_Therapy --> ici_irae_monitoring__Monitoring_Plan
+    classDef action fill:#E4FAFA,stroke:#008585,stroke-width:2px,color:#000
+    classDef enquiry fill:#E6FFE6,stroke:#009700,stroke-width:2px,color:#000
+    classDef decision fill:#FFFFFF,stroke:#B40F78,stroke-width:2px,color:#000
+    classDef plan fill:#FFDCD9,stroke:#E55344,stroke-width:2px,color:#000
+    classDef keystone fill:#FEFBED,stroke:#D9AB0A,stroke-width:2px,color:#000
+    classDef candidate fill:#F8A2D3,stroke:#B40F78,stroke-dasharray:3 3,color:#000
+    classDef data fill:#F1F3F4,stroke:#5F6368,stroke-dasharray:2 2,color:#000
+    classDef missing fill:#FCE8E6,stroke:#D93025,stroke-width:2px,color:#000
+    classDef optional stroke-dasharray:6 4
+    classDef terminal stroke-width:4px

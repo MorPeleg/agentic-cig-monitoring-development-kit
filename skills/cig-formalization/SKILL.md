@@ -106,7 +106,7 @@ Coding-patch rules (MUST / MUST NOT):
 6. If the approved proposal's action set **differs** from the existing `.pf`, this is **not** a coding patch — stop and report. Do not silently switch to a full rebuild.
 7. Do **not** rename the project directory.
 
-After the patch, run `format` and `lint` (0 errors), regenerate the `.mmd`, then run the freeze gate:
+After the patch, run `format` and `lint` (0 errors), regenerate the `.mmd` and the `.html` report, then run the freeze gate:
 `node scripts/check_cig.mjs projects/<p>/guideline/<name>.pf --proposal projects/<p>/plans/PROPOSAL-<ts>.md --baseline projects/<p>/guideline/baseline/<snapshot>.pf --coding-patch`.
 It FAILs on any change outside the four coding keys.
 
@@ -245,7 +245,8 @@ omitted from the listings for brevity. Through capa the tool ids are
     the proposal does not explain; run once with `include_info: true` and
     confirm every PF-X060 "treated as text literal" is an intended literal, not
     a misspelt data item), `to_mermaid(output: "<abs>/guideline/<name>.mmd")`,
-    then the *End-of-Step-6 determinism check*. Fix any failure before handing
+    `node scripts/build_report.mjs <guideline.pf>` (writes the
+    `guideline/<name>.html` viewer), then the *End-of-Step-6 determinism check*. Fix any failure before handing
     off to Step 7.
 
 ## The fixed per-action bundle
@@ -430,7 +431,7 @@ re-emit if any fails:
       and Decision are populated.
 - [ ] Metadata `title` set; `desc` qualitative, with no hand-written count or
       stale drug/section list.
-- [ ] `guideline/<name>.mmd` regenerated from this file with `to_mermaid`.
+- [ ] `guideline/<name>.mmd` regenerated from this file with `to_mermaid`, and `guideline/<name>.html` with `node scripts/build_report.mjs <guideline.pf>`.
 - [ ] `node scripts/check_cig.mjs projects/<p>/guideline/<name>.pf --proposal projects/<p>/plans/PROPOSAL-<ts>.md`
       (add `--baseline projects/<p>/guideline/baseline/<newest>.pf` on an
       iteration) exits 0 with no FAIL.

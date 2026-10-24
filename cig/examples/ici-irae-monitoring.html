@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ICI immune-related adverse event monitoring (ESMO 2017)</title>
+<style>/* PROforma guideline viewer: a Composer-style workspace (task tree, plan canvas, properties). */
+:root {
+  --bg: #e9ebee;
+  --panel: #ffffff;
+  --panel-2: #f6f7f9;
+  --ink: #1f2328;
+  --muted: #5f6368;
+  --line: #d0d4da;
+  --accent: #8a1538;
+  --accent-soft: #f6e7ec;
+  --sel: #1a73e8;
+  --canvas: #fbfbfc;
+  --grid: #e3e6ea;
+  --edge: #5f6368;
+  --code-bg: #f3f4f6;
+  --plan-fill: #ffdcd9; --plan-stroke: #e55344;
+  --action-fill: #e4fafa; --action-stroke: #008585;
+  --enquiry-fill: #e6ffe6; --enquiry-stroke: #009700;
+  --decision-fill: #ffffff; --decision-stroke: #b40f78;
+  --task-fill: #fefbed; --task-stroke: #d9ab0a;
+  --ok: #137333; --warn: #b06000; --err: #c5221f;
+}
+:root:not([data-theme="light"]) { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --panel: #1e2125; --panel-2: #24282d; --ink: #e8eaed; --muted: #9aa0a6;
+    --line: #3a3f45; --accent: #e8839f; --accent-soft: #3a2029; --sel: #8ab4f8;
+    --canvas: #1a1d21; --grid: #262a30; --edge: #9aa0a6; --code-bg: #2a2e33;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --panel: #1e2125; --panel-2: #24282d; --ink: #e8eaed; --muted: #9aa0a6;
+  --line: #3a3f45; --accent: #e8839f; --accent-soft: #3a2029; --sel: #8ab4f8;
+  --canvas: #1a1d21; --grid: #262a30; --edge: #9aa0a6; --code-bg: #2a2e33;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+code, pre, .mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; }
+code { background: var(--code-bg); padding: 1px 4px; border-radius: 4px; word-break: break-word; }
+
+/* header */
+header.top {
+  display: flex; align-items: center; gap: 14px; padding: 8px 14px;
+  background: var(--panel); border-bottom: 1px solid var(--line); flex: none; min-width: 0;
+}
+.brand { width: 28px; height: 28px; flex: none; }
+.titles { min-width: 0; flex: 1; }
+.titles h1 { font-size: 15px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.titles .sub { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; font-size: 12px; background: var(--panel-2); white-space: nowrap; }
+.chip.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.chip.err { color: var(--err); border-color: color-mix(in srgb, var(--err) 40%, var(--line)); }
+.chip.warn { color: var(--warn); }
+button.icon { border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); border-radius: 6px; padding: 3px 8px; cursor: pointer; font: inherit; }
+button.icon:hover { border-color: var(--muted); }
+
+/* tabs */
+nav.tabs { display: flex; gap: 2px; padding: 0 10px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none; overflow-x: auto; }
+nav.tabs button {
+  border: 0; background: none; color: var(--muted); padding: 8px 12px; cursor: pointer; font: inherit;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+}
+nav.tabs button.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+
+main { flex: 1; min-height: 0; display: flex; }
+.view { display: none; flex: 1; min-height: 0; min-width: 0; }
+.view.on { display: flex; }
+
+/* workspace: tree | canvas | properties */
+#workspace { display: grid; grid-template-columns: 250px minmax(0, 1fr) 340px; }
+aside { background: var(--panel); min-height: 0; overflow: auto; }
+aside.left { border-right: 1px solid var(--line); }
+aside.right { border-left: 1px solid var(--line); }
+.pane-title { position: sticky; top: 0; background: var(--panel); z-index: 1; padding: 8px 12px; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+ul.tree, ul.tree ul { list-style: none; margin: 0; padding: 0; }
+ul.tree ul { padding-left: 14px; border-left: 1px dotted var(--line); margin-left: 9px; }
+ul.tree li > .row { display: flex; align-items: center; gap: 6px; padding: 2px 8px; cursor: pointer; border-radius: 4px; white-space: nowrap; }
+ul.tree li > .row:hover { background: var(--panel-2); }
+ul.tree li > .row.sel { background: var(--accent-soft); outline: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+ul.tree .twist { width: 12px; color: var(--muted); flex: none; text-align: center; }
+ul.tree .nm { overflow: hidden; text-overflow: ellipsis; }
+.tree-section { padding: 6px 0 10px; }
+svg.ico { width: 16px; height: 16px; flex: none; }
+
+/* canvas */
+.canvas-wrap { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--canvas); }
+.crumbs { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; font-size: 12px; }
+.crumbs a { color: var(--sel); cursor: pointer; text-decoration: none; }
+.crumbs a:hover { text-decoration: underline; }
+.crumbs .sep { color: var(--muted); }
+.crumbs .here { font-weight: 600; }
+.crumbs .plan-cap { color: var(--muted); margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40ch; }
+svg#canvas { flex: 1; width: 100%; min-height: 0; cursor: grab; touch-action: none; user-select: none; display: block; }
+svg#canvas.panning { cursor: grabbing; }
+.toolbar { position: absolute; right: 12px; top: 46px; display: flex; flex-direction: column; gap: 4px; z-index: 2; }
+.toolbar button { width: 32px; height: 30px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; cursor: pointer; font: 600 14px/1 system-ui, sans-serif; }
+.toolbar button:hover { border-color: var(--muted); }
+.toolbar .sep { height: 4px; }
+.toolbar button.on { background: var(--accent-soft); border-color: var(--accent); }
+.zoomlabel { position: absolute; right: 12px; bottom: 10px; font-size: 11px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
+.hint { position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: var(--muted); }
+
+.node { cursor: pointer; }
+.node .shape { stroke-width: 2; }
+.node.optional .shape { stroke-dasharray: 6 4; }
+.node.terminal .shape { stroke-width: 4; }
+.node.sel .halo { stroke: var(--sel); stroke-width: 3; fill: none; }
+.node .halo { stroke: transparent; fill: none; }
+.node:hover .halo { stroke: color-mix(in srgb, var(--sel) 45%, transparent); stroke-width: 2; }
+.node text.lbl { font: 12px system-ui, sans-serif; fill: var(--ink); text-anchor: middle; }
+.node text.lbl2 { font: 11px system-ui, sans-serif; fill: var(--muted); text-anchor: middle; }
+.badge { font: 600 9px system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; fill: #fff; }
+.edge { stroke: var(--edge); stroke-width: 1.6; fill: none; }
+.edge-label { font: 11px system-ui, sans-serif; fill: var(--decision-stroke); paint-order: stroke; stroke: var(--canvas); stroke-width: 4px; text-anchor: middle; }
+.edge-label[text-anchor="start"] { text-anchor: start; }
+.plan-drill { font: 10px system-ui, sans-serif; fill: var(--muted); text-anchor: middle; }
+
+/* properties */
+.props { padding: 10px 12px 24px; }
+.props .empty { color: var(--muted); padding: 20px 4px; }
+.props h2 { font-size: 15px; margin: 4px 0 2px; display: flex; align-items: center; gap: 8px; }
+.props .kindline { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+.props h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 10px; }
+.kv dt { color: var(--muted); font-size: 12px; }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+table.mp { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+table.mp td { border-top: 1px solid var(--line); padding: 4px 4px; vertical-align: top; overflow-wrap: anywhere; }
+table.mp td.k { color: var(--muted); width: 40%; font-family: ui-monospace, Consolas, monospace; font-size: 11px; overflow-wrap: normal; word-break: normal; }
+.cand { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin: 6px 0; background: var(--panel-2); }
+.cand .cn { font-weight: 600; }
+.args { margin: 4px 0 0; padding-left: 0; list-style: none; }
+.args li { margin: 3px 0; }
+.sup { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; border-radius: 3px; padding: 0 5px; margin-right: 4px; color: #fff; background: #5f6368; }
+.sup.for { background: #137333; } .sup.against { background: #c5221f; } .sup.confirming { background: #0b57d0; } .sup.excluding { background: #8e24aa; }
+.grade { display: inline-block; font-size: 10px; font-weight: 700; border-radius: 3px; padding: 0 4px; border: 1px solid currentColor; margin: 0 2px; white-space: nowrap; }
+.grade.gA { color: #137333; } .grade.gB { color: #0b57d0; } .grade.gC { color: #b06000; } .grade.gD, .grade.gE { color: #c5221f; }
+a.ref { color: var(--sel); cursor: pointer; text-decoration: none; }
+a.ref:hover { text-decoration: underline; }
+
+/* document views */
+.doc { overflow: auto; padding: 18px 22px 40px; flex: 1; }
+.doc .inner { max-width: 1100px; margin: 0 auto; }
+.doc h2 { font-size: 17px; margin: 0 0 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: 0 0 14px; }
+.card h3 { margin: 0 0 6px; font-size: 14px; }
+.tag { color: var(--muted); font-size: 12px; font-weight: 400; }
+table.grid { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.grid th { text-align: left; color: var(--muted); font-weight: 600; border-bottom: 2px solid var(--line); padding: 6px 8px; }
+table.grid td { border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; overflow-wrap: anywhere; }
+.tablewrap { overflow-x: auto; }
+pre.src { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow: auto; margin: 0; line-height: 1.5; }
+pre.src .kw { color: #8a1538; font-weight: 600; }
+pre.src .str { color: #137333; }
+pre.src .cmt { color: var(--muted); font-style: italic; }
+.lint-row.error td:first-child { color: var(--err); font-weight: 600; }
+.lint-row.warning td:first-child { color: var(--warn); font-weight: 600; }
+.lint-row.info td:first-child { color: var(--muted); }
+.notes h1, .notes h2, .notes h3 { font-size: 15px; }
+.muted { color: var(--muted); }
+
+/* narrow screens: stack the panes */
+@media (max-width: 900px) {
+  #workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; overflow: auto; }
+  aside.left { display: none; }
+  aside.left.show { display: block; position: absolute; z-index: 5; top: 92px; left: 0; bottom: 0; width: min(280px, 85vw); box-shadow: 0 0 24px rgba(0,0,0,.25); }
+  aside.right { border-left: 0; border-top: 1px solid var(--line); max-height: 45vh; }
+  .canvas-wrap { min-height: 55vh; }
+  .hint { display: none; }
+  header.top { flex-wrap: wrap; padding: 8px 16px; }
+  .chips { justify-content: flex-start; }
+  .doc { padding: 14px 16px 30px; }
+}
+@media (min-width: 901px) { #treeToggle { display: none; } }
+@media print {
+  body { overflow: visible; height: auto; display: block; }
+  nav.tabs, .toolbar, .hint, .zoomlabel, #treeToggle, #themeToggle { display: none !important; }
+  main, .view, .view.on, #workspace { display: block !important; }
+  aside { display: none !important; }
+  .doc { overflow: visible; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="icon" id="treeToggle" title="Task tree">☰</button>
+  <svg class="brand" viewBox="0 0 128 128" aria-hidden="true"><rect width="128" height="128" rx="28" fill="#8a1538"/><g stroke-linejoin="round" stroke-linecap="round"><g stroke="#FFDCD9" stroke-width="5" fill="none"><path d="M46 46 L54 54"/><path d="M74 74 L82 82"/></g><path d="M32 16 L48 32 L32 48 L16 32 Z" fill="#E6FFE6" stroke="#009700" stroke-width="4"/><circle cx="64" cy="64" r="15" fill="#FFFFFF" stroke="#B40F78" stroke-width="4"/><circle cx="64" cy="64" r="5" fill="#B40F78"/><rect x="80" y="80" width="32" height="32" rx="8" fill="#E4FAFA" stroke="#008585" stroke-width="4"/></g></svg>
+  <div class="titles"><h1 title="ICI immune-related adverse event monitoring (ESMO 2017)">ICI immune-related adverse event monitoring (ESMO 2017)</h1><div class="sub">version 1.0 · agentic-cig-monitoring kit · ESMO 2017 (Haanen et al.) — PROforma CIG for monitoring immune checkpoint inhibitor therapy in adults with cancer: baseline risk assessment, a pre-treatment decision, the ICI therapy plan, and surveillance for immune-related adverse events and for completion of the pre-infusion blood tests, from the ESMO 2017 toxicity guideline.</div></div>
+  <div class="chips">
+    
+    <span class="chip">5 plans</span>
+    <span class="chip">17 actions</span>
+    <span class="chip">1 enquiries</span>
+    <span class="chip">1 decisions</span>
+    <span class="chip">4 data items</span>
+    <span class="chip ok">lint: 0 errors, 0 warnings</span>
+    <button class="icon" id="themeToggle" title="Light / dark">◐</button>
+  </div>
+</header>
+<nav class="tabs">
+  <button data-tab="workspace" class="on">Plan editor</button>
+  <button data-tab="dataview">Data definitions</button>
+  <button data-tab="decisionview">Decisions</button>
+  
+  <button data-tab="lintview">Lint</button>
+  <button data-tab="sourceview">Source</button>
+</nav>
+<main>
+  <section class="view on" id="workspace">
+    <aside class="left">
+      <div class="pane-title">Tasks</div>
+      <ul class="tree tree-section" id="tree"></ul>
+      <div class="pane-title">Data</div>
+      <ul class="tree tree-section" id="datatree"></ul>
+    </aside>
+    <div class="canvas-wrap">
+      <div class="crumbs" id="crumbs"></div>
+      <svg id="canvas" role="img" aria-label="Plan diagram"></svg>
+      <div class="toolbar">
+        <button id="zin" title="Zoom in (+)">+</button>
+        <button id="zout" title="Zoom out (−)">−</button>
+        <button id="zfit" title="Fit to view (0)">⤢</button>
+        <button id="z100" title="Actual size">1:1</button>
+        <div class="sep"></div>
+        <button id="zup" title="Up to the parent plan (Backspace)">↑</button>
+        <button id="zlayout" title="Layout: stored positions (click for automatic)">⊞</button>
+        <button id="zlabel" title="Show captions instead of names">Aa</button>
+      </div>
+      <div class="hint">Drag to pan · wheel or pinch to zoom · double-click a plan to open it</div>
+      <div class="zoomlabel" id="zoomlabel">100%</div>
+    </div>
+    <aside class="right">
+      <div class="pane-title">Properties</div>
+      <div class="props" id="props"></div>
+    </aside>
+  </section>
+  <section class="view doc" id="dataview"></section>
+  <section class="view doc" id="decisionview"></section>
+  
+  <section class="view doc" id="lintview"></section>
+  <section class="view doc" id="sourceview"></section>
+</main>
+<script type="application/json" id="pf-data">{"model":{"format":"proforma-export/1","engine_version":"1.9","metadata":{"author":"agentic-cig-monitoring kit","desc":"PROforma CIG for monitoring immune checkpoint inhibitor therapy in adults with cancer: baseline risk assessment, a pre-treatment decision, the ICI therapy plan, and surveillance for immune-related adverse events and for completion of the pre-infusion blood tests, from the ESMO 2017 toxicity guideline.","name":"ici_irae_monitoring","title":"ICI immune-related adverse event monitoring (ESMO 2017)","version":"1.0"},"metaprops":{"goal.noun_phrase":"adult cancer treated with immune checkpoint inhibitors, with monitoring for immune-related adverse events","goal.verb":"treat"},"root":"ici_irae_monitoring","tasks":[{"name":"ici_irae_monitoring","kind":"plan","caption":"ICI immune-related adverse event monitoring (ESMO 2017)","description":null,"metaprops":{"goal.noun_phrase":"adult cancer treated with immune checkpoint inhibitors, with monitoring for immune-related adverse events","goal.verb":"treat"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[{"name":"Get_Baseline_Data","task":"Get_Baseline_Data","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,40,0,0]},{"name":"Pretreatment_Decision","task":"Pretreatment_Decision","caption":null,"description":null,"metaprops":{},"after":["Get_Baseline_Data"],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,140,0,0]},{"name":"ICI_Therapy","task":"ICI_Therapy","caption":null,"description":null,"metaprops":{},"after":["Pretreatment_Decision"],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,240,0,0]},{"name":"Monitoring_Plan","task":"Monitoring_Plan","caption":null,"description":null,"metaprops":{},"after":["ICI_Therapy"],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,340,0,0]}],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":[],"paths":["ici_irae_monitoring"],"reachable":true},{"name":"Get_Baseline_Data","kind":"enquiry","caption":"Assess susceptibility to immune-related adverse events and collect baseline data before ICI therapy","description":"Baseline assessment before ICI therapy (ESMO 2017 iv121). Asked as data items: pre-existing autoimmune disease, prior irAE on a previous ICI course, solid-organ allograft, and the planned ICI regimen. Also collected for the clinician (no condition reads them): baseline TSH and FT4 (T3 when indicated) (Fig 5); ALT, AST and bilirubin (iv126); sodium, potassium, creatinine and urea, with baseline creatinine as the reference for nephritis grading (iv133, Fig 14); blood glucose (iv126); patient and family history and general physical condition (iv121); baseline CT chest/abdomen/pelvis with or without brain MRI (iv121). Supplementary Table S1 (detailed baseline list) was not available.","metaprops":{},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[{"data":"ici_regimen","mandatory":null},{"data":"organ_allograft","mandatory":null},{"data":"pre_existing_autoimmune_disease","mandatory":null},{"data":"prior_irAE_on_ICI","mandatory":null}],"used_by":["ici_irae_monitoring"],"paths":["ici_irae_monitoring/Get_Baseline_Data"],"reachable":true},{"name":"Pretreatment_Decision","kind":"decision","caption":"Decide whether ICI can start with standard monitoring or needs specialist review first","description":"Assistant-proposed rule: the guideline names the irAE risk groups (pre-existing autoimmune disease, prior irAE on ICI, solid-organ allograft) but gives no executable criterion. Abnormal baseline TFTs are deliberately not an argument: Baseline abnormal values do not preclude treatment (Fig 5).","metaprops":{},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[{"name":"Start_ICI","caption":"Start ICI","description":"start the ICI therapy plan with standard irAE monitoring","metaprops":{},"recommendation":"netsupport() > 0","priority":null,"arguments":[{"name":"Arg_Start_ICI","support":"for","condition":"pre_existing_autoimmune_disease = false and prior_irAE_on_ICI = false and organ_allograft = false","caption":null,"description":null,"metaprops":{}}]},{"name":"Specialist_Review_Before_ICI","caption":"Specialist review before ICI","description":"a risk factor for irAEs is present; discuss risk and benefit with the relevant specialist before starting","metaprops":{},"recommendation":"netsupport() > 0","priority":null,"arguments":[{"name":"Arg_Specialist_Review_Before_ICI","support":"for","condition":"pre_existing_autoimmune_disease = true or prior_irAE_on_ICI = true or organ_allograft = true","caption":null,"description":null,"metaprops":{}}]}],"sources":[],"used_by":["ici_irae_monitoring"],"paths":["ici_irae_monitoring/Pretreatment_Decision"],"reachable":true},{"name":"Inform_Patient_irAE_Risk","kind":"action","caption":"Inform the patient of potential irAEs and ask them to report symptoms directly to the treating team","description":null,"metaprops":{"goal.noun_phrase":"delayed detection and aggravation of immune-related adverse events (patient informed of potential irAEs and told to report symptoms directly to the treating team)","goal.verb":"avoid"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["ICI_Therapy"],"paths":["ici_irae_monitoring/ICI_Therapy/Inform_Patient_irAE_Risk"],"reachable":true},{"name":"Obtain_Specialist_Review","kind":"action","caption":"Discuss irAE risk and benefit with the relevant specialist before starting ICI","description":null,"metaprops":{"goal.noun_phrase":"unassessed risk of autoimmune-disease worsening, recurrent irAEs or allograft rejection on ICI","goal.verb":"avoid"},"precondition":"result_of(Pretreatment_Decision) = Specialist_Review_Before_ICI","wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["ICI_Therapy"],"paths":["ici_irae_monitoring/ICI_Therapy/Obtain_Specialist_Review"],"reachable":true},{"name":"Administer_ICI","kind":"action","caption":"Administer immune checkpoint inhibitor therapy (anti-CTLA4, anti-PD-1/PD-L1 or combination)","description":null,"metaprops":{"goal.noun_phrase":"ICI therapy (anti-CTLA4, anti-PD-1/PD-L1 or combination) delivered for an approved indication (ESMO Table 1)","goal.verb":"achieve"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["ICI_Therapy"],"paths":["ici_irae_monitoring/ICI_Therapy/Administer_ICI"],"reachable":true},{"name":"ICI_Therapy","kind":"plan","caption":"Inform the patient, obtain specialist review when indicated, and administer ICI therapy","description":null,"metaprops":{},"precondition":"result_of(Pretreatment_Decision) = Start_ICI or result_of(Pretreatment_Decision) = Specialist_Review_Before_ICI","wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[{"name":"Inform_Patient_irAE_Risk","task":"Inform_Patient_irAE_Risk","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,40,0,0]},{"name":"Obtain_Specialist_Review","task":"Obtain_Specialist_Review","caption":null,"description":null,"metaprops":{},"after":["Inform_Patient_irAE_Risk"],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,140,0,0]},{"name":"Administer_ICI","task":"Administer_ICI","caption":null,"description":null,"metaprops":{},"after":["Inform_Patient_irAE_Risk","Obtain_Specialist_Review"],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,240,0,0]}],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["ici_irae_monitoring"],"paths":["ici_irae_monitoring/ICI_Therapy"],"reachable":true},{"name":"Monitor_PreInfusion_Surveillance","kind":"action","caption":"Monitor completion of the pre-infusion blood panel before each ICI infusion","description":null,"metaprops":{"ServiceRequest.code":"completion check of the pre-infusion blood tests due at each infusion: ALT, AST and bilirubin, sodium, potassium, creatinine and urea, and blood glucose at every infusion, plus TSH and FT4 when due per the regimen-specific TFT schedule of Monitor_Thyroid","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"before every ICI infusion (each cycle), for the duration of ICI therapy","ServiceRequest.patientInstruction":"attend for blood tests before each scheduled infusion","ServiceRequest.performerInstruction":"if any test due at this infusion is missing, obtain it and review the results before administering the ICI","applies_when":"all_patients_on_therapy","assistant_invention":"framing the tests due at each infusion as one completion audit, adding glucose to the same draw, and the obtain-before-administering rule","category":"action_completion","cq":"CQ6, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = completion check of the pre-infusion blood tests due at each infusion: ALT, AST and bilirubin, sodium, potassium, creatinine and urea, and blood glucose at every infusion, plus TSH and FT4 when due per the regimen-specific TFT schedule of Monitor_Thyroid; ServiceRequest.occurrenceTiming = before every ICI infusion (each cycle), for the duration of ICI therapy; ServiceRequest.patientInstruction = attend for blood tests before each scheduled infusion; ServiceRequest.performerInstruction = if any test due at this infusion is missing, obtain it and review the results before administering the ICI","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"order/result audit of the named lab tests","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"TFTs \"before every infusion or at least once a month (in the case of 2-weekly infusions)\", with the regimen schedule in Fig 5; transaminases and bilirubin \"before every cycle\"; sodium, potassium, creatinine and urea \"before every infusion\"","monitored_target":"completion of the planned pre-infusion surveillance bloods before each infusion of Administer_ICI","monitoring_frequency_basis":"the guideline sets transaminases and bilirubin \"before every cycle\" and sodium, potassium, creatinine and urea \"before every infusion\". TFTs follow the Fig 5 regimen schedule: every cycle for anti-CTLA4-containing regimens; for anti-PD-1/PD-L1, every cycle for 3 months, then every second cycle. Glucose is aligned to the same draw (assistant-proposed)","monitoring_stance":"recommended","provenance_type":"assistant_completed_from_guidelines","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Thyroid gland disorders iv124","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Hepatotoxicity Diagnosis iv126","source.3":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Renal toxicity iv133","source.4":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 5 (ICPi monitoring and management: thyroid function) iv125","source_kind":"clinical_guideline","trigger":"a test due at this infusion is missing at the time of a scheduled infusion"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Actions"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Actions/Monitor_PreInfusion_Surveillance"],"reachable":true},{"name":"Monitor_Actions","kind":"plan","caption":"Monitor completion of the planned pre-infusion surveillance","description":null,"metaprops":{},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[{"name":"Monitor_PreInfusion_Surveillance","task":"Monitor_PreInfusion_Surveillance","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,40,0,0]}],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitoring_Plan"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Actions"],"reachable":true},{"name":"Monitor_Thyroid","kind":"action","caption":"Monitor thyroid function (TSH, FT4)","description":null,"metaprops":{"ServiceRequest.code":"thyroid function tests (TSH, FT4, T3 when indicated)","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"baseline, then for anti-CTLA4-containing regimens every cycle plus 4-6 weeks after cycle 4. For anti-PD-1/PD-L1, every cycle for the first 3 months, then every second cycle on a 2-weekly schedule (at least monthly)","ServiceRequest.patientInstruction":"report fatigue, weight change, palpitations, heat or cold intolerance, or feeling unwell","ServiceRequest.performerInstruction":"interpret TSH/FT4 per the ESMO thyroid algorithm. If symptomatic hyperthyroidism and unwell, withhold ICI and start a beta-blocker. If hypothyroid with symptoms, start thyroxine and continue ICI. If TSH falls across two measurements with normal or low FT4, or TSH is low with low FT4, check 9 am cortisol. Note that CT iodine may affect TFTs","applies_when":"all_patients_on_therapy","assistant_invention":"patient symptom wording (generic thyroid symptoms)","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = thyroid function tests (TSH, FT4, T3 when indicated); ServiceRequest.occurrenceTiming = baseline, then for anti-CTLA4-containing regimens every cycle plus 4-6 weeks after cycle 4. For anti-PD-1/PD-L1, every cycle for the first 3 months, then every second cycle on a 2-weekly schedule (at least monthly); ServiceRequest.patientInstruction = report fatigue, weight change, palpitations, heat or cold intolerance, or feeling unwell; ServiceRequest.performerInstruction = interpret TSH/FT4 per the ESMO thyroid algorithm. If symptomatic hyperthyroidism and unwell, withhold ICI and start a beta-blocker. If hypothyroid with symptoms, start thyroxine and continue ICI. If TSH falls across two measurements with normal or low FT4, or TSH is low with low FT4, check 9 am cortisol. Note that CT iodine may affect TFTs","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"serum TSH and FT4 (T3 when indicated)","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"thyroid dysfunction is mostly detected by routine TSH/FT4, which \"should be carried out before every infusion or at least once a month\". Fig 5 gives the regimen-specific schedule and the management algorithm","monitored_target":"thyroid dysfunction (hypothyroidism or hyperthyroidism) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"guideline-stated (iv124 text; Fig 5). \"Late endocrine dysfunction can occur\"","monitoring_stance":"recommended","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Thyroid gland disorders iv124","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 5 (ICPi monitoring and management: thyroid function) iv125","source_kind":"clinical_guideline","trigger":"symptomatic hyperthyroidism with patient unwell; falling or low TSH with low FT4 (possible hypopituitarism)"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Thyroid"],"reachable":true},{"name":"Monitor_Hypophysitis","kind":"action","caption":"Monitor for hypophysitis (pituitary symptoms, triggered 9 am cortisol)","description":null,"metaprops":{"ServiceRequest.code":"pituitary symptom screen with triggered 9 am cortisol (and pituitary axis bloods)","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"each visit (symptom review), 9 am cortisol when indicated by symptoms or by a falling TSH, weekly while TSH is falling across two measurements with normal or low FT4","ServiceRequest.patientInstruction":"report headache, visual disturbance, marked fatigue, mood change, dizziness or feeling faint, and seek urgent review if unwell","ServiceRequest.performerInstruction":"if severe mass-effect symptoms (severe headache, any visual disturbance) or severe hypoadrenalism (hypotension, severe electrolyte disturbance), send pituitary axis bloods (9 am cortisol, ACTH, TSH and FT4, LH, FSH, sex hormones, IGF-1, prolactin), start i.v. methylprednisolone 1 mg/kg, withhold ICI, arrange pituitary MRI and consult endocrinology. If moderate symptoms (headache without visual disturbance, or fatigue or mood change while haemodynamically stable with no electrolyte disturbance), start oral prednisolone 0.5-1 mg/kg once daily after sending the pituitary axis bloods, withhold ICI, arrange pituitary MRI and visual field assessment, and treat as severe if there is no improvement in 48 h","applies_when":"all_patients_on_therapy","assistant_invention":"each-visit symptom review cadence; patient symptom wording beyond headache and visual disturbance (from Fig 6 tiers)","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = pituitary symptom screen with triggered 9 am cortisol (and pituitary axis bloods); ServiceRequest.occurrenceTiming = each visit (symptom review), 9 am cortisol when indicated by symptoms or by a falling TSH, weekly while TSH is falling across two measurements with normal or low FT4; ServiceRequest.patientInstruction = report headache, visual disturbance, marked fatigue, mood change, dizziness or feeling faint, and seek urgent review if unwell; ServiceRequest.performerInstruction = if severe mass-effect symptoms (severe headache, any visual disturbance) or severe hypoadrenalism (hypotension, severe electrolyte disturbance), send pituitary axis bloods (9 am cortisol, ACTH, TSH and FT4, LH, FSH, sex hormones, IGF-1, prolactin), start i.v. methylprednisolone 1 mg/kg, withhold ICI, arrange pituitary MRI and consult endocrinology. If moderate symptoms (headache without visual disturbance, or fatigue or mood change while haemodynamically stable with no electrolyte disturbance), start oral prednisolone 0.5-1 mg/kg once daily after sending the pituitary axis bloods, withhold ICI, arrange pituitary MRI and visual field assessment, and treat as severe if there is no improvement in 48 h","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"patient symptom report; 9 am serum cortisol; pituitary axis panel; pituitary MRI when indicated","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"\"Headache and visual disturbances require immediate evaluation\". Weekly cortisol when TSH falls with normal or low T4. Fig 6 gives severity tiers and the pituitary bloods. Hypophysitis is mainly seen with anti-CTLA4 and is very rare with anti-PD-1 and anti-PD-L1 (iv126). Fig 6 gives the severe and moderate management tiers.","monitored_target":"hypophysitis (pituitary dysfunction, hypoadrenalism) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"guideline-stated triggers (Fig 5, Fig 6). The each-visit symptom review is assistant-proposed to give the \"immediate evaluation\" instruction a place in the schedule","monitoring_stance":"recommended","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Hypophysitis iv126","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 5 iv125","source.3":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 6 (management of hypophysitis) iv127","source_kind":"clinical_guideline","trigger":"headache or visual disturbance (immediate evaluation); severe hypoadrenalism; falling TSH with normal or low FT4"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Hypophysitis"],"reachable":true},{"name":"Monitor_Hepatitis","kind":"action","caption":"Monitor liver function for immune-related hepatitis (ALT, AST, bilirubin)","description":null,"metaprops":{"ServiceRequest.code":"serum transaminases (ALT, AST) and total bilirubin","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"baseline and before every cycle of ICI","ServiceRequest.patientInstruction":"report jaundice, dark urine, or right-upper-abdominal pain (hepatitis is usually asymptomatic)","ServiceRequest.performerInstruction":"if ALT/AST is >ULN to 3×ULN, repeat in 1 week. If 3-5×ULN (G2), withhold ICI, recheck LFTs/INR/albumin every 3 days, review medications and alcohol, and do a liver screen. If 5-20×ULN (G3), stop ICI and start steroids. If >20×ULN (G4), permanently discontinue ICI, start i.v. methylprednisolone 2 mg/kg, and get a hepatology consult","applies_when":"all_patients_on_therapy","assistant_invention":"patient symptom wording (the guideline says hepatitis is usually asymptomatic)","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = serum transaminases (ALT, AST) and total bilirubin; ServiceRequest.occurrenceTiming = baseline and before every cycle of ICI; ServiceRequest.patientInstruction = report jaundice, dark urine, or right-upper-abdominal pain (hepatitis is usually asymptomatic); ServiceRequest.performerInstruction = if ALT/AST is >ULN to 3×ULN, repeat in 1 week. If 3-5×ULN (G2), withhold ICI, recheck LFTs/INR/albumin every 3 days, review medications and alcohol, and do a liver screen. If 5-20×ULN (G3), stop ICI and start steroids. If >20×ULN (G4), permanently discontinue ICI, start i.v. methylprednisolone 2 mg/kg, and get a hepatology consult","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"serum ALT, AST, total bilirubin (INR and albumin when abnormal)","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"\"All patients undergoing ICPi therapy should be assessed ... with serum transaminases and bilirubin measured before every cycle\". Hepatitis is usually asymptomatic and detected on routine blood monitoring","monitored_target":"immune-related hepatitis (hepatotoxicity) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"guideline-stated \"before every cycle\"","monitoring_stance":"recommended","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Hepatotoxicity Diagnosis iv126","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 7 (management of hepatitis) iv128","source_kind":"clinical_guideline","trigger":"ALT/AST >3×ULN or rising bilirubin"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Hepatitis"],"reachable":true},{"name":"Monitor_Diabetes","kind":"action","caption":"Monitor blood glucose for immune-related type 1 diabetes","description":null,"metaprops":{"ServiceRequest.code":"blood glucose (with triggered ketone/acid-base assessment)","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"baseline and before every ICI infusion with the pre-infusion bloods (assistant-proposed), plus on symptoms","ServiceRequest.patientInstruction":"report excessive thirst, frequent urination, weight loss, nausea or vomiting, abdominal pain, or drowsiness","ServiceRequest.performerInstruction":"if new hyperglycaemia, measure C-peptide and GAD and islet-cell antibodies to distinguish type 1 from type 2 DM. If ketoacidosis (G3-4), admit immediately and treat per local guidelines, corticosteroids are not recommended","applies_when":"all_patients_on_therapy","assistant_invention":"cadence (before every infusion); patient DKA symptom wording","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = blood glucose (with triggered ketone/acid-base assessment); ServiceRequest.occurrenceTiming = baseline and before every ICI infusion with the pre-infusion bloods (assistant-proposed), plus on symptoms; ServiceRequest.patientInstruction = report excessive thirst, frequent urination, weight loss, nausea or vomiting, abdominal pain, or drowsiness; ServiceRequest.performerInstruction = if new hyperglycaemia, measure C-peptide and GAD and islet-cell antibodies to distinguish type 1 from type 2 DM. If ketoacidosis (G3-4), admit immediately and treat per local guidelines, corticosteroids are not recommended","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"blood glucose; triggered C-peptide, GAD/ICA antibodies, ketones","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"\"It is recommended that blood glucose levels are regularly monitored in patients treated with ICPis\". Ketoacidosis is life-threatening. Type 1 DM G3-4 requires immediate admission [I, A]","monitored_target":"immune-related type 1 diabetes mellitus and diabetic ketoacidosis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"the guideline says \"regularly monitored\" without a cadence. Same-draw-as-pre-infusion bloods is proposed so glucose is checked whenever the drug is given (MonitoringFrequency rule 1). DKA is acute, hence the symptom trigger (rule 2)","monitoring_stance":"recommended","provenance_type":"assistant_completed_from_guidelines","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Type 1 diabetes mellitus iv126","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Table 2 (Immune-related endocrinopathies) iv139","source_kind":"clinical_guideline","trigger":"new hyperglycaemia or ketoacidosis symptoms"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Diabetes"],"reachable":true},{"name":"Monitor_Nephritis","kind":"action","caption":"Monitor renal function for immune-related nephritis (Na, K, creatinine, urea)","description":null,"metaprops":{"ServiceRequest.code":"serum sodium, potassium, creatinine and urea","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"baseline and before every ICI infusion","ServiceRequest.patientInstruction":"report reduced urine output, blood in urine, or swelling","ServiceRequest.performerInstruction":"grade creatinine against the patient's baseline. G1 (1.5×baseline or >ULN to 1.5×ULN): continue ICI and repeat creatinine weekly. G2 (>1.5-3× baseline): withhold ICI, hydrate, review in 48-72 h, and discuss with a nephrologist if not improving. G3 (>3× baseline or >3-6×ULN): withhold ICI, admit, and repeat creatinine every 24 h. Oliguria means inpatient admission. Stop nephrotoxic drugs and rule out infection or obstruction","applies_when":"all_patients_on_therapy","assistant_invention":"patient symptom wording (only oliguria is source-stated: \"Advise patient to notify if oliguric\")","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = serum sodium, potassium, creatinine and urea; ServiceRequest.occurrenceTiming = baseline and before every ICI infusion; ServiceRequest.patientInstruction = report reduced urine output, blood in urine, or swelling; ServiceRequest.performerInstruction = grade creatinine against the patient's baseline. G1 (1.5×baseline or >ULN to 1.5×ULN): continue ICI and repeat creatinine weekly. G2 (>1.5-3× baseline): withhold ICI, hydrate, review in 48-72 h, and discuss with a nephrologist if not improving. G3 (>3× baseline or >3-6×ULN): withhold ICI, admit, and repeat creatinine every 24 h. Oliguria means inpatient admission. Stop nephrotoxic drugs and rule out infection or obstruction","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"serum Na, K, creatinine, urea; triggered urinalysis/UPCR, renal ultrasound","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"\"Serum sodium, potassium, creatinine and urea should be measured before every infusion\". Fig 14 grades against baseline creatinine","monitored_target":"immune-related nephritis (renal toxicity) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"guideline-stated \"before every infusion\"","monitoring_stance":"recommended","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Renal toxicity iv133","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 14 (management of nephritis) iv138","source_kind":"clinical_guideline","trigger":"creatinine >1.5× baseline; oliguria"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Nephritis"],"reachable":true},{"name":"Monitor_Skin","kind":"action","caption":"Monitor for immune-related skin toxicity","description":null,"metaprops":{"ServiceRequest.code":"skin and mucosa symptom screen with triggered physical examination and CTCAE grading","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"each visit (symptom review), with full skin exam on any skin symptom","ServiceRequest.patientInstruction":"report any new rash, itching, blistering, skin peeling, mouth or genital sores, or rash with fever","ServiceRequest.performerInstruction":"exclude other causes. Examine all skin including mucosa, grade by BSA (CTCAE), and check FBC, liver and kidney tests if needed. G2: continue and recheck weekly. G3: withhold ICI and refer to dermatology. G4, SJS/TEN/DRESS: permanently discontinue ICI, hospitalise and get urgent dermatology care","applies_when":"all_patients_on_therapy","assistant_invention":"each-visit symptom review cadence; patient symptom wording","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = skin and mucosa symptom screen with triggered physical examination and CTCAE grading; ServiceRequest.occurrenceTiming = each visit (symptom review), with full skin exam on any skin symptom; ServiceRequest.patientInstruction = report any new rash, itching, blistering, skin peeling, mouth or genital sores, or rash with fever; ServiceRequest.performerInstruction = exclude other causes. Examine all skin including mucosa, grade by BSA (CTCAE), and check FBC, liver and kidney tests if needed. G2: continue and recheck weekly. G3: withhold ICI and refer to dermatology. G4, SJS/TEN/DRESS: permanently discontinue ICI, hospitalise and get urgent dermatology care","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"patient symptom report; physical examination with BSA/CTCAE grading","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"when a patient presents with a skin AE, rule out other causes, then do \"a careful and thorough physical examination of the skin including the mucosal areas\". Life-threatening reactions mean permanent discontinuation and hospitalisation","monitored_target":"immune-related skin toxicity including SJS/TEN/DRESS as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"skin AEs develop \"within the first few weeks\". The guideline specifies assessment on presentation only. The each-visit symptom review is assistant-proposed. The guideline makes no recommendation for routine full-body skin examination","monitoring_stance":"symptom_triggered_only","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Immune-related skin toxicity iv122-iv123","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 3 (management of skin rash) iv123","source_kind":"clinical_guideline","trigger":"skin sloughing or epidermal detachment, mucosal involvement, rash with fever (possible SJS/TEN/DRESS)"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Skin"],"reachable":true},{"name":"Monitor_Colitis","kind":"action","caption":"Monitor for immune-related diarrhoea and colitis","description":null,"metaprops":{"ServiceRequest.code":"diarrhoea and colitis symptom screen with triggered blood and stool work-up","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"each visit (symptom review) and on any diarrhoea, continuing after the last dose (enterocolitis may occur months after ipilimumab)","ServiceRequest.patientInstruction":"report any increase in stool frequency over baseline, blood or mucus in stool, abdominal pain, nocturnal stools, fever, or signs of dehydration","ServiceRequest.performerInstruction":"on diarrhoea, test FBC, UEC, LFTs, CRP and TFTs, plus stool microscopy and culture, viral PCR and C. difficile toxin (mandatory for significant diarrhoea on anti-CTLA4). G2 (4-6 stools/day over baseline): withhold ICI, contact the patient every 72 h, and book sigmoidoscopy/colonoscopy. Severe (≥7 stools/day, or G1-2 with dehydration, fever, tachycardia or haematochezia): hospitalise, give i.v. methylprednisolone 1-2 mg/kg, and do endoscopy","applies_when":"all_patients_on_therapy","assistant_invention":"each-visit review cadence; patient symptom wording","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = diarrhoea and colitis symptom screen with triggered blood and stool work-up; ServiceRequest.occurrenceTiming = each visit (symptom review) and on any diarrhoea, continuing after the last dose (enterocolitis may occur months after ipilimumab); ServiceRequest.patientInstruction = report any increase in stool frequency over baseline, blood or mucus in stool, abdominal pain, nocturnal stools, fever, or signs of dehydration; ServiceRequest.performerInstruction = on diarrhoea, test FBC, UEC, LFTs, CRP and TFTs, plus stool microscopy and culture, viral PCR and C. difficile toxin (mandatory for significant diarrhoea on anti-CTLA4). G2 (4-6 stools/day over baseline): withhold ICI, contact the patient every 72 h, and book sigmoidoscopy/colonoscopy. Severe (≥7 stools/day, or G1-2 with dehydration, fever, tachycardia or haematochezia): hospitalise, give i.v. methylprednisolone 1-2 mg/kg, and do endoscopy","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"patient symptom report (stool count vs baseline); triggered FBC, UEC, LFT, CRP, TFT, stool tests, endoscopy","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"severe diarrhoea definition (iv129). Diarrhoea on anti-CTLA4 needs work-up with CBC, electrolytes and stool analyses. No routine predictive biomarker; prophylactic budesonide is ineffective","monitored_target":"immune-related diarrhoea and colitis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"symptom-triggered. The guideline gives a triggered work-up and states \"No routine biomarker\" predicts colitis. Each-visit review is assistant-proposed","monitoring_stance":"symptom_triggered_only","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Gastrointestinal toxicity iv128-iv130","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 8 (management of diarrhoea and colitis) iv129","source_kind":"clinical_guideline","trigger":"severe diarrhoea as defined, or G2 persisting >3 days; peritonism/perforation"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Colitis"],"reachable":true},{"name":"Monitor_Pneumonitis","kind":"action","caption":"Monitor for immune-related pneumonitis","description":null,"metaprops":{"ServiceRequest.code":"respiratory symptom screen with triggered chest CT","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"each visit (symptom review) and on any new respiratory symptom, throughout therapy (pneumonitis tends to occur months after initiation)","ServiceRequest.patientInstruction":"report new or worsening cough, shortness of breath, chest pain, or fever","ServiceRequest.performerInstruction":"on any new respiratory symptom, do a dedicated evaluation with CT. Order chest X-ray and bloods (FBC/UEC/LFTs/TFTs/Ca/ESR/CRP), and consider sputum and infection screen. G2: withhold ICI and monitor symptoms daily. G3-4 (severe symptoms, new or worsening hypoxia): discontinue ICI, admit, give i.v. methylprednisolone 2-4 mg/kg/day, and arrange respiratory review and HRCT ± bronchoscopy/BAL","applies_when":"all_patients_on_therapy","assistant_invention":"each-visit review cadence","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = respiratory symptom screen with triggered chest CT; ServiceRequest.occurrenceTiming = each visit (symptom review) and on any new respiratory symptom, throughout therapy (pneumonitis tends to occur months after initiation); ServiceRequest.patientInstruction = report new or worsening cough, shortness of breath, chest pain, or fever; ServiceRequest.performerInstruction = on any new respiratory symptom, do a dedicated evaluation with CT. Order chest X-ray and bloods (FBC/UEC/LFTs/TFTs/Ca/ESR/CRP), and consider sputum and infection screen. G2: withhold ICI and monitor symptoms daily. G3-4 (severe symptoms, new or worsening hypoxia): discontinue ICI, admit, give i.v. methylprednisolone 2-4 mg/kg/day, and arrange respiratory review and HRCT ± bronchoscopy/BAL","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"patient symptom report; triggered chest CT, chest X-ray, oxygen saturation, bloods","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"\"any new respiratory symptom should prompt a dedicated evaluation\". Patients with new cough, shortness of breath or hypoxia \"should be assessed by CT\"","monitored_target":"immune-related pneumonitis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"guideline says \"Any respiratory symptom or sign must be carefully monitored\" and every new symptom gets CT. Each-visit review is assistant-proposed","monitoring_stance":"symptom_triggered_only","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Immune-related pneumonitis iv131-iv133","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 9 (management of pneumonitis) iv132","source_kind":"clinical_guideline","trigger":"new/worsening hypoxia, severe dyspnoea, difficulty breathing"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Pneumonitis"],"reachable":true},{"name":"Monitor_Neurological","kind":"action","caption":"Monitor for immune-related neurological toxicity","description":null,"metaprops":{"ServiceRequest.code":"neurological symptom screen with triggered neurological examination and work-up","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"each visit (symptom review) and on any new neurological symptom","ServiceRequest.patientInstruction":"report new weakness, numbness or tingling, double vision or drooping eyelids, facial weakness, difficulty swallowing or breathing, confusion, severe headache, or neck stiffness","ServiceRequest.performerInstruction":"exclude progression, seizures, infection and metabolic causes. For any symptom beyond mild (or any cranial nerve problem), withhold ICI. Get an early neurology consult and MRI, NCS/EMG, lumbar puncture as indicated. If severe (limits self-care, respiratory involvement), admit, give i.v. methylprednisolone 2 mg/kg, and arrange daily neurological review ± vital capacity","applies_when":"all_patients_on_therapy","assistant_invention":"each-visit review cadence; patient symptom wording drawn from the syndromes in Fig 10-12","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = neurological symptom screen with triggered neurological examination and work-up; ServiceRequest.occurrenceTiming = each visit (symptom review) and on any new neurological symptom; ServiceRequest.patientInstruction = report new weakness, numbness or tingling, double vision or drooping eyelids, facial weakness, difficulty swallowing or breathing, confusion, severe headache, or neck stiffness; ServiceRequest.performerInstruction = exclude progression, seizures, infection and metabolic causes. For any symptom beyond mild (or any cranial nerve problem), withhold ICI. Get an early neurology consult and MRI, NCS/EMG, lumbar puncture as indicated. If severe (limits self-care, respiratory involvement), admit, give i.v. methylprednisolone 2 mg/kg, and arrange daily neurological review ± vital capacity","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"patient symptom report; triggered neurological exam, MRI, NCS/EMG, lumbar puncture, vital capacity","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"rule out other causes. \"Early consultation with a neurologist is advised\". Withhold ICI for all but grade 1 until the AE is defined [V, B]","monitored_target":"immune-related neurological toxicity as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"onset 6-13 weeks (iv133). The guideline specifies triggered work-up only. Each-visit review is assistant-proposed","monitoring_stance":"symptom_triggered_only","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Neurological toxicity iv133","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figures 10-12 iv134-iv136","source_kind":"clinical_guideline","trigger":"respiratory or bulbar weakness, rapidly progressive weakness, altered consciousness"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Neurological"],"reachable":true},{"name":"Monitor_Myocarditis","kind":"action","caption":"Monitor for immune-related myocarditis and cardiac toxicity","description":null,"metaprops":{"ServiceRequest.code":"cardiac symptom screen with triggered cardiology assessment","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"each visit (symptom review) and on any new cardiac symptom","ServiceRequest.patientInstruction":"report chest pain, breathlessness, palpitations, fainting, or leg swelling","ServiceRequest.performerInstruction":"if a checkpoint-inhibitor cardiac AE (myocarditis) is suspected, admit, start high-dose methylprednisolone 1-2 mg/kg immediately, and consult cardiology early. Escalate to MMF or tacrolimus if deteriorating","applies_when":"all_patients_on_therapy","assistant_invention":"symptom list and each-visit screen (the guideline gives no symptoms, tests or surveillance for cardiac AEs)","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = cardiac symptom screen with triggered cardiology assessment; ServiceRequest.occurrenceTiming = each visit (symptom review) and on any new cardiac symptom; ServiceRequest.patientInstruction = report chest pain, breathlessness, palpitations, fainting, or leg swelling; ServiceRequest.performerInstruction = if a checkpoint-inhibitor cardiac AE (myocarditis) is suspected, admit, start high-dose methylprednisolone 1-2 mg/kg immediately, and consult cardiology early. Escalate to MMF or tacrolimus if deteriorating","goal.verb":"order","guideline_status":"not_specified_as_a_guideline_monitoring_task","instrument":"patient symptom report; clinician cardiology assessment (the guideline names no test)","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"myocarditis, pericarditis, arrhythmias, cardiomyopathy and impaired ventricular function are reported. \"Early consultation with a cardiologist is recommended\". Give steroids rapidly if suspected","monitored_target":"immune-related cardiac toxicity (myocarditis) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"cardiac AEs are rare (\u003c1%) but serious, so event-driven. Each-visit review is assistant-proposed","monitoring_stance":"symptom_triggered_only","provenance_type":"assistant_completed_from_guidelines","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Cardiac toxicity iv133","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Table 2 (Cardiac toxicity) iv139","source_kind":"clinical_guideline","trigger":"suspected myocarditis"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Myocarditis"],"reachable":true},{"name":"Monitor_Arthralgia","kind":"action","caption":"Monitor for immune-related arthralgia and myalgia","description":null,"metaprops":{"ServiceRequest.code":"joint and muscle symptom screen with triggered rheumatological assessment","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"each visit (symptom review) and on joint or muscle symptoms","ServiceRequest.patientInstruction":"report joint pain, swelling or stiffness, or muscle pain or weakness","ServiceRequest.performerInstruction":"take a rheumatological history, examine all joints and skin, and order an autoimmune blood panel. G2: consider withholding ICI and refer to rheumatology early. G3 (severe, limits self-care): withhold ICI, start prednisolone 0.5-1 mg/kg, and get rheumatology advice","applies_when":"all_patients_on_therapy","assistant_invention":"each-visit review cadence; patient symptom wording","category":"undesired_ade","cq":"CQ3, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = joint and muscle symptom screen with triggered rheumatological assessment; ServiceRequest.occurrenceTiming = each visit (symptom review) and on joint or muscle symptoms; ServiceRequest.patientInstruction = report joint pain, swelling or stiffness, or muscle pain or weakness; ServiceRequest.performerInstruction = take a rheumatological history, examine all joints and skin, and order an autoimmune blood panel. G2: consider withholding ICI and refer to rheumatology early. G3 (severe, limits self-care): withhold ICI, start prednisolone 0.5-1 mg/kg, and get rheumatology advice","goal.verb":"order","guideline_status":"specified_as_a_guideline_monitoring_task","instrument":"patient symptom report; joint examination; autoimmune blood panel; US/MRI of affected joints","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"myalgias and arthralgias in 2%-12%. Severe symptoms \"should prompt consultation with a rheumatologist\" [V, B]. Fig 13 gives grade-based assessment","monitored_target":"immune-related arthralgia, arthritis and myalgia as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"symptom-triggered per Fig 13. Each-visit review is assistant-proposed","monitoring_stance":"symptom_triggered_only","provenance_type":"guideline_specified","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Rheumatological toxicity iv133","source.2":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 13 (management of arthralgia) iv137","source_kind":"clinical_guideline","trigger":"severe polyarthritis or symptoms limiting self-care"},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Arthralgia"],"reachable":true},{"name":"Monitor_Autoimmune_Flare","kind":"action","caption":"Monitor pre-existing autoimmune disease for flare during ICI therapy","description":null,"metaprops":{"ServiceRequest.code":"pre-existing autoimmune disease activity review","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"baseline and each visit during ICI therapy","ServiceRequest.patientInstruction":"report any flare or worsening of your known autoimmune condition","ServiceRequest.performerInstruction":"if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm","applies_when":"patients with a history of autoimmune disease, or who are being actively treated for an autoimmune disease (iv121)","assistant_invention":"the entire monitoring action (cadence, instrument, performer step); only the sub-population and risk are sourced","category":"undesired_ade","cq":"CQ3, CQ4, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = pre-existing autoimmune disease activity review; ServiceRequest.occurrenceTiming = baseline and each visit during ICI therapy; ServiceRequest.patientInstruction = report any flare or worsening of your known autoimmune condition; ServiceRequest.performerInstruction = if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm","goal.verb":"order","guideline_status":"not_specified_as_a_guideline_monitoring_task","instrument":"patient symptom report; clinician review of disease activity","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"such patients \"are at risk for worsening of their autoimmune disease while on immune checkpoint blockade\". The guideline gives no monitoring instruction","monitored_target":"worsening of pre-existing autoimmune disease as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"tied to the infusion-visit cadence (MonitoringFrequency rule 1). The guideline gives no cadence","monitoring_stance":"proposed_by_assistant","provenance_type":"assistant_completed_from_guidelines","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Patient selection and baseline assessments iv121","source_kind":"clinical_guideline","trigger":"worsening of the pre-existing autoimmune disease"},"precondition":"pre_existing_autoimmune_disease = true","wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Autoimmune_Flare"],"reachable":true},{"name":"Monitor_Allograft_Rejection","kind":"action","caption":"Monitor allograft function for rejection during anti-PD-1 therapy","description":null,"metaprops":{"ServiceRequest.code":"allograft function review (graft-specific function tests per transplant team)","ServiceRequest.intent":"order","ServiceRequest.occurrenceTiming":"baseline and each visit during anti-PD-1 therapy","ServiceRequest.patientInstruction":"report symptoms of graft dysfunction as instructed by your transplant team","ServiceRequest.performerInstruction":"if graft dysfunction is suspected, contact the transplant team urgently","applies_when":"patients with allografted organs receiving anti-PD-1 therapy (iv134). The guideline says single-agent ipilimumab \"may be administered without necessarily causing rejection\"","assistant_invention":"the entire monitoring action; only the sub-population and risk are sourced (the guideline's own evidence here is case reports it cites)","category":"undesired_ade","cq":"CQ3, CQ4, CQ5, CQ7","goal.noun_phrase":"ServiceRequest.intent = order; ServiceRequest.code = allograft function review (graft-specific function tests per transplant team); ServiceRequest.occurrenceTiming = baseline and each visit during anti-PD-1 therapy; ServiceRequest.patientInstruction = report symptoms of graft dysfunction as instructed by your transplant team; ServiceRequest.performerInstruction = if graft dysfunction is suspected, contact the transplant team urgently","goal.verb":"order","guideline_status":"not_specified_as_a_guideline_monitoring_task","instrument":"clinician review with graft-specific function tests (assistant-proposed)","knowledge_origin":"ESMO 2017 guideline + assistant operationalization","literature_basis":"several case reports document acute allograft rejection after anti-PD-1. \"This very significant risk must be considered in discussing systemic therapy options\"","monitored_target":"acute solid-organ allograft rejection as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)","monitoring_frequency_basis":"tied to the infusion-visit cadence. The guideline gives no cadence","monitoring_stance":"proposed_by_assistant","provenance_type":"assistant_completed_from_guidelines","source.1":"ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Allograft rejection iv134","source_kind":"clinical_guideline","trigger":"suspected acute graft rejection"},"precondition":"organ_allograft = true and (ici_regimen = anti_PD1 or ici_regimen = anti_CTLA4_plus_anti_PD1)","wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitor_Undesired_State"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State/Monitor_Allograft_Rejection"],"reachable":true},{"name":"Monitor_Undesired_State","kind":"plan","caption":"Monitor immune-related adverse events","description":null,"metaprops":{},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[{"name":"Monitor_Thyroid","task":"Monitor_Thyroid","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,40,0,0]},{"name":"Monitor_Hypophysitis","task":"Monitor_Hypophysitis","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,140,0,0]},{"name":"Monitor_Hepatitis","task":"Monitor_Hepatitis","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,240,0,0]},{"name":"Monitor_Diabetes","task":"Monitor_Diabetes","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,340,0,0]},{"name":"Monitor_Nephritis","task":"Monitor_Nephritis","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,440,0,0]},{"name":"Monitor_Skin","task":"Monitor_Skin","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,540,0,0]},{"name":"Monitor_Colitis","task":"Monitor_Colitis","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,640,0,0]},{"name":"Monitor_Pneumonitis","task":"Monitor_Pneumonitis","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,740,0,0]},{"name":"Monitor_Neurological","task":"Monitor_Neurological","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,840,0,0]},{"name":"Monitor_Myocarditis","task":"Monitor_Myocarditis","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,940,0,0]},{"name":"Monitor_Arthralgia","task":"Monitor_Arthralgia","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,1040,0,0]},{"name":"Monitor_Autoimmune_Flare","task":"Monitor_Autoimmune_Flare","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,1140,0,0]},{"name":"Monitor_Allograft_Rejection","task":"Monitor_Allograft_Rejection","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,1240,0,0]}],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["Monitoring_Plan"],"paths":["ici_irae_monitoring/Monitoring_Plan/Monitor_Undesired_State"],"reachable":true},{"name":"Monitoring_Plan","kind":"plan","caption":"Monitor pre-infusion surveillance completion and immune-related adverse events in parallel","description":null,"metaprops":{},"precondition":null,"wait_condition":null,"postcondition":null,"goal":null,"trigger":null,"context":null,"procedure":null,"abort":null,"terminate":null,"components":[{"name":"Monitor_Actions","task":"Monitor_Actions","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,40,0,0]},{"name":"Monitor_Undesired_State","task":"Monitor_Undesired_State","caption":null,"description":null,"metaprops":{},"after":[],"optional":false,"autonomous":false,"terminal":false,"number_of_cycles":null,"cycle_until":null,"cycle_repeat":null,"param_values":[],"ltwh":[40,140,0,0]}],"choice_mode":null,"support_mode":null,"candidates":[],"sources":[],"used_by":["ici_irae_monitoring"],"paths":["ici_irae_monitoring/Monitoring_Plan"],"reachable":true}],"data":[{"name":"pre_existing_autoimmune_disease","type":"boolean","caption":"Pre-existing autoimmune disease?","description":"History of autoimmune disease, or active treatment for an autoimmune disease; risk factor for worsening on ICI (ESMO 2017 iv121). Read by the Decision arguments and the precondition of Monitor_Autoimmune_Flare","metaprops":{},"unit":null,"range":[],"default_value":null,"derivation":null,"dynamic":false,"mandatory_validation":null,"warnings":[],"asked_by":["Get_Baseline_Data"]},{"name":"prior_irAE_on_ICI","type":"boolean","caption":"Prior irAE on a previous ICI course?","description":"Immune-related adverse event on a previous ICI course, either class (ESMO 2017 iv121). Read by the Decision arguments","metaprops":{},"unit":null,"range":[],"default_value":null,"derivation":null,"dynamic":false,"mandatory_validation":null,"warnings":[],"asked_by":["Get_Baseline_Data"]},{"name":"organ_allograft","type":"boolean","caption":"Solid-organ allograft recipient?","description":"Solid-organ allograft recipient; risk of acute rejection on anti-PD-1 (ESMO 2017 iv134). Read by the Decision arguments and the precondition of Monitor_Allograft_Rejection","metaprops":{},"unit":null,"range":[],"default_value":null,"derivation":null,"dynamic":false,"mandatory_validation":null,"warnings":[],"asked_by":["Get_Baseline_Data"]},{"name":"ici_regimen","type":"text","caption":"Planned ICI regimen","description":"Class of the planned ICI regimen (ESMO 2017 Table 1): anti_CTLA4, anti_PD1, anti_PDL1 or anti_CTLA4_plus_anti_PD1. Read by the precondition of Monitor_Allograft_Rejection; also selects the Fig 5 TFT schedule (not executable)","metaprops":{},"unit":null,"range":["\"anti_CTLA4\"","\"anti_PD1\"","\"anti_PDL1\"","\"anti_CTLA4_plus_anti_PD1\""],"default_value":null,"derivation":null,"dynamic":false,"mandatory_validation":null,"warnings":[],"asked_by":["Get_Baseline_Data"]}],"functions":[]},"lint":[{"severity":"info","code":"PF-X060","message":"'anti_CTLA4_plus_anti_PD1' is not a data item or function; the engine treats it as the text literal \"anti_CTLA4_plus_anti_PD1\"","component":"Monitor_Allograft_Rejection","line":511,"col":21},{"severity":"info","code":"PF-X060","message":"'anti_PD1' is not a data item or function; the engine treats it as the text literal \"anti_PD1\"","component":"Monitor_Allograft_Rejection","line":511,"col":21}],"source":"/** PROforma version 1.9 (plain text) **/\n\n/** IMPORTANT: Keep all your comments below the engine_version line **/\nengine_version :: '1.9' ;\n\nmetadata  :: 'ici_irae_monitoring' ;\n     title :: 'ICI immune-related adverse event monitoring (ESMO 2017)' ;\n     desc :: 'PROforma CIG for monitoring immune checkpoint inhibitor therapy in adults with cancer: baseline risk assessment, a pre-treatment decision, the ICI therapy plan, and surveillance for immune-related adverse events and for completion of the pre-infusion blood tests, from the ESMO 2017 toxicity guideline.' ;\n     version :: '1.0' ;\n     author :: 'agentic-cig-monitoring kit' ;\nend metadata.\n\nmetaprops :: 'goal.noun_phrase=adult cancer treated with immune checkpoint inhibitors, with monitoring for immune-related adverse events\ngoal.verb=treat\n' ;\n\nplan  :: 'ici_irae_monitoring' ;\n     caption :: 'ICI immune-related adverse event monitoring (ESMO 2017)' ;\n     metaprops :: 'goal.noun_phrase=adult cancer treated with immune checkpoint inhibitors, with monitoring for immune-related adverse events\ngoal.verb=treat\n' ;\n     component :: 'Get_Baseline_Data' ;\n          task_definition :: 'Get_Baseline_Data' ;\n          ltwh :: 40,40,0,0;\n     component :: 'Pretreatment_Decision' ;\n          task_definition :: 'Pretreatment_Decision' ;\n          schedule_constraint :: completed('Get_Baseline_Data') ;\n          ltwh :: 40,140,0,0;\n     component :: 'ICI_Therapy' ;\n          task_definition :: 'ICI_Therapy' ;\n          schedule_constraint :: completed('Pretreatment_Decision') ;\n          ltwh :: 40,240,0,0;\n     component :: 'Monitoring_Plan' ;\n          task_definition :: 'Monitoring_Plan' ;\n          schedule_constraint :: completed('ICI_Therapy') ;\n          ltwh :: 40,340,0,0;\nend plan.\n\nenquiry  :: 'Get_Baseline_Data' ;\n     caption :: 'Assess susceptibility to immune-related adverse events and collect baseline data before ICI therapy' ;\n     description :: 'Baseline assessment before ICI therapy (ESMO 2017 iv121). Asked as data items: pre-existing autoimmune disease, prior irAE on a previous ICI course, solid-organ allograft, and the planned ICI regimen. Also collected for the clinician (no condition reads them): baseline TSH and FT4 (T3 when indicated) (Fig 5); ALT, AST and bilirubin (iv126); sodium, potassium, creatinine and urea, with baseline creatinine as the reference for nephritis grading (iv133, Fig 14); blood glucose (iv126); patient and family history and general physical condition (iv121); baseline CT chest/abdomen/pelvis with or without brain MRI (iv121). Supplementary Table S1 (detailed baseline list) was not available.' ;\n     source :: 'ici_regimen' ;\n          data_definition :: 'ici_regimen' ;\n     source :: 'organ_allograft' ;\n          data_definition :: 'organ_allograft' ;\n     source :: 'pre_existing_autoimmune_disease' ;\n          data_definition :: 'pre_existing_autoimmune_disease' ;\n     source :: 'prior_irAE_on_ICI' ;\n          data_definition :: 'prior_irAE_on_ICI' ;\nend enquiry.\n\ndecision  :: 'Pretreatment_Decision' ;\n     caption :: 'Decide whether ICI can start with standard monitoring or needs specialist review first' ;\n     description :: 'Assistant-proposed rule: the guideline names the irAE risk groups (pre-existing autoimmune disease, prior irAE on ICI, solid-organ allograft) but gives no executable criterion. Abnormal baseline TFTs are deliberately not an argument: Baseline abnormal values do not preclude treatment (Fig 5).' ;\n     candidate :: 'Start_ICI' ;\n          caption :: 'Start ICI' ;\n          description :: 'start the ICI therapy plan with standard irAE monitoring' ;\n          argument :: for,pre_existing_autoimmune_disease = false and prior_irAE_on_ICI = false and organ_allograft = false attributes\n               argument_name :: 'Arg_Start_ICI' ;\n          end attributes\n          ;\n          recommendation ::netsupport() > 0;\n     candidate :: 'Specialist_Review_Before_ICI' ;\n          caption :: 'Specialist review before ICI' ;\n          description :: 'a risk factor for irAEs is present; discuss risk and benefit with the relevant specialist before starting' ;\n          argument :: for,pre_existing_autoimmune_disease = true or prior_irAE_on_ICI = true or organ_allograft = true attributes\n               argument_name :: 'Arg_Specialist_Review_Before_ICI' ;\n          end attributes\n          ;\n          recommendation ::netsupport() > 0;\nend decision.\n\naction  :: 'Inform_Patient_irAE_Risk' ;\n     caption :: 'Inform the patient of potential irAEs and ask them to report symptoms directly to the treating team' ;\n     metaprops :: 'goal.noun_phrase=delayed detection and aggravation of immune-related adverse events (patient informed of potential irAEs and told to report symptoms directly to the treating team)\ngoal.verb=avoid\n' ;\nend action.\n\naction  :: 'Obtain_Specialist_Review' ;\n     caption :: 'Discuss irAE risk and benefit with the relevant specialist before starting ICI' ;\n     metaprops :: 'goal.noun_phrase=unassessed risk of autoimmune-disease worsening, recurrent irAEs or allograft rejection on ICI\ngoal.verb=avoid\n' ;\n     precondition ::result_of(Pretreatment_Decision) = Specialist_Review_Before_ICI;\nend action.\n\naction  :: 'Administer_ICI' ;\n     caption :: 'Administer immune checkpoint inhibitor therapy (anti-CTLA4, anti-PD-1/PD-L1 or combination)' ;\n     metaprops :: 'goal.noun_phrase=ICI therapy (anti-CTLA4, anti-PD-1/PD-L1 or combination) delivered for an approved indication (ESMO Table 1)\ngoal.verb=achieve\n' ;\nend action.\n\nplan  :: 'ICI_Therapy' ;\n     caption :: 'Inform the patient, obtain specialist review when indicated, and administer ICI therapy' ;\n     precondition ::result_of(Pretreatment_Decision) = Start_ICI or result_of(Pretreatment_Decision) = Specialist_Review_Before_ICI;\n     component :: 'Inform_Patient_irAE_Risk' ;\n          task_definition :: 'Inform_Patient_irAE_Risk' ;\n          ltwh :: 40,40,0,0;\n     component :: 'Obtain_Specialist_Review' ;\n          task_definition :: 'Obtain_Specialist_Review' ;\n          schedule_constraint :: completed('Inform_Patient_irAE_Risk') ;\n          ltwh :: 40,140,0,0;\n     component :: 'Administer_ICI' ;\n          task_definition :: 'Administer_ICI' ;\n          schedule_constraint :: completed('Inform_Patient_irAE_Risk') ;\n          schedule_constraint :: completed('Obtain_Specialist_Review') ;\n          ltwh :: 40,240,0,0;\nend plan.\n\naction  :: 'Monitor_PreInfusion_Surveillance' ;\n     caption :: 'Monitor completion of the pre-infusion blood panel before each ICI infusion' ;\n     metaprops :: 'ServiceRequest.code=completion check of the pre-infusion blood tests due at each infusion\\\\: ALT, AST and bilirubin, sodium, potassium, creatinine and urea, and blood glucose at every infusion, plus TSH and FT4 when due per the regimen-specific TFT schedule of Monitor_Thyroid\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=before every ICI infusion (each cycle), for the duration of ICI therapy\nServiceRequest.patientInstruction=attend for blood tests before each scheduled infusion\nServiceRequest.performerInstruction=if any test due at this infusion is missing, obtain it and review the results before administering the ICI\napplies_when=all_patients_on_therapy\nassistant_invention=framing the tests due at each infusion as one completion audit, adding glucose to the same draw, and the obtain-before-administering rule\ncategory=action_completion\ncq=CQ6, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= completion check of the pre-infusion blood tests due at each infusion\\\\: ALT, AST and bilirubin, sodium, potassium, creatinine and urea, and blood glucose at every infusion, plus TSH and FT4 when due per the regimen-specific TFT schedule of Monitor_Thyroid; ServiceRequest.occurrenceTiming \\\\= before every ICI infusion (each cycle), for the duration of ICI therapy; ServiceRequest.patientInstruction \\\\= attend for blood tests before each scheduled infusion; ServiceRequest.performerInstruction \\\\= if any test due at this infusion is missing, obtain it and review the results before administering the ICI\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=order/result audit of the named lab tests\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=TFTs \"before every infusion or at least once a month (in the case of 2-weekly infusions)\", with the regimen schedule in Fig 5; transaminases and bilirubin \"before every cycle\"; sodium, potassium, creatinine and urea \"before every infusion\"\nmonitored_target=completion of the planned pre-infusion surveillance bloods before each infusion of Administer_ICI\nmonitoring_frequency_basis=the guideline sets transaminases and bilirubin \"before every cycle\" and sodium, potassium, creatinine and urea \"before every infusion\". TFTs follow the Fig 5 regimen schedule\\\\: every cycle for anti-CTLA4-containing regimens; for anti-PD-1/PD-L1, every cycle for 3 months, then every second cycle. Glucose is aligned to the same draw (assistant-proposed)\nmonitoring_stance=recommended\nprovenance_type=assistant_completed_from_guidelines\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Thyroid gland disorders iv124\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Hepatotoxicity Diagnosis iv126\nsource.3=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Renal toxicity iv133\nsource.4=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 5 (ICPi monitoring and management\\\\: thyroid function) iv125\nsource_kind=clinical_guideline\ntrigger=a test due at this infusion is missing at the time of a scheduled infusion\n' ;\nend action.\n\nplan  :: 'Monitor_Actions' ;\n     caption :: 'Monitor completion of the planned pre-infusion surveillance' ;\n     component :: 'Monitor_PreInfusion_Surveillance' ;\n          task_definition :: 'Monitor_PreInfusion_Surveillance' ;\n          ltwh :: 40,40,0,0;\nend plan.\n\naction  :: 'Monitor_Thyroid' ;\n     caption :: 'Monitor thyroid function (TSH, FT4)' ;\n     metaprops :: 'ServiceRequest.code=thyroid function tests (TSH, FT4, T3 when indicated)\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=baseline, then for anti-CTLA4-containing regimens every cycle plus 4-6 weeks after cycle 4. For anti-PD-1/PD-L1, every cycle for the first 3 months, then every second cycle on a 2-weekly schedule (at least monthly)\nServiceRequest.patientInstruction=report fatigue, weight change, palpitations, heat or cold intolerance, or feeling unwell\nServiceRequest.performerInstruction=interpret TSH/FT4 per the ESMO thyroid algorithm. If symptomatic hyperthyroidism and unwell, withhold ICI and start a beta-blocker. If hypothyroid with symptoms, start thyroxine and continue ICI. If TSH falls across two measurements with normal or low FT4, or TSH is low with low FT4, check 9 am cortisol. Note that CT iodine may affect TFTs\napplies_when=all_patients_on_therapy\nassistant_invention=patient symptom wording (generic thyroid symptoms)\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= thyroid function tests (TSH, FT4, T3 when indicated); ServiceRequest.occurrenceTiming \\\\= baseline, then for anti-CTLA4-containing regimens every cycle plus 4-6 weeks after cycle 4. For anti-PD-1/PD-L1, every cycle for the first 3 months, then every second cycle on a 2-weekly schedule (at least monthly); ServiceRequest.patientInstruction \\\\= report fatigue, weight change, palpitations, heat or cold intolerance, or feeling unwell; ServiceRequest.performerInstruction \\\\= interpret TSH/FT4 per the ESMO thyroid algorithm. If symptomatic hyperthyroidism and unwell, withhold ICI and start a beta-blocker. If hypothyroid with symptoms, start thyroxine and continue ICI. If TSH falls across two measurements with normal or low FT4, or TSH is low with low FT4, check 9 am cortisol. Note that CT iodine may affect TFTs\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=serum TSH and FT4 (T3 when indicated)\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=thyroid dysfunction is mostly detected by routine TSH/FT4, which \"should be carried out before every infusion or at least once a month\". Fig 5 gives the regimen-specific schedule and the management algorithm\nmonitored_target=thyroid dysfunction (hypothyroidism or hyperthyroidism) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=guideline-stated (iv124 text; Fig 5). \"Late endocrine dysfunction can occur\"\nmonitoring_stance=recommended\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Thyroid gland disorders iv124\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 5 (ICPi monitoring and management\\\\: thyroid function) iv125\nsource_kind=clinical_guideline\ntrigger=symptomatic hyperthyroidism with patient unwell; falling or low TSH with low FT4 (possible hypopituitarism)\n' ;\nend action.\n\naction  :: 'Monitor_Hypophysitis' ;\n     caption :: 'Monitor for hypophysitis (pituitary symptoms, triggered 9 am cortisol)' ;\n     metaprops :: 'ServiceRequest.code=pituitary symptom screen with triggered 9 am cortisol (and pituitary axis bloods)\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=each visit (symptom review), 9 am cortisol when indicated by symptoms or by a falling TSH, weekly while TSH is falling across two measurements with normal or low FT4\nServiceRequest.patientInstruction=report headache, visual disturbance, marked fatigue, mood change, dizziness or feeling faint, and seek urgent review if unwell\nServiceRequest.performerInstruction=if severe mass-effect symptoms (severe headache, any visual disturbance) or severe hypoadrenalism (hypotension, severe electrolyte disturbance), send pituitary axis bloods (9 am cortisol, ACTH, TSH and FT4, LH, FSH, sex hormones, IGF-1, prolactin), start i.v. methylprednisolone 1 mg/kg, withhold ICI, arrange pituitary MRI and consult endocrinology. If moderate symptoms (headache without visual disturbance, or fatigue or mood change while haemodynamically stable with no electrolyte disturbance), start oral prednisolone 0.5-1 mg/kg once daily after sending the pituitary axis bloods, withhold ICI, arrange pituitary MRI and visual field assessment, and treat as severe if there is no improvement in 48 h\napplies_when=all_patients_on_therapy\nassistant_invention=each-visit symptom review cadence; patient symptom wording beyond headache and visual disturbance (from Fig 6 tiers)\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= pituitary symptom screen with triggered 9 am cortisol (and pituitary axis bloods); ServiceRequest.occurrenceTiming \\\\= each visit (symptom review), 9 am cortisol when indicated by symptoms or by a falling TSH, weekly while TSH is falling across two measurements with normal or low FT4; ServiceRequest.patientInstruction \\\\= report headache, visual disturbance, marked fatigue, mood change, dizziness or feeling faint, and seek urgent review if unwell; ServiceRequest.performerInstruction \\\\= if severe mass-effect symptoms (severe headache, any visual disturbance) or severe hypoadrenalism (hypotension, severe electrolyte disturbance), send pituitary axis bloods (9 am cortisol, ACTH, TSH and FT4, LH, FSH, sex hormones, IGF-1, prolactin), start i.v. methylprednisolone 1 mg/kg, withhold ICI, arrange pituitary MRI and consult endocrinology. If moderate symptoms (headache without visual disturbance, or fatigue or mood change while haemodynamically stable with no electrolyte disturbance), start oral prednisolone 0.5-1 mg/kg once daily after sending the pituitary axis bloods, withhold ICI, arrange pituitary MRI and visual field assessment, and treat as severe if there is no improvement in 48 h\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=patient symptom report; 9 am serum cortisol; pituitary axis panel; pituitary MRI when indicated\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=\"Headache and visual disturbances require immediate evaluation\". Weekly cortisol when TSH falls with normal or low T4. Fig 6 gives severity tiers and the pituitary bloods. Hypophysitis is mainly seen with anti-CTLA4 and is very rare with anti-PD-1 and anti-PD-L1 (iv126). Fig 6 gives the severe and moderate management tiers.\nmonitored_target=hypophysitis (pituitary dysfunction, hypoadrenalism) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=guideline-stated triggers (Fig 5, Fig 6). The each-visit symptom review is assistant-proposed to give the \"immediate evaluation\" instruction a place in the schedule\nmonitoring_stance=recommended\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Hypophysitis iv126\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 5 iv125\nsource.3=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 6 (management of hypophysitis) iv127\nsource_kind=clinical_guideline\ntrigger=headache or visual disturbance (immediate evaluation); severe hypoadrenalism; falling TSH with normal or low FT4\n' ;\nend action.\n\naction  :: 'Monitor_Hepatitis' ;\n     caption :: 'Monitor liver function for immune-related hepatitis (ALT, AST, bilirubin)' ;\n     metaprops :: 'ServiceRequest.code=serum transaminases (ALT, AST) and total bilirubin\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=baseline and before every cycle of ICI\nServiceRequest.patientInstruction=report jaundice, dark urine, or right-upper-abdominal pain (hepatitis is usually asymptomatic)\nServiceRequest.performerInstruction=if ALT/AST is >ULN to 3\\\\u00D7ULN, repeat in 1 week. If 3-5\\\\u00D7ULN (G2), withhold ICI, recheck LFTs/INR/albumin every 3 days, review medications and alcohol, and do a liver screen. If 5-20\\\\u00D7ULN (G3), stop ICI and start steroids. If >20\\\\u00D7ULN (G4), permanently discontinue ICI, start i.v. methylprednisolone 2 mg/kg, and get a hepatology consult\napplies_when=all_patients_on_therapy\nassistant_invention=patient symptom wording (the guideline says hepatitis is usually asymptomatic)\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= serum transaminases (ALT, AST) and total bilirubin; ServiceRequest.occurrenceTiming \\\\= baseline and before every cycle of ICI; ServiceRequest.patientInstruction \\\\= report jaundice, dark urine, or right-upper-abdominal pain (hepatitis is usually asymptomatic); ServiceRequest.performerInstruction \\\\= if ALT/AST is >ULN to 3\\\\u00D7ULN, repeat in 1 week. If 3-5\\\\u00D7ULN (G2), withhold ICI, recheck LFTs/INR/albumin every 3 days, review medications and alcohol, and do a liver screen. If 5-20\\\\u00D7ULN (G3), stop ICI and start steroids. If >20\\\\u00D7ULN (G4), permanently discontinue ICI, start i.v. methylprednisolone 2 mg/kg, and get a hepatology consult\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=serum ALT, AST, total bilirubin (INR and albumin when abnormal)\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=\"All patients undergoing ICPi therapy should be assessed ... with serum transaminases and bilirubin measured before every cycle\". Hepatitis is usually asymptomatic and detected on routine blood monitoring\nmonitored_target=immune-related hepatitis (hepatotoxicity) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=guideline-stated \"before every cycle\"\nmonitoring_stance=recommended\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Hepatotoxicity Diagnosis iv126\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 7 (management of hepatitis) iv128\nsource_kind=clinical_guideline\ntrigger=ALT/AST >3\\\\u00D7ULN or rising bilirubin\n' ;\nend action.\n\naction  :: 'Monitor_Diabetes' ;\n     caption :: 'Monitor blood glucose for immune-related type 1 diabetes' ;\n     metaprops :: 'ServiceRequest.code=blood glucose (with triggered ketone/acid-base assessment)\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=baseline and before every ICI infusion with the pre-infusion bloods (assistant-proposed), plus on symptoms\nServiceRequest.patientInstruction=report excessive thirst, frequent urination, weight loss, nausea or vomiting, abdominal pain, or drowsiness\nServiceRequest.performerInstruction=if new hyperglycaemia, measure C-peptide and GAD and islet-cell antibodies to distinguish type 1 from type 2 DM. If ketoacidosis (G3-4), admit immediately and treat per local guidelines, corticosteroids are not recommended\napplies_when=all_patients_on_therapy\nassistant_invention=cadence (before every infusion); patient DKA symptom wording\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= blood glucose (with triggered ketone/acid-base assessment); ServiceRequest.occurrenceTiming \\\\= baseline and before every ICI infusion with the pre-infusion bloods (assistant-proposed), plus on symptoms; ServiceRequest.patientInstruction \\\\= report excessive thirst, frequent urination, weight loss, nausea or vomiting, abdominal pain, or drowsiness; ServiceRequest.performerInstruction \\\\= if new hyperglycaemia, measure C-peptide and GAD and islet-cell antibodies to distinguish type 1 from type 2 DM. If ketoacidosis (G3-4), admit immediately and treat per local guidelines, corticosteroids are not recommended\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=blood glucose; triggered C-peptide, GAD/ICA antibodies, ketones\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=\"It is recommended that blood glucose levels are regularly monitored in patients treated with ICPis\". Ketoacidosis is life-threatening. Type 1 DM G3-4 requires immediate admission [I, A]\nmonitored_target=immune-related type 1 diabetes mellitus and diabetic ketoacidosis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=the guideline says \"regularly monitored\" without a cadence. Same-draw-as-pre-infusion bloods is proposed so glucose is checked whenever the drug is given (MonitoringFrequency rule 1). DKA is acute, hence the symptom trigger (rule 2)\nmonitoring_stance=recommended\nprovenance_type=assistant_completed_from_guidelines\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Type 1 diabetes mellitus iv126\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Table 2 (Immune-related endocrinopathies) iv139\nsource_kind=clinical_guideline\ntrigger=new hyperglycaemia or ketoacidosis symptoms\n' ;\nend action.\n\naction  :: 'Monitor_Nephritis' ;\n     caption :: 'Monitor renal function for immune-related nephritis (Na, K, creatinine, urea)' ;\n     metaprops :: 'ServiceRequest.code=serum sodium, potassium, creatinine and urea\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=baseline and before every ICI infusion\nServiceRequest.patientInstruction=report reduced urine output, blood in urine, or swelling\nServiceRequest.performerInstruction=grade creatinine against the patient\\'s baseline. G1 (1.5\\\\u00D7baseline or >ULN to 1.5\\\\u00D7ULN)\\\\: continue ICI and repeat creatinine weekly. G2 (>1.5-3\\\\u00D7 baseline)\\\\: withhold ICI, hydrate, review in 48-72 h, and discuss with a nephrologist if not improving. G3 (>3\\\\u00D7 baseline or >3-6\\\\u00D7ULN)\\\\: withhold ICI, admit, and repeat creatinine every 24 h. Oliguria means inpatient admission. Stop nephrotoxic drugs and rule out infection or obstruction\napplies_when=all_patients_on_therapy\nassistant_invention=patient symptom wording (only oliguria is source-stated\\\\: \"Advise patient to notify if oliguric\")\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= serum sodium, potassium, creatinine and urea; ServiceRequest.occurrenceTiming \\\\= baseline and before every ICI infusion; ServiceRequest.patientInstruction \\\\= report reduced urine output, blood in urine, or swelling; ServiceRequest.performerInstruction \\\\= grade creatinine against the patient\\'s baseline. G1 (1.5\\\\u00D7baseline or >ULN to 1.5\\\\u00D7ULN)\\\\: continue ICI and repeat creatinine weekly. G2 (>1.5-3\\\\u00D7 baseline)\\\\: withhold ICI, hydrate, review in 48-72 h, and discuss with a nephrologist if not improving. G3 (>3\\\\u00D7 baseline or >3-6\\\\u00D7ULN)\\\\: withhold ICI, admit, and repeat creatinine every 24 h. Oliguria means inpatient admission. Stop nephrotoxic drugs and rule out infection or obstruction\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=serum Na, K, creatinine, urea; triggered urinalysis/UPCR, renal ultrasound\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=\"Serum sodium, potassium, creatinine and urea should be measured before every infusion\". Fig 14 grades against baseline creatinine\nmonitored_target=immune-related nephritis (renal toxicity) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=guideline-stated \"before every infusion\"\nmonitoring_stance=recommended\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Renal toxicity iv133\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 14 (management of nephritis) iv138\nsource_kind=clinical_guideline\ntrigger=creatinine >1.5\\\\u00D7 baseline; oliguria\n' ;\nend action.\n\naction  :: 'Monitor_Skin' ;\n     caption :: 'Monitor for immune-related skin toxicity' ;\n     metaprops :: 'ServiceRequest.code=skin and mucosa symptom screen with triggered physical examination and CTCAE grading\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=each visit (symptom review), with full skin exam on any skin symptom\nServiceRequest.patientInstruction=report any new rash, itching, blistering, skin peeling, mouth or genital sores, or rash with fever\nServiceRequest.performerInstruction=exclude other causes. Examine all skin including mucosa, grade by BSA (CTCAE), and check FBC, liver and kidney tests if needed. G2\\\\: continue and recheck weekly. G3\\\\: withhold ICI and refer to dermatology. G4, SJS/TEN/DRESS\\\\: permanently discontinue ICI, hospitalise and get urgent dermatology care\napplies_when=all_patients_on_therapy\nassistant_invention=each-visit symptom review cadence; patient symptom wording\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= skin and mucosa symptom screen with triggered physical examination and CTCAE grading; ServiceRequest.occurrenceTiming \\\\= each visit (symptom review), with full skin exam on any skin symptom; ServiceRequest.patientInstruction \\\\= report any new rash, itching, blistering, skin peeling, mouth or genital sores, or rash with fever; ServiceRequest.performerInstruction \\\\= exclude other causes. Examine all skin including mucosa, grade by BSA (CTCAE), and check FBC, liver and kidney tests if needed. G2\\\\: continue and recheck weekly. G3\\\\: withhold ICI and refer to dermatology. G4, SJS/TEN/DRESS\\\\: permanently discontinue ICI, hospitalise and get urgent dermatology care\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=patient symptom report; physical examination with BSA/CTCAE grading\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=when a patient presents with a skin AE, rule out other causes, then do \"a careful and thorough physical examination of the skin including the mucosal areas\". Life-threatening reactions mean permanent discontinuation and hospitalisation\nmonitored_target=immune-related skin toxicity including SJS/TEN/DRESS as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=skin AEs develop \"within the first few weeks\". The guideline specifies assessment on presentation only. The each-visit symptom review is assistant-proposed. The guideline makes no recommendation for routine full-body skin examination\nmonitoring_stance=symptom_triggered_only\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Immune-related skin toxicity iv122-iv123\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 3 (management of skin rash) iv123\nsource_kind=clinical_guideline\ntrigger=skin sloughing or epidermal detachment, mucosal involvement, rash with fever (possible SJS/TEN/DRESS)\n' ;\nend action.\n\naction  :: 'Monitor_Colitis' ;\n     caption :: 'Monitor for immune-related diarrhoea and colitis' ;\n     metaprops :: 'ServiceRequest.code=diarrhoea and colitis symptom screen with triggered blood and stool work-up\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=each visit (symptom review) and on any diarrhoea, continuing after the last dose (enterocolitis may occur months after ipilimumab)\nServiceRequest.patientInstruction=report any increase in stool frequency over baseline, blood or mucus in stool, abdominal pain, nocturnal stools, fever, or signs of dehydration\nServiceRequest.performerInstruction=on diarrhoea, test FBC, UEC, LFTs, CRP and TFTs, plus stool microscopy and culture, viral PCR and C. difficile toxin (mandatory for significant diarrhoea on anti-CTLA4). G2 (4-6 stools/day over baseline)\\\\: withhold ICI, contact the patient every 72 h, and book sigmoidoscopy/colonoscopy. Severe (\\\\u22657 stools/day, or G1-2 with dehydration, fever, tachycardia or haematochezia)\\\\: hospitalise, give i.v. methylprednisolone 1-2 mg/kg, and do endoscopy\napplies_when=all_patients_on_therapy\nassistant_invention=each-visit review cadence; patient symptom wording\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= diarrhoea and colitis symptom screen with triggered blood and stool work-up; ServiceRequest.occurrenceTiming \\\\= each visit (symptom review) and on any diarrhoea, continuing after the last dose (enterocolitis may occur months after ipilimumab); ServiceRequest.patientInstruction \\\\= report any increase in stool frequency over baseline, blood or mucus in stool, abdominal pain, nocturnal stools, fever, or signs of dehydration; ServiceRequest.performerInstruction \\\\= on diarrhoea, test FBC, UEC, LFTs, CRP and TFTs, plus stool microscopy and culture, viral PCR and C. difficile toxin (mandatory for significant diarrhoea on anti-CTLA4). G2 (4-6 stools/day over baseline)\\\\: withhold ICI, contact the patient every 72 h, and book sigmoidoscopy/colonoscopy. Severe (\\\\u22657 stools/day, or G1-2 with dehydration, fever, tachycardia or haematochezia)\\\\: hospitalise, give i.v. methylprednisolone 1-2 mg/kg, and do endoscopy\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=patient symptom report (stool count vs baseline); triggered FBC, UEC, LFT, CRP, TFT, stool tests, endoscopy\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=severe diarrhoea definition (iv129). Diarrhoea on anti-CTLA4 needs work-up with CBC, electrolytes and stool analyses. No routine predictive biomarker; prophylactic budesonide is ineffective\nmonitored_target=immune-related diarrhoea and colitis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=symptom-triggered. The guideline gives a triggered work-up and states \"No routine biomarker\" predicts colitis. Each-visit review is assistant-proposed\nmonitoring_stance=symptom_triggered_only\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Gastrointestinal toxicity iv128-iv130\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 8 (management of diarrhoea and colitis) iv129\nsource_kind=clinical_guideline\ntrigger=severe diarrhoea as defined, or G2 persisting >3 days; peritonism/perforation\n' ;\nend action.\n\naction  :: 'Monitor_Pneumonitis' ;\n     caption :: 'Monitor for immune-related pneumonitis' ;\n     metaprops :: 'ServiceRequest.code=respiratory symptom screen with triggered chest CT\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=each visit (symptom review) and on any new respiratory symptom, throughout therapy (pneumonitis tends to occur months after initiation)\nServiceRequest.patientInstruction=report new or worsening cough, shortness of breath, chest pain, or fever\nServiceRequest.performerInstruction=on any new respiratory symptom, do a dedicated evaluation with CT. Order chest X-ray and bloods (FBC/UEC/LFTs/TFTs/Ca/ESR/CRP), and consider sputum and infection screen. G2\\\\: withhold ICI and monitor symptoms daily. G3-4 (severe symptoms, new or worsening hypoxia)\\\\: discontinue ICI, admit, give i.v. methylprednisolone 2-4 mg/kg/day, and arrange respiratory review and HRCT \\\\u00B1 bronchoscopy/BAL\napplies_when=all_patients_on_therapy\nassistant_invention=each-visit review cadence\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= respiratory symptom screen with triggered chest CT; ServiceRequest.occurrenceTiming \\\\= each visit (symptom review) and on any new respiratory symptom, throughout therapy (pneumonitis tends to occur months after initiation); ServiceRequest.patientInstruction \\\\= report new or worsening cough, shortness of breath, chest pain, or fever; ServiceRequest.performerInstruction \\\\= on any new respiratory symptom, do a dedicated evaluation with CT. Order chest X-ray and bloods (FBC/UEC/LFTs/TFTs/Ca/ESR/CRP), and consider sputum and infection screen. G2\\\\: withhold ICI and monitor symptoms daily. G3-4 (severe symptoms, new or worsening hypoxia)\\\\: discontinue ICI, admit, give i.v. methylprednisolone 2-4 mg/kg/day, and arrange respiratory review and HRCT \\\\u00B1 bronchoscopy/BAL\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=patient symptom report; triggered chest CT, chest X-ray, oxygen saturation, bloods\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=\"any new respiratory symptom should prompt a dedicated evaluation\". Patients with new cough, shortness of breath or hypoxia \"should be assessed by CT\"\nmonitored_target=immune-related pneumonitis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=guideline says \"Any respiratory symptom or sign must be carefully monitored\" and every new symptom gets CT. Each-visit review is assistant-proposed\nmonitoring_stance=symptom_triggered_only\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Immune-related pneumonitis iv131-iv133\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 9 (management of pneumonitis) iv132\nsource_kind=clinical_guideline\ntrigger=new/worsening hypoxia, severe dyspnoea, difficulty breathing\n' ;\nend action.\n\naction  :: 'Monitor_Neurological' ;\n     caption :: 'Monitor for immune-related neurological toxicity' ;\n     metaprops :: 'ServiceRequest.code=neurological symptom screen with triggered neurological examination and work-up\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=each visit (symptom review) and on any new neurological symptom\nServiceRequest.patientInstruction=report new weakness, numbness or tingling, double vision or drooping eyelids, facial weakness, difficulty swallowing or breathing, confusion, severe headache, or neck stiffness\nServiceRequest.performerInstruction=exclude progression, seizures, infection and metabolic causes. For any symptom beyond mild (or any cranial nerve problem), withhold ICI. Get an early neurology consult and MRI, NCS/EMG, lumbar puncture as indicated. If severe (limits self-care, respiratory involvement), admit, give i.v. methylprednisolone 2 mg/kg, and arrange daily neurological review \\\\u00B1 vital capacity\napplies_when=all_patients_on_therapy\nassistant_invention=each-visit review cadence; patient symptom wording drawn from the syndromes in Fig 10-12\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= neurological symptom screen with triggered neurological examination and work-up; ServiceRequest.occurrenceTiming \\\\= each visit (symptom review) and on any new neurological symptom; ServiceRequest.patientInstruction \\\\= report new weakness, numbness or tingling, double vision or drooping eyelids, facial weakness, difficulty swallowing or breathing, confusion, severe headache, or neck stiffness; ServiceRequest.performerInstruction \\\\= exclude progression, seizures, infection and metabolic causes. For any symptom beyond mild (or any cranial nerve problem), withhold ICI. Get an early neurology consult and MRI, NCS/EMG, lumbar puncture as indicated. If severe (limits self-care, respiratory involvement), admit, give i.v. methylprednisolone 2 mg/kg, and arrange daily neurological review \\\\u00B1 vital capacity\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=patient symptom report; triggered neurological exam, MRI, NCS/EMG, lumbar puncture, vital capacity\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=rule out other causes. \"Early consultation with a neurologist is advised\". Withhold ICI for all but grade 1 until the AE is defined [V, B]\nmonitored_target=immune-related neurological toxicity as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=onset 6-13 weeks (iv133). The guideline specifies triggered work-up only. Each-visit review is assistant-proposed\nmonitoring_stance=symptom_triggered_only\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Neurological toxicity iv133\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figures 10-12 iv134-iv136\nsource_kind=clinical_guideline\ntrigger=respiratory or bulbar weakness, rapidly progressive weakness, altered consciousness\n' ;\nend action.\n\naction  :: 'Monitor_Myocarditis' ;\n     caption :: 'Monitor for immune-related myocarditis and cardiac toxicity' ;\n     metaprops :: 'ServiceRequest.code=cardiac symptom screen with triggered cardiology assessment\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=each visit (symptom review) and on any new cardiac symptom\nServiceRequest.patientInstruction=report chest pain, breathlessness, palpitations, fainting, or leg swelling\nServiceRequest.performerInstruction=if a checkpoint-inhibitor cardiac AE (myocarditis) is suspected, admit, start high-dose methylprednisolone 1-2 mg/kg immediately, and consult cardiology early. Escalate to MMF or tacrolimus if deteriorating\napplies_when=all_patients_on_therapy\nassistant_invention=symptom list and each-visit screen (the guideline gives no symptoms, tests or surveillance for cardiac AEs)\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= cardiac symptom screen with triggered cardiology assessment; ServiceRequest.occurrenceTiming \\\\= each visit (symptom review) and on any new cardiac symptom; ServiceRequest.patientInstruction \\\\= report chest pain, breathlessness, palpitations, fainting, or leg swelling; ServiceRequest.performerInstruction \\\\= if a checkpoint-inhibitor cardiac AE (myocarditis) is suspected, admit, start high-dose methylprednisolone 1-2 mg/kg immediately, and consult cardiology early. Escalate to MMF or tacrolimus if deteriorating\ngoal.verb=order\nguideline_status=not_specified_as_a_guideline_monitoring_task\ninstrument=patient symptom report; clinician cardiology assessment (the guideline names no test)\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=myocarditis, pericarditis, arrhythmias, cardiomyopathy and impaired ventricular function are reported. \"Early consultation with a cardiologist is recommended\". Give steroids rapidly if suspected\nmonitored_target=immune-related cardiac toxicity (myocarditis) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=cardiac AEs are rare (\u003c1%) but serious, so event-driven. Each-visit review is assistant-proposed\nmonitoring_stance=symptom_triggered_only\nprovenance_type=assistant_completed_from_guidelines\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Cardiac toxicity iv133\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Table 2 (Cardiac toxicity) iv139\nsource_kind=clinical_guideline\ntrigger=suspected myocarditis\n' ;\nend action.\n\naction  :: 'Monitor_Arthralgia' ;\n     caption :: 'Monitor for immune-related arthralgia and myalgia' ;\n     metaprops :: 'ServiceRequest.code=joint and muscle symptom screen with triggered rheumatological assessment\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=each visit (symptom review) and on joint or muscle symptoms\nServiceRequest.patientInstruction=report joint pain, swelling or stiffness, or muscle pain or weakness\nServiceRequest.performerInstruction=take a rheumatological history, examine all joints and skin, and order an autoimmune blood panel. G2\\\\: consider withholding ICI and refer to rheumatology early. G3 (severe, limits self-care)\\\\: withhold ICI, start prednisolone 0.5-1 mg/kg, and get rheumatology advice\napplies_when=all_patients_on_therapy\nassistant_invention=each-visit review cadence; patient symptom wording\ncategory=undesired_ade\ncq=CQ3, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= joint and muscle symptom screen with triggered rheumatological assessment; ServiceRequest.occurrenceTiming \\\\= each visit (symptom review) and on joint or muscle symptoms; ServiceRequest.patientInstruction \\\\= report joint pain, swelling or stiffness, or muscle pain or weakness; ServiceRequest.performerInstruction \\\\= take a rheumatological history, examine all joints and skin, and order an autoimmune blood panel. G2\\\\: consider withholding ICI and refer to rheumatology early. G3 (severe, limits self-care)\\\\: withhold ICI, start prednisolone 0.5-1 mg/kg, and get rheumatology advice\ngoal.verb=order\nguideline_status=specified_as_a_guideline_monitoring_task\ninstrument=patient symptom report; joint examination; autoimmune blood panel; US/MRI of affected joints\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=myalgias and arthralgias in 2%-12%. Severe symptoms \"should prompt consultation with a rheumatologist\" [V, B]. Fig 13 gives grade-based assessment\nmonitored_target=immune-related arthralgia, arthritis and myalgia as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=symptom-triggered per Fig 13. Each-visit review is assistant-proposed\nmonitoring_stance=symptom_triggered_only\nprovenance_type=guideline_specified\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Rheumatological toxicity iv133\nsource.2=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Figure 13 (management of arthralgia) iv137\nsource_kind=clinical_guideline\ntrigger=severe polyarthritis or symptoms limiting self-care\n' ;\nend action.\n\naction  :: 'Monitor_Autoimmune_Flare' ;\n     caption :: 'Monitor pre-existing autoimmune disease for flare during ICI therapy' ;\n     metaprops :: 'ServiceRequest.code=pre-existing autoimmune disease activity review\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=baseline and each visit during ICI therapy\nServiceRequest.patientInstruction=report any flare or worsening of your known autoimmune condition\nServiceRequest.performerInstruction=if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm\napplies_when=patients with a history of autoimmune disease, or who are being actively treated for an autoimmune disease (iv121)\nassistant_invention=the entire monitoring action (cadence, instrument, performer step); only the sub-population and risk are sourced\ncategory=undesired_ade\ncq=CQ3, CQ4, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= pre-existing autoimmune disease activity review; ServiceRequest.occurrenceTiming \\\\= baseline and each visit during ICI therapy; ServiceRequest.patientInstruction \\\\= report any flare or worsening of your known autoimmune condition; ServiceRequest.performerInstruction \\\\= if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm\ngoal.verb=order\nguideline_status=not_specified_as_a_guideline_monitoring_task\ninstrument=patient symptom report; clinician review of disease activity\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=such patients \"are at risk for worsening of their autoimmune disease while on immune checkpoint blockade\". The guideline gives no monitoring instruction\nmonitored_target=worsening of pre-existing autoimmune disease as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=tied to the infusion-visit cadence (MonitoringFrequency rule 1). The guideline gives no cadence\nmonitoring_stance=proposed_by_assistant\nprovenance_type=assistant_completed_from_guidelines\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Patient selection and baseline assessments iv121\nsource_kind=clinical_guideline\ntrigger=worsening of the pre-existing autoimmune disease\n' ;\n     precondition ::pre_existing_autoimmune_disease = true;\nend action.\n\naction  :: 'Monitor_Allograft_Rejection' ;\n     caption :: 'Monitor allograft function for rejection during anti-PD-1 therapy' ;\n     metaprops :: 'ServiceRequest.code=allograft function review (graft-specific function tests per transplant team)\nServiceRequest.intent=order\nServiceRequest.occurrenceTiming=baseline and each visit during anti-PD-1 therapy\nServiceRequest.patientInstruction=report symptoms of graft dysfunction as instructed by your transplant team\nServiceRequest.performerInstruction=if graft dysfunction is suspected, contact the transplant team urgently\napplies_when=patients with allografted organs receiving anti-PD-1 therapy (iv134). The guideline says single-agent ipilimumab \"may be administered without necessarily causing rejection\"\nassistant_invention=the entire monitoring action; only the sub-population and risk are sourced (the guideline\\'s own evidence here is case reports it cites)\ncategory=undesired_ade\ncq=CQ3, CQ4, CQ5, CQ7\ngoal.noun_phrase=ServiceRequest.intent \\\\= order; ServiceRequest.code \\\\= allograft function review (graft-specific function tests per transplant team); ServiceRequest.occurrenceTiming \\\\= baseline and each visit during anti-PD-1 therapy; ServiceRequest.patientInstruction \\\\= report symptoms of graft dysfunction as instructed by your transplant team; ServiceRequest.performerInstruction \\\\= if graft dysfunction is suspected, contact the transplant team urgently\ngoal.verb=order\nguideline_status=not_specified_as_a_guideline_monitoring_task\ninstrument=clinician review with graft-specific function tests (assistant-proposed)\nknowledge_origin=ESMO 2017 guideline + assistant operationalization\nliterature_basis=several case reports document acute allograft rejection after anti-PD-1. \"This very significant risk must be considered in discussing systemic therapy options\"\nmonitored_target=acute solid-organ allograft rejection as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)\nmonitoring_frequency_basis=tied to the infusion-visit cadence. The guideline gives no cadence\nmonitoring_stance=proposed_by_assistant\nprovenance_type=assistant_completed_from_guidelines\nsource.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Allograft rejection iv134\nsource_kind=clinical_guideline\ntrigger=suspected acute graft rejection\n' ;\n     precondition ::organ_allograft = true and (ici_regimen = anti_PD1 or ici_regimen = anti_CTLA4_plus_anti_PD1);\nend action.\n\nplan  :: 'Monitor_Undesired_State' ;\n     caption :: 'Monitor immune-related adverse events' ;\n     component :: 'Monitor_Thyroid' ;\n          task_definition :: 'Monitor_Thyroid' ;\n          ltwh :: 40,40,0,0;\n     component :: 'Monitor_Hypophysitis' ;\n          task_definition :: 'Monitor_Hypophysitis' ;\n          ltwh :: 40,140,0,0;\n     component :: 'Monitor_Hepatitis' ;\n          task_definition :: 'Monitor_Hepatitis' ;\n          ltwh :: 40,240,0,0;\n     component :: 'Monitor_Diabetes' ;\n          task_definition :: 'Monitor_Diabetes' ;\n          ltwh :: 40,340,0,0;\n     component :: 'Monitor_Nephritis' ;\n          task_definition :: 'Monitor_Nephritis' ;\n          ltwh :: 40,440,0,0;\n     component :: 'Monitor_Skin' ;\n          task_definition :: 'Monitor_Skin' ;\n          ltwh :: 40,540,0,0;\n     component :: 'Monitor_Colitis' ;\n          task_definition :: 'Monitor_Colitis' ;\n          ltwh :: 40,640,0,0;\n     component :: 'Monitor_Pneumonitis' ;\n          task_definition :: 'Monitor_Pneumonitis' ;\n          ltwh :: 40,740,0,0;\n     component :: 'Monitor_Neurological' ;\n          task_definition :: 'Monitor_Neurological' ;\n          ltwh :: 40,840,0,0;\n     component :: 'Monitor_Myocarditis' ;\n          task_definition :: 'Monitor_Myocarditis' ;\n          ltwh :: 40,940,0,0;\n     component :: 'Monitor_Arthralgia' ;\n          task_definition :: 'Monitor_Arthralgia' ;\n          ltwh :: 40,1040,0,0;\n     component :: 'Monitor_Autoimmune_Flare' ;\n          task_definition :: 'Monitor_Autoimmune_Flare' ;\n          ltwh :: 40,1140,0,0;\n     component :: 'Monitor_Allograft_Rejection' ;\n          task_definition :: 'Monitor_Allograft_Rejection' ;\n          ltwh :: 40,1240,0,0;\nend plan.\n\nplan  :: 'Monitoring_Plan' ;\n     caption :: 'Monitor pre-infusion surveillance completion and immune-related adverse events in parallel' ;\n     component :: 'Monitor_Actions' ;\n          task_definition :: 'Monitor_Actions' ;\n          ltwh :: 40,40,0,0;\n     component :: 'Monitor_Undesired_State' ;\n          task_definition :: 'Monitor_Undesired_State' ;\n          ltwh :: 40,140,0,0;\nend plan.\n\n\ndata  :: 'pre_existing_autoimmune_disease' ;\n     type :: boolean ;\n     caption :: 'Pre-existing autoimmune disease?' ;\n     description :: 'History of autoimmune disease, or active treatment for an autoimmune disease; risk factor for worsening on ICI (ESMO 2017 iv121). Read by the Decision arguments and the precondition of Monitor_Autoimmune_Flare' ;\nend data.\n\ndata  :: 'prior_irAE_on_ICI' ;\n     type :: boolean ;\n     caption :: 'Prior irAE on a previous ICI course?' ;\n     description :: 'Immune-related adverse event on a previous ICI course, either class (ESMO 2017 iv121). Read by the Decision arguments' ;\nend data.\n\ndata  :: 'organ_allograft' ;\n     type :: boolean ;\n     caption :: 'Solid-organ allograft recipient?' ;\n     description :: 'Solid-organ allograft recipient; risk of acute rejection on anti-PD-1 (ESMO 2017 iv134). Read by the Decision arguments and the precondition of Monitor_Allograft_Rejection' ;\nend data.\n\ndata  :: 'ici_regimen' ;\n     type :: text ;\n     caption :: 'Planned ICI regimen' ;\n     description :: 'Class of the planned ICI regimen (ESMO 2017 Table 1): anti_CTLA4, anti_PD1, anti_PDL1 or anti_CTLA4_plus_anti_PD1. Read by the precondition of Monitor_Allograft_Rejection; also selects the Fig 5 TFT schedule (not executable)' ;\n     range ::\"anti_CTLA4\",\"anti_PD1\",\"anti_PDL1\",\"anti_CTLA4_plus_anti_PD1\";\nend data.\n","file":"ici-irae-monitoring.pf"}</script>
+<script>/* PROforma guideline viewer (client side). Reads the embedded `proforma export` model
+   (#pf-data) and renders a Composer-style workspace: task tree, plan canvas with
+   pan / zoom / drill-down, and a properties panel; plus data, decision, lint and
+   source views. No external dependencies. */
+(function () {
+  "use strict";
+  const D = JSON.parse(document.getElementById("pf-data").textContent);
+  const G = D.model;
+  const tasks = new Map(G.tasks.map((t) => [t.name, t]));
+  const dataItems = new Map(G.data.map((d) => [d.name, d]));
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = (s) =>
+    String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const NS = "http://www.w3.org/2000/svg";
+  const svgEl = (name, attrs, parent) => {
+    const e = document.createElementNS(NS, name);
+    for (const k in attrs || {}) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  // evidence grades such as [I, A] or [IV-V, B]
+  const LEVEL = "(?:I{1,3}|IV|V)";
+  const GRADE_RE = new RegExp("\\[(" + LEVEL + "(?:\\s*[-–]\\s*" + LEVEL + ")?),\\s*([A-E])\\]", "g");
+  const rich = (s) => esc(s).replace(GRADE_RE, (m, l, g) => '<span class="grade g' + g + '">' + l + ", " + g + "</span>");
+
+  // names in an expression become links to the task / data item they refer to
+  const linkExpr = (expr) =>
+    esc(expr).replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (w) =>
+      tasks.has(w) ? '<a class="ref" data-task="' + w + '">' + w + "</a>" : dataItems.has(w) ? '<a class="ref" data-data="' + w + '">' + w + "</a>" : w
+    );
+
+  // ---------------------------------------------------------------- icons
+  const KIND_STYLE = {
+    plan: ["var(--plan-fill)", "var(--plan-stroke)"],
+    action: ["var(--action-fill)", "var(--action-stroke)"],
+    enquiry: ["var(--enquiry-fill)", "var(--enquiry-stroke)"],
+    decision: ["var(--decision-fill)", "var(--decision-stroke)"],
+    task: ["var(--task-fill)", "var(--task-stroke)"],
+    data: ["var(--panel-2)", "var(--muted)"],
+  };
+  function iconSvg(kind) {
+    const [f, s] = KIND_STYLE[kind] || KIND_STYLE.task;
+    const body = {
+      plan: '<rect x="1.5" y="3.5" width="13" height="9" rx="3" fill="' + f + '" stroke="' + s + '" stroke-width="1.5"/>',
+      action: '<rect x="2.5" y="2.5" width="11" height="11" rx="2.5" fill="' + f + '" stroke="' + s + '" stroke-width="1.5"/>',
+      enquiry: '<path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="' + f + '" stroke="' + s + '" stroke-width="1.5"/>',
+      decision: '<circle cx="8" cy="8" r="6" fill="' + f + '" stroke="' + s + '" stroke-width="1.8"/><circle cx="8" cy="8" r="2" fill="' + s + '"/>',
+      task: '<path d="M3 13 5 3h6l2 10Z" fill="' + f + '" stroke="' + s + '" stroke-width="1.5"/>',
+      data: '<ellipse cx="8" cy="4.5" rx="5.5" ry="2.5" fill="' + f + '" stroke="' + s + '"/><path d="M2.5 4.5v7c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5v-7" fill="' + f + '" stroke="' + s + '"/>',
+    }[kind] || "";
+    return '<svg class="ico" viewBox="0 0 16 16" aria-hidden="true">' + body + "</svg>";
+  }
+
+  // ---------------------------------------------------------------- state
+  const state = { plan: G.root, trail: [G.root], sel: null, layout: "stored", label: "name" };
+  const view = { x: 0, y: 0, k: 1 };
+
+  // ---------------------------------------------------------------- tabs
+  for (const b of document.querySelectorAll("nav.tabs button")) {
+    b.onclick = () => showTab(b.dataset.tab);
+  }
+  function showTab(id) {
+    for (const b of document.querySelectorAll("nav.tabs button")) b.classList.toggle("on", b.dataset.tab === id);
+    for (const v of document.querySelectorAll(".view")) v.classList.toggle("on", v.id === id);
+    if (id === "workspace") requestAnimationFrame(() => fit(false));
+  }
+
+  // ---------------------------------------------------------------- tree
+  function buildTree() {
+    const ul = $("#tree");
+    ul.innerHTML = "";
+    const add = (parentUl, taskName, compName, path, depth) => {
+      const t = tasks.get(taskName);
+      const li = document.createElement("li");
+      const kids = t && t.kind === "plan" && !path.includes(taskName) ? t.components : [];
+      const row = document.createElement("div");
+      row.className = "row";
+      row.dataset.task = taskName;
+      row.title = t && t.caption ? t.caption : taskName;
+      row.innerHTML =
+        '<span class="twist">' + (kids.length ? (depth < 2 ? "▾" : "▸") : "") + "</span>" + iconSvg(t ? t.kind : "task") +
+        '<span class="nm">' + esc(compName || taskName) + "</span>";
+      li.appendChild(row);
+      parentUl.appendChild(li);
+      if (kids.length) {
+        const sub = document.createElement("ul");
+        if (depth >= 2) sub.hidden = true;
+        li.appendChild(sub);
+        for (const c of kids) add(sub, c.task, c.name, path.concat(taskName), depth + 1);
+        row.querySelector(".twist").onclick = (e) => {
+          e.stopPropagation();
+          sub.hidden = !sub.hidden;
+          e.target.textContent = sub.hidden ? "▸" : "▾";
+        };
+      }
+      row.onclick = () => selectTask(taskName, { open: true });
+      row.ondblclick = () => t && t.kind === "plan" && openPlan(taskName);
+    };
+    if (G.root) add(ul, G.root, null, [], 0);
+    const orphans = G.tasks.filter((t) => !t.reachable);
+    if (orphans.length) {
+      const li = document.createElement("li");
+      li.innerHTML = '<div class="row muted"><span class="twist"></span>Not in any plan</div>';
+      ul.appendChild(li);
+      const sub = document.createElement("ul");
+      li.appendChild(sub);
+      for (const t of orphans) add(sub, t.name, null, [], 3);
+    }
+    const dl = $("#datatree");
+    dl.innerHTML = "";
+    for (const d of G.data) {
+      const li = document.createElement("li");
+      li.innerHTML =
+        '<div class="row" data-data="' + esc(d.name) + '"><span class="twist"></span>' + iconSvg("data") + '<span class="nm">' + esc(d.name) + "</span></div>";
+      li.firstChild.onclick = () => selectData(d.name);
+      dl.appendChild(li);
+    }
+  }
+  function markTree() {
+    for (const r of document.querySelectorAll("ul.tree .row")) {
+      const on = state.sel && ((state.sel.type === "task" && r.dataset.task === state.sel.name) || (state.sel.type === "data" && r.dataset.data === state.sel.name));
+      r.classList.toggle("sel", !!on);
+    }
+  }
+
+  // ---------------------------------------------------------------- canvas
+  const svg = $("#canvas");
+  const vp = svgEl("g", {}, svg);
+  const NODE = 64;
+
+  function planLayout(plan) {
+    const comps = plan.components;
+    const stored = comps.map((c) => (c.ltwh ? { x: c.ltwh[0], y: c.ltwh[1] } : null));
+    const seen = new Set();
+    let usable = stored.every(Boolean);
+    for (const p of stored) {
+      if (!p) break;
+      const k = p.x + "," + p.y;
+      if (seen.has(k)) usable = false;
+      seen.add(k);
+    }
+    // the CLI's default placement stacks every new component in one column; when that
+    // hides parallel siblings (same scheduling depth), the stored layout misleads
+    const depthOf = (c, seenNames) => (c.after.length ? 1 + Math.max(...c.after.map((a) => {
+      const x = comps.find((y) => y.name === a);
+      return x && !seenNames.includes(a) ? depthOf(x, seenNames.concat(a)) : 0;
+    })) : 0);
+    if (usable && comps.length > 2 && new Set(stored.map((p) => p.x)).size === 1) {
+      const depths = comps.map((c) => depthOf(c, [c.name]));
+      if (new Set(depths).size < depths.length) usable = false;
+    }
+    state.autoUsed = !(state.layout === "stored" && usable);
+    if (state.layout === "stored" && usable) {
+      // Composer stores icon positions; spread them a little so labels fit
+      return comps.map((c, i) => ({ x: stored[i].x * 1.6, y: stored[i].y * 1.25 }));
+    }
+    // auto: layers by scheduling depth, one row per layer
+    const byName = new Map(comps.map((c) => [c.name, c]));
+    const level = new Map();
+    const lv = (c, stack) => {
+      if (level.has(c.name)) return level.get(c.name);
+      if (stack.includes(c.name)) return 0;
+      const ante = c.after.map((a) => byName.get(a)).filter(Boolean);
+      const v = ante.length ? Math.max(...ante.map((a) => lv(a, stack.concat(c.name)))) + 1 : 0;
+      level.set(c.name, v);
+      return v;
+    };
+    comps.forEach((c) => lv(c, []));
+    const rows = new Map();
+    comps.forEach((c, i) => {
+      const l = level.get(c.name);
+      if (!rows.has(l)) rows.set(l, []);
+      rows.get(l).push(i);
+    });
+    // wide layers wrap into a grid so many parallel tasks stay readable
+    const PER_ROW = 5;
+    const pos = [];
+    const width = Math.min(PER_ROW, Math.max(...[...rows.values()].map((r) => r.length)));
+    let y = 40;
+    for (const l of [...rows.keys()].sort((a, b) => a - b)) {
+      const idx = rows.get(l);
+      for (let start = 0; start < idx.length; start += PER_ROW) {
+        const chunk = idx.slice(start, start + PER_ROW);
+        chunk.forEach((i, j) => {
+          pos[i] = { x: 40 + (j + (width - chunk.length) / 2) * 170, y };
+        });
+        y += 150;
+      }
+    }
+    return pos;
+  }
+
+  function branchLabel(target, anteTask) {
+    // a decision antecedent whose result the target's precondition tests
+    if (!target.precondition || !anteTask || anteTask.kind !== "decision") return "";
+    const re = new RegExp("result_(?:of|set)\\(\\s*'?" + anteTask.name + "'?\\s*\\)\\s*(?:=|includes)\\s*'?([A-Za-z_][A-Za-z0-9_]*)", "g");
+    const out = [];
+    let m;
+    while ((m = re.exec(target.precondition))) out.push(m[1]);
+    return out.join(" / ");
+  }
+
+  function drawShape(g, kind, cx, cy) {
+    const [f, s] = KIND_STYLE[kind] || KIND_STYLE.task;
+    const r = NODE / 2;
+    const common = { class: "shape", fill: f, stroke: s };
+    if (kind === "plan") {
+      svgEl("rect", Object.assign({ x: cx - 34, y: cy - 24, width: 68, height: 48, rx: 14 }, common), g);
+      for (let i = -1; i <= 1; i++) svgEl("rect", { x: cx + i * 14 - 5, y: cy - 5, width: 10, height: 10, rx: 2, fill: s, opacity: 0.55 }, g);
+      return 26;
+    }
+    if (kind === "action") {
+      svgEl("rect", Object.assign({ x: cx - 25, y: cy - 25, width: 50, height: 50, rx: 10 }, common), g);
+      svgEl("path", { d: "M" + (cx - 10) + " " + cy + " l7 7 l13 -15", fill: "none", stroke: s, "stroke-width": 3, "stroke-linecap": "round", "stroke-linejoin": "round" }, g);
+      return 27;
+    }
+    if (kind === "enquiry") {
+      svgEl("path", Object.assign({ d: "M" + cx + " " + (cy - r) + " L" + (cx + r) + " " + cy + " L" + cx + " " + (cy + r) + " L" + (cx - r) + " " + cy + "Z" }, common), g);
+      const q = svgEl("text", { x: cx, y: cy + 1, "text-anchor": "middle", "dominant-baseline": "central", fill: s, "font-size": 20, "font-weight": 700 }, g);
+      q.textContent = "?";
+      return r - 2;
+    }
+    if (kind === "decision") {
+      svgEl("circle", Object.assign({ cx, cy, r: 27, "stroke-width": 3 }, common), g);
+      svgEl("circle", { cx, cy, r: 7, fill: s }, g);
+      return 28;
+    }
+    svgEl("path", Object.assign({ d: "M" + (cx - 26) + " " + (cy + 22) + " L" + (cx - 16) + " " + (cy - 22) + " H" + (cx + 16) + " L" + (cx + 26) + " " + (cy + 22) + "Z" }, common), g);
+    return 26;
+  }
+
+  function wrapLabel(text, max) {
+    const words = String(text).split(/\s+/);
+    const lines = [];
+    let cur = "";
+    for (const w of words) {
+      if ((cur + " " + w).trim().length > max && cur) {
+        lines.push(cur);
+        cur = w;
+      } else cur = (cur + " " + w).trim();
+    }
+    if (cur) lines.push(cur);
+    if (lines.length > 3) {
+      lines.length = 3;
+      lines[2] = lines[2].replace(/.{0,2}$/, "") + "…";
+    }
+    return lines;
+  }
+
+  function render() {
+    vp.innerHTML = "";
+    const plan = tasks.get(state.plan);
+    renderCrumbs();
+    if (!plan) return;
+    const defs = svgEl("defs", {}, vp);
+    const mk = svgEl("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 9, markerHeight: 9, orient: "auto-start-reverse" }, defs);
+    svgEl("path", { d: "M0 0 L10 5 L0 10 z", fill: "var(--edge)" }, mk);
+
+    const pos = planLayout(plan);
+    const centers = new Map();
+    const radius = new Map();
+    const boxes = new Map();
+    // where the ray from (cx, cy) towards (tx, ty) leaves a node's box
+    const clip = (b, cx, cy, tx, ty) => {
+      const dx = tx - cx;
+      const dy = ty - cy;
+      let t = 1;
+      if (dx > 0) t = Math.min(t, (b.x2 - cx) / dx);
+      if (dx < 0) t = Math.min(t, (b.x1 - cx) / dx);
+      if (dy > 0) t = Math.min(t, (b.y2 - cy) / dy);
+      if (dy < 0) t = Math.min(t, (b.y1 - cy) / dy);
+      return { x: cx + dx * t, y: cy + dy * t };
+    };
+    plan.components.forEach((c, i) => centers.set(c.name, { x: pos[i].x + NODE / 2, y: pos[i].y + NODE / 2 }));
+    const edgeLayer = svgEl("g", {}, vp);
+    const nodeLayer = svgEl("g", {}, vp);
+
+    plan.components.forEach((c) => {
+      const t = tasks.get(c.task) || { kind: "task", name: c.task };
+      const { x: cx, y: cy } = centers.get(c.name);
+      const g = svgEl("g", { class: "node" + (c.optional ? " optional" : "") + (c.terminal ? " terminal" : ""), "data-task": c.task }, nodeLayer);
+      svgEl("rect", { class: "halo", x: cx - 40, y: cy - 38, width: 80, height: 76, rx: 12 }, g);
+      radius.set(c.name, drawShape(g, t.kind, cx, cy));
+      const nLines = wrapLabel(state.label === "caption" && t.caption ? t.caption : c.name, state.label === "caption" ? 26 : 22).length;
+      boxes.set(c.name, { x1: cx - 36, x2: cx + 36, y1: cy - 32, y2: cy + 36 + nLines * 14 + (t.kind === "plan" ? 12 : 0) });
+      // badges: precondition (if) and cycles
+      if (t.precondition) {
+        svgEl("circle", { cx: cx - 30, cy: cy - 26, r: 9, fill: "var(--decision-stroke)" }, g);
+        svgEl("text", { class: "badge", x: cx - 30, y: cy - 26 }, g).textContent = "if";
+      }
+      if (c.cycle_repeat || c.number_of_cycles || c.cycle_until) {
+        svgEl("circle", { cx: cx + 30, cy: cy - 26, r: 9, fill: "var(--action-stroke)" }, g);
+        svgEl("text", { class: "badge", x: cx + 30, y: cy - 26 }, g).textContent = "↻";
+      }
+      const label = state.label === "caption" && t.caption ? t.caption : c.name;
+      const lines = wrapLabel(label, state.label === "caption" ? 26 : 22);
+      lines.forEach((ln, i) => {
+        svgEl("text", { class: "lbl", x: cx, y: cy + 46 + i * 14 }, g).textContent = ln;
+      });
+      if (t.kind === "plan") {
+        svgEl("text", { class: "plan-drill", x: cx, y: cy + 46 + lines.length * 14 }, g).textContent =
+          "▸ " + (t.components ? t.components.length : 0) + " tasks · double-click to open";
+      }
+      const title = svgEl("title", {}, g);
+      title.textContent = (t.caption ? t.caption + "\n" : "") + t.kind + " " + c.task + (t.precondition ? "\nprecondition: " + t.precondition : "");
+      g.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectTask(c.task, { open: false });
+      });
+      g.addEventListener("dblclick", (e) => {
+        e.stopPropagation();
+        if (t.kind === "plan") openPlan(c.task);
+      });
+      if (state.sel && state.sel.type === "task" && state.sel.name === c.task) g.classList.add("sel");
+    });
+
+    plan.components.forEach((c) => {
+      const t = tasks.get(c.task);
+      for (const a of c.after) {
+        const p = centers.get(a);
+        const q = centers.get(c.name);
+        if (!p || !q) continue;
+        const s1 = clip(boxes.get(a), p.x, p.y, q.x, q.y);
+        const s2 = clip(boxes.get(c.name), q.x, q.y, p.x, p.y);
+        const x1 = s1.x;
+        const y1 = s1.y + 2;
+        const x2 = s2.x;
+        const y2 = s2.y - 2;
+        svgEl("path", { class: "edge", d: "M" + x1 + " " + y1 + " L" + x2 + " " + y2, "marker-end": "url(#arrow)" }, edgeLayer);
+        const anteComp = plan.components.find((x) => x.name === a);
+        const lbl = t ? branchLabel(t, tasks.get(anteComp ? anteComp.task : a)) : "";
+        if (lbl) {
+          // beside a mostly vertical edge, above a mostly horizontal one
+          const vertical = Math.abs(x2 - x1) < Math.abs(y2 - y1);
+          svgEl("text", vertical
+            ? { class: "edge-label", x: (x1 + x2) / 2 + 10, y: (y1 + y2) / 2 + 4, "text-anchor": "start" }
+            : { class: "edge-label", x: (x1 + x2) / 2, y: (y1 + y2) / 2 - 6 }, edgeLayer).textContent = lbl;
+        }
+      }
+    });
+    applyView();
+    $("#zlayout").classList.toggle("on", !!state.autoUsed);
+  }
+
+  function renderCrumbs() {
+    const el = $("#crumbs");
+    const plan = tasks.get(state.plan);
+    el.innerHTML = state.trail
+      .map((p, i) =>
+        i === state.trail.length - 1 ? '<span class="here">' + esc(p) + "</span>" : '<a data-i="' + i + '">' + esc(p) + '</a><span class="sep">›</span>'
+      )
+      .join("") + (plan && plan.caption ? '<span class="plan-cap" title="' + esc(plan.caption) + '">' + esc(plan.caption) + "</span>" : "");
+    for (const a of el.querySelectorAll("a")) {
+      a.onclick = () => {
+        const i = Number(a.dataset.i);
+        state.trail = state.trail.slice(0, i + 1);
+        state.plan = state.trail[i];
+        render();
+        fit(false);
+      };
+    }
+  }
+
+  function openPlan(name, trail) {
+    const t = tasks.get(name);
+    if (!t || t.kind !== "plan") return;
+    if (trail) state.trail = trail;
+    else {
+      const at = state.trail.indexOf(name);
+      state.trail = at >= 0 ? state.trail.slice(0, at + 1) : state.trail.concat(name);
+    }
+    state.plan = name;
+    selectTask(name, { open: false, silent: true });
+    render();
+    fit(false);
+  }
+
+  // path from the root to the plan that contains a task (first path in the export)
+  function trailTo(planName) {
+    const t = tasks.get(planName);
+    if (!t || !t.paths || !t.paths.length) return [planName];
+    // paths are component names; map them to task names along the way
+    const parts = t.paths[0].split("/");
+    const out = [parts[0]];
+    let cur = tasks.get(parts[0]);
+    for (const p of parts.slice(1)) {
+      const comp = cur && cur.components.find((c) => c.name === p);
+      if (!comp) break;
+      out.push(comp.task);
+      cur = tasks.get(comp.task);
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------- pan / zoom
+  function applyView() {
+    vp.setAttribute("transform", "translate(" + view.x + "," + view.y + ") scale(" + view.k + ")");
+    $("#zoomlabel").textContent = Math.round(view.k * 100) + "%";
+  }
+  function fit(animate) {
+    const box = vp.getBBox();
+    const W = svg.clientWidth;
+    const H = svg.clientHeight;
+    if (!box.width || !W || !H) return;
+    const k = Math.min(1.4, Math.max(0.15, Math.min((W - 60) / box.width, (H - 60) / box.height)));
+    view.k = k;
+    view.x = (W - box.width * k) / 2 - box.x * k;
+    view.y = (H - box.height * k) / 2 - box.y * k;
+    applyView();
+  }
+  function zoomAt(f, px, py) {
+    const k = Math.min(4, Math.max(0.1, view.k * f));
+    const r = k / view.k;
+    view.x = px - (px - view.x) * r;
+    view.y = py - (py - view.y) * r;
+    view.k = k;
+    applyView();
+  }
+  svg.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - rect.left, e.clientY - rect.top);
+    },
+    { passive: false }
+  );
+  let drag = null;
+  const pointers = new Map();
+  svg.addEventListener("pointerdown", (e) => {
+    // nodes keep their own click / double-click; pan only from the background
+    if (e.target.closest && e.target.closest(".node") && e.pointerType === "mouse") return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1) {
+      drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false };
+      svg.classList.add("panning");
+    }
+    if (e.pointerType === "mouse") svg.setPointerCapture(e.pointerId);
+  });
+  svg.addEventListener("pointermove", (e) => {
+    if (!pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      // pinch zoom
+      const [a, b] = [...pointers.values()];
+      const other = [...pointers.entries()].find(([id]) => id !== e.pointerId)[1];
+      const before = Math.hypot(prev.x - other.x, prev.y - other.y);
+      const after = Math.hypot(a.x - b.x, a.y - b.y);
+      const rect = svg.getBoundingClientRect();
+      if (before > 0) zoomAt(after / before, (a.x + b.x) / 2 - rect.left, (a.y + b.y) / 2 - rect.top);
+      return;
+    }
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    view.x = drag.vx + dx;
+    view.y = drag.vy + dy;
+    applyView();
+  });
+  const endDrag = (e) => {
+    pointers.delete(e.pointerId);
+    if (pointers.size === 0) {
+      svg.classList.remove("panning");
+      drag = null;
+    }
+  };
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+  $("#zin").onclick = () => zoomAt(1.25, svg.clientWidth / 2, svg.clientHeight / 2);
+  $("#zout").onclick = () => zoomAt(0.8, svg.clientWidth / 2, svg.clientHeight / 2);
+  $("#zfit").onclick = () => fit(true);
+  $("#z100").onclick = () => {
+    const cx = svg.clientWidth / 2;
+    const cy = svg.clientHeight / 2;
+    zoomAt(1 / view.k, cx, cy);
+  };
+  $("#zup").onclick = () => {
+    if (state.trail.length > 1) openPlan(state.trail[state.trail.length - 2], state.trail.slice(0, -1));
+  };
+  $("#zlayout").onclick = (e) => {
+    state.layout = state.layout === "stored" ? "auto" : "stored";
+    e.currentTarget.classList.toggle("on", state.layout === "auto");
+    e.currentTarget.title = state.layout === "auto" ? "Layout: automatic (click for stored positions)" : "Layout: stored positions (click for automatic)";
+    render();
+    fit(false);
+  };
+  $("#zlabel").onclick = (e) => {
+    state.label = state.label === "name" ? "caption" : "name";
+    e.currentTarget.classList.toggle("on", state.label === "caption");
+    render();
+  };
+  window.addEventListener("resize", () => fit(false));
+  document.addEventListener("keydown", (e) => {
+    if (!$("#workspace").classList.contains("on") || e.target.closest("input,textarea")) return;
+    if (e.key === "+" || e.key === "=") $("#zin").click();
+    else if (e.key === "-") $("#zout").click();
+    else if (e.key === "0") $("#zfit").click();
+    else if (e.key === "Backspace" || (e.key === "ArrowUp" && e.altKey)) $("#zup").click();
+  });
+
+  // ---------------------------------------------------------------- selection + properties
+  function selectTask(name, opts) {
+    const t = tasks.get(name);
+    state.sel = { type: "task", name };
+    if (opts && opts.open && t) {
+      if (t.kind === "plan") {
+        openPlan(name, trailTo(name));
+        showProps();
+        return;
+      }
+      // show the plan that contains this task
+      const parent = t.used_by && t.used_by[0];
+      if (parent && parent !== state.plan) openPlan(parent, trailTo(parent));
+    }
+    if (!opts || !opts.silent) {
+      for (const n of vp.querySelectorAll(".node")) n.classList.toggle("sel", n.dataset.task === name);
+    }
+    showProps();
+  }
+  function selectData(name) {
+    state.sel = { type: "data", name };
+    showProps();
+  }
+
+  function metapropsHtml(mp) {
+    const keys = Object.keys(mp || {});
+    if (!keys.length) return "";
+    const groups = [
+      ["Goal", (k) => k.startsWith("goal.")],
+      ["ServiceRequest", (k) => k.startsWith("ServiceRequest.")],
+      ["Sources", (k) => k === "source" || /^source\.\d+$/.test(k)],
+      ["Provenance and operationalization", () => true],
+    ];
+    const used = new Set();
+    let html = "";
+    for (const [title, test] of groups) {
+      const ks = keys.filter((k) => !used.has(k) && test(k));
+      if (!ks.length) continue;
+      ks.forEach((k) => used.add(k));
+      html += "<h3>" + esc(title) + '</h3><table class="mp">' +
+        ks.map((k) => '<tr><td class="k">' + esc(k).replace(/./g, ".<wbr>") + "</td><td>" + rich(mp[k]) + "</td></tr>").join("") + "</table>";
+    }
+    return html;
+  }
+
+  function kv(rows) {
+    const r = rows.filter((x) => x[1] != null && x[1] !== "" && x[1] !== false);
+    if (!r.length) return "";
+    return '<dl class="kv">' + r.map(([k, v]) => "<dt>" + esc(k) + "</dt><dd>" + v + "</dd>").join("") + "</dl>";
+  }
+
+  function showProps() {
+    const el = $("#props");
+    markTree();
+    if (!state.sel) {
+      el.innerHTML = '<div class="empty">Select a task on the canvas or in the tree. Double-click a plan to open it.</div>';
+      return;
+    }
+    if (state.sel.type === "data") {
+      const d = dataItems.get(state.sel.name);
+      el.innerHTML =
+        "<h2>" + iconSvg("data") + esc(d.name) + '</h2><div class="kindline">data item · ' + esc(d.type || "untyped") + "</div>" +
+        kv([
+          ["Caption", d.caption && rich(d.caption)],
+          ["Description", d.description && rich(d.description)],
+          ["Type", d.type && "<code>" + esc(d.type) + "</code>"],
+          ["Unit", d.unit && esc(d.unit)],
+          ["Range", d.range.length > 0 && d.range.map((r) => "<code>" + esc(r) + "</code>").join(" ")],
+          ["Default", d.default_value && "<code>" + esc(d.default_value) + "</code>"],
+          ["Derivation", d.derivation && "<code>" + linkExpr(d.derivation) + "</code>"],
+          ["Asked by", d.asked_by.map((a) => '<a class="ref" data-task="' + esc(a) + '">' + esc(a) + "</a>").join(", ")],
+          ["Used in", usedIn(d.name)],
+        ]) + metapropsHtml(d.metaprops);
+      wireRefs(el);
+      return;
+    }
+    const t = tasks.get(state.sel.name);
+    if (!t) return;
+    const comp = findComponent(t.name);
+    let html =
+      "<h2>" + iconSvg(t.kind) + esc(t.name) + '</h2><div class="kindline">' + esc(t.kind) + (comp ? " · in plan " + esc(comp.plan) : t.name === G.root ? " · root plan" : "") + "</div>" +
+      kv([
+        ["Caption", t.caption && rich(t.caption)],
+        ["Description", t.description && rich(t.description)],
+        ["Precondition", t.precondition && "<code>" + linkExpr(t.precondition) + "</code>"],
+        ["Wait condition", t.wait_condition && "<code>" + linkExpr(t.wait_condition) + "</code>"],
+        ["Postcondition", t.postcondition && "<code>" + linkExpr(t.postcondition) + "</code>"],
+        ["Goal (expr)", t.goal && "<code>" + linkExpr(t.goal) + "</code>"],
+        ["Procedure", t.procedure && rich(t.procedure)],
+        ["Trigger", t.trigger && esc(t.trigger)],
+        ["Terminate", t.terminate && "<code>" + linkExpr(t.terminate) + "</code>"],
+        ["Abort", t.abort && "<code>" + linkExpr(t.abort) + "</code>"],
+        ["Starts after", comp && comp.c.after.length > 0 && comp.c.after.map((a) => '<a class="ref" data-task="' + esc(a) + '">' + esc(a) + "</a>").join(", ")],
+        ["Cycles", comp && [comp.c.number_of_cycles && "number " + esc(comp.c.number_of_cycles), comp.c.cycle_repeat && "repeat every " + esc(comp.c.cycle_repeat), comp.c.cycle_until && "until <code>" + linkExpr(comp.c.cycle_until) + "</code>"].filter(Boolean).join("; ")],
+        ["Flags", comp && ["optional", "autonomous", "terminal"].filter((f) => comp.c[f]).join(", ")],
+        ["Choice", t.kind === "decision" && esc((t.choice_mode || "single") + " choice, " + (t.support_mode || "symbolic") + " support")],
+      ]);
+    if (t.kind === "plan" && t.components.length) {
+      html += "<h3>Components</h3><div>" + t.components.map((c) => '<a class="ref" data-task="' + esc(c.task) + '">' + esc(c.name) + "</a>").join(", ") +
+        '</div><p><button class="icon" id="openplan">Open plan ▸</button></p>';
+    }
+    if (t.sources.length) {
+      html += "<h3>Asks for (sources)</h3><table class=\"mp\">" + t.sources.map((s) => {
+        const d = dataItems.get(s.data);
+        return '<tr><td class="k"><a class="ref" data-data="' + esc(s.data) + '">' + esc(s.data) + "</a></td><td>" + (d ? esc(d.type || "") + (d.unit ? " (" + esc(d.unit) + ")" : "") + (d.description ? " — " + rich(d.description) : "") : "") + "</td></tr>";
+      }).join("") + "</table>";
+    }
+    if (t.candidates.length) {
+      html += "<h3>Candidates</h3>" + t.candidates.map((c) =>
+        '<div class="cand"><div class="cn">' + esc(c.name) + (c.caption ? ' <span class="tag">' + rich(c.caption) + "</span>" : "") + "</div>" +
+        (c.description ? '<div class="muted">' + rich(c.description) + "</div>" : "") +
+        '<ul class="args">' + (c.arguments.length ? c.arguments.map((a) =>
+          '<li><span class="sup ' + esc(a.support) + '">' + esc(a.support) + "</span><code>" + linkExpr(a.condition) + "</code>" +
+          (a.caption ? '<div class="muted">' + rich(a.caption) + "</div>" : "") + "</li>").join("") : '<li class="muted">no arguments</li>') + "</ul>" +
+        '<div class="muted">recommended when <code>' + linkExpr(c.recommendation || "netsupport() > 0") + "</code></div></div>").join("");
+    }
+    html += metapropsHtml(t.metaprops);
+    el.innerHTML = html;
+    const ob = $("#openplan", el);
+    if (ob) ob.onclick = () => openPlan(t.name, trailTo(t.name));
+    wireRefs(el);
+  }
+  function findComponent(taskName) {
+    for (const p of G.tasks) {
+      if (p.kind !== "plan") continue;
+      const c = p.components.find((x) => x.task === taskName);
+      if (c) return { plan: p.name, c };
+    }
+    return null;
+  }
+  function usedIn(dataName) {
+    const re = new RegExp("\\b" + dataName + "\\b");
+    const hits = [];
+    for (const t of G.tasks) {
+      const exprs = [t.precondition, t.wait_condition, ...t.candidates.flatMap((c) => [c.recommendation, ...c.arguments.map((a) => a.condition)])];
+      if (exprs.some((e) => e && re.test(e))) hits.push(t.name);
+    }
+    return hits.map((h) => '<a class="ref" data-task="' + esc(h) + '">' + esc(h) + "</a>").join(", ");
+  }
+  function wireRefs(root) {
+    for (const a of root.querySelectorAll("a.ref")) {
+      a.onclick = () => {
+        if (a.dataset.task) {
+          showTab("workspace");
+          selectTask(a.dataset.task, { open: true });
+        } else if (a.dataset.data) {
+          showTab("workspace");
+          selectData(a.dataset.data);
+        }
+      };
+    }
+  }
+
+  // ---------------------------------------------------------------- other views
+  function buildDataView() {
+    const rows = G.data.map((d) =>
+      "<tr><td><a class=\"ref\" data-data=\"" + esc(d.name) + "\"><code>" + esc(d.name) + "</code></a></td><td>" + esc(d.type || "") + (d.unit ? " (" + esc(d.unit) + ")" : "") +
+      "</td><td>" + rich(d.caption || d.description || "") + "</td><td>" + (d.range.length ? d.range.map((r) => "<code>" + esc(r) + "</code>").join(" ") : d.derivation ? "derived: <code>" + esc(d.derivation) + "</code>" : '<span class="muted">—</span>') +
+      "</td><td>" + d.asked_by.map((a) => '<a class="ref" data-task="' + esc(a) + '">' + esc(a) + "</a>").join(", ") + "</td></tr>").join("");
+    $("#dataview").innerHTML = '<div class="inner"><h2>Data definitions</h2><div class="card tablewrap"><table class="grid"><thead><tr><th>Name</th><th>Type</th><th>Description</th><th>Values</th><th>Asked by</th></tr></thead><tbody>' +
+      (rows || '<tr><td colspan="5" class="muted">No data items.</td></tr>') + "</tbody></table></div></div>";
+    wireRefs($("#dataview"));
+  }
+  function buildDecisionView() {
+    const ds = G.tasks.filter((t) => t.kind === "decision");
+    $("#decisionview").innerHTML = '<div class="inner"><h2>Decisions</h2>' + (ds.length ? ds.map((d) =>
+      '<section class="card"><h3>' + rich(d.caption || d.name) + ' <span class="tag">' + esc(d.name) + " · " + esc(d.choice_mode || "single") + " choice</span></h3>" +
+      (d.description ? "<p>" + rich(d.description) + "</p>" : "") +
+      '<div class="tablewrap"><table class="grid"><thead><tr><th>Candidate</th><th>Arguments</th><th>Recommended when</th></tr></thead><tbody>' +
+      d.candidates.map((c) => "<tr><td><b>" + esc(c.name) + "</b>" + (c.caption ? '<div class="muted">' + rich(c.caption) + "</div>" : "") + (c.description ? '<div class="muted">' + rich(c.description) + "</div>" : "") +
+        '</td><td><ul class="args">' + (c.arguments.length ? c.arguments.map((a) => '<li><span class="sup ' + esc(a.support) + '">' + esc(a.support) + "</span><code>" + linkExpr(a.condition) + "</code>" + (a.caption ? '<div class="muted">' + rich(a.caption) + "</div>" : "") + "</li>").join("") : '<li class="muted">no arguments</li>') +
+        "</ul></td><td><code>" + linkExpr(c.recommendation || "netsupport() > 0") + "</code></td></tr>").join("") + "</tbody></table></div></section>").join("") : '<p class="muted">No decisions.</p>') + "</div>";
+    wireRefs($("#decisionview"));
+  }
+  function buildLintView() {
+    const L = D.lint || [];
+    $("#lintview").innerHTML = '<div class="inner"><h2>Lint</h2><div class="card tablewrap">' + (L.length
+      ? '<table class="grid"><thead><tr><th>Severity</th><th>Code</th><th>Where</th><th>Message</th></tr></thead><tbody>' +
+        L.map((d) => '<tr class="lint-row ' + esc(d.severity) + '"><td>' + esc(d.severity) + "</td><td><code>" + esc(d.code) + "</code></td><td>" + (d.component ? '<a class="ref" data-task="' + esc(d.component) + '">' + esc(d.component) + "</a>" : "") + (d.line ? " line " + d.line : "") + "</td><td>" + esc(d.message) + "</td></tr>").join("") + "</tbody></table>"
+      : '<p>No findings: the guideline lints clean (Composer-equivalent checks).</p>') + "</div></div>";
+    wireRefs($("#lintview"));
+  }
+  function buildSourceView() {
+    const kw = /\b(plan|action|enquiry|decision|task|data|function|metadata|end|component|candidate|argument|source|precondition|wait_condition|postcondition|recommendation|schedule_constraint|task_definition|caption|description|metaprops|type|unit|range|choice_mode|support_mode|procedure|ltwh|attributes|argument_name|data_definition|engine_version|title|version|author|desc|default_value|derivation|cycle_repeat|number_of_cycles|optional|terminal|autonomous|goal|trigger)\b(?=\s*::|\.)/g;
+    const html = esc(D.source || "")
+      .replace(/(\/\*\*[\s\S]*?\*\*\/)/g, '<span class="cmt">$1</span>')
+      .replace(/(&#39;(?:[^&]|&(?!#39;))*?&#39;)/g, '<span class="str">$1</span>')
+      .replace(kw, '<span class="kw">$1</span>');
+    $("#sourceview").innerHTML = '<div class="inner"><h2>PROforma source <span class="tag">' + esc(D.file || "") + "</span></h2><pre class=\"src\">" + html + "</pre></div>";
+  }
+
+  // ---------------------------------------------------------------- theme + mobile tree
+  $("#themeToggle").onclick = () => {
+    const r = document.documentElement;
+    const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    r.dataset.theme = dark ? "light" : "dark";
+  };
+  $("#treeToggle").onclick = () => $("aside.left").classList.toggle("show");
+
+  // ---------------------------------------------------------------- start
+  buildTree();
+  buildDataView();
+  buildDecisionView();
+  buildLintView();
+  buildSourceView();
+  showProps();
+  render();
+  showTab("workspace");
+})();
+</script>
+</body>
+</html>

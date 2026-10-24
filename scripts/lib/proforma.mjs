@@ -34,6 +34,8 @@ function resolveCli() {
   }
   const cache = path.join(os.homedir(), ".cache", "proforma-mcp", PROFORMA_MCP_VERSION);
   const js = path.join(cache, "node_modules", "proforma-mcp", "bin", "proforma.js");
+  // a cached install without its platform binary (optional dependency skipped) is useless: reinstall
+  if (fs.existsSync(js) && !supportsExport(asCmd(js))) fs.rmSync(cache, { recursive: true, force: true });
   if (!fs.existsSync(js)) {
     console.error(`installing proforma-mcp@${PROFORMA_MCP_VERSION} into ${cache}`);
     fs.mkdirSync(cache, { recursive: true });
@@ -43,8 +45,9 @@ function resolveCli() {
       stdio: ["ignore", 2, 2], // keep stdout for the caller
       shell: win,
     });
-    if (r.status !== 0 || !fs.existsSync(js)) {
-      throw new Error(`could not install proforma-mcp@${PROFORMA_MCP_VERSION}; set PROFORMA_BIN`);
+    if (r.status !== 0 || !fs.existsSync(js) || !supportsExport(asCmd(js))) {
+      fs.rmSync(cache, { recursive: true, force: true });
+      throw new Error(`could not install a working proforma-mcp@${PROFORMA_MCP_VERSION} for ${process.platform}-${process.arch}; set PROFORMA_BIN`);
     }
   }
   return asCmd(js);

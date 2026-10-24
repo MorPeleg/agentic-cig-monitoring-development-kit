@@ -55,6 +55,8 @@ enquiry  :: 'Get_Eligibility_Data' ;
           data_definition :: 'BMI' ;
      source :: 'contraindications' ;
           data_definition :: 'contraindications' ;
+     source :: 'on_insulin_or_secretagogue' ;
+          data_definition :: 'on_insulin_or_secretagogue' ;
      source :: 'weight_related_comorbidity' ;
           data_definition :: 'weight_related_comorbidity' ;
 end enquiry.
@@ -367,12 +369,12 @@ monitored_target=hypoglycemia as a labeled adverse effect when GLP-1 is combined
 monitoring_frequency_basis=tied to follow-up visits and to insulin/secretagogue dose changes when the interaction risk is highest
 monitoring_stance=recommended
 owl.iri=Monitor_Hypoglycemia
-owl.precondition=concomitant insulin or insulin secretagogue therapy \\= true
 provenance_type=package_insert_specified
 source=Wegovy (semaglutide) US Prescribing Information, Warnings and Precautions\\: Hypoglycemia (5.4)
 source_kind=package_insert
 trigger=symptomatic hypoglycemia (shakiness, sweating, confusion, palpitations) or low SMBG
 ' ;
+     precondition ::on_insulin_or_secretagogue = true;
 end action.
 
 action  :: 'Monitor_Pancreatitis' ;
@@ -515,6 +517,13 @@ data  :: 'contraindications' ;
      type :: text ;
      description :: 'Personal/family history of medullary thyroid carcinoma or MEN2, prior pancreatitis, pregnancy/planned pregnancy' ;
      metaprops :: 'owl.iri=Data_Contraindications
+' ;
+end data.
+
+data  :: 'on_insulin_or_secretagogue' ;
+     type :: boolean ;
+     description :: 'Concomitant insulin or insulin secretagogue (sulfonylurea, meglitinide) therapy; scopes hypoglycemia monitoring per the semaglutide label (Warnings and Precautions 5.4)' ;
+     metaprops :: 'owl.iri=Data_On_Insulin_Or_Secretagogue
 ' ;
 end data.
 

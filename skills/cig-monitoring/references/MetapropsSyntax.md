@@ -72,17 +72,22 @@ The `ServiceRequest.*` block in `metaprops` MUST match the same fields in the **
 
 ## Population-scoped monitoring → assert a `precondition`
 
-When `applies_when` names a sub-population rather than `all_patients_on_therapy`, also gate the monitoring `Action` with a PROforma `precondition` (a `PROforma_Condition` whose `string_representation` encodes the condition), so the scoping is machine-readable, not only documented in the string. Example for the label's concomitant-insulin qualification on hypoglycemia:
+When `applies_when` names a sub-population rather than `all_patients_on_therapy`, also gate the monitoring `Action` with a PROforma `precondition` (a `PROforma_Condition` whose `string_representation` encodes the condition), so the scoping is machine-readable, not only documented in the string. Write the `string_representation` as a PROforma expression over a data item the Enquiry collects (add the `pf:Data` + `pf:Source` if needed) so the condition can execute; a sentence such as "concomitant insulin or insulin secretagogue therapy = true" cannot. Example for the label's concomitant-insulin qualification on hypoglycemia:
 
 ```
 ObjectPropertyAssertion(pf:precondition Monitor_Hypoglycemia PC_On_Insulin_Or_Secretagogue)
 ClassAssertion(pf:PROforma_Condition PC_On_Insulin_Or_Secretagogue)
-DataPropertyAssertion(pf:string_representation PC_On_Insulin_Or_Secretagogue "concomitant insulin or insulin secretagogue therapy = true")
+DataPropertyAssertion(pf:string_representation PC_On_Insulin_Or_Secretagogue "on_insulin_or_secretagogue = true")
+ClassAssertion(pf:Data Data_On_Insulin_Or_Secretagogue)
+DataPropertyAssertion(pf:name Data_On_Insulin_Or_Secretagogue "on_insulin_or_secretagogue")
+ClassAssertion(pf:Source Src_On_Insulin_Or_Secretagogue)
+ObjectPropertyAssertion(pf:sref Src_On_Insulin_Or_Secretagogue Data_On_Insulin_Or_Secretagogue)
+ObjectPropertyAssertion(pf:sources Get_Eligibility_Data Src_On_Insulin_Or_Secretagogue)
 ```
 
 The `cig-monitoring-review` source-fidelity phase checks that an action whose cited source qualifies the harm carries both a faithful `applies_when` and (for a sub-population) a `precondition`.
 
-The free-text form above documents the scoping but cannot execute. When the CIG is exported to PROforma (`cig-proforma-export` skill), a precondition only becomes executable if its `string_representation` is a PROforma expression over data items the Enquiry collects, e.g. `on_insulin_or_secretagogue = true` with a matching `pf:Data` + `pf:Source`. Otherwise the export lists it under "needs formalization".
+The `cig-proforma-export` skill lists any precondition that is not an executable expression under "needs formalization".
 
 ## Worked value (labeled ADE — acute pancreatitis)
 

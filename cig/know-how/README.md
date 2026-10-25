@@ -2,6 +2,8 @@
 
 > Source: know-how authored by Mor Peleg, captured verbatim (lightly formatted) for provenance.
 > This document is the domain know-how that the `cig-monitoring` skill operationalizes.
+>
+> **Operationalization (this kit):** the text below refers to the PROforma CIG OWL ontology, where the CIG was first modeled. The kit now emits each CIG as an executable PROforma guideline file (`.pf`) instead. The steps, design patterns and goal types apply unchanged; see `skills/cig-monitoring` for how each maps to PROforma.
 
 ## Aims
 

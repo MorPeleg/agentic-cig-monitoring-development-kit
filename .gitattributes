@@ -1,0 +1,2 @@
+# PROforma files keep Composer's exact bytes (CRLF line endings).
+*.pf -text

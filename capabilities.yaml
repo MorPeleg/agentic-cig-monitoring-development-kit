@@ -2,7 +2,9 @@ options:
   toolExposure: on-demand
   requiresCommands:
     - cli: npx
-      description: Launches the owl-mcp MCP server (ships with Node.js)
+      description: Launches the proforma-mcp MCP server (ships with Node.js)
+    - cli: node
+      description: Runs the kit's gate scripts (scripts/check_cig.mjs, scripts/run_cqs.mjs)
     - cli: semlocal
       description: Required for local semantic memory (npm install -g semlocal)
 skills:
@@ -19,116 +21,139 @@ skills:
     def:
       path: ./skills/cig-monitoring
       description: >-
-        Primary workflow: instantiate the PROforma CIG ontology
-        (cig/proforma.owl) for a clinical guideline. Model therapy
-        recommendations and monitoring of desired/undesired effects as PROforma
-        Plans, Actions, Components and Goals (State Achievement goals with verb
-        achieve/avoid; Action Enactment goals with verb order and FHIR
-        ServiceRequest). Use when turning a guideline into a CIG or building a
-        therapy + monitoring plan.
+        Primary workflow: formalize a clinical guideline as an executable
+        PROforma CIG (.pf). Model therapy recommendations and monitoring of
+        desired/undesired effects as PROforma plans, enquiries, decisions and
+        actions with goals (State Achievement goals with verb achieve/avoid;
+        Action Enactment goals with verb order and a FHIR ServiceRequest). Use
+        when turning a guideline into a CIG or building a therapy + monitoring
+        plan.
       requires:
-        - '@owl.add_axiom'
-        - '@owl.add_axioms'
-        - '@owl.add_data_property_assertion'
-        - '@owl.add_annotation_assertion'
-        - '@owl.add_object_property_assertion'
-        - '@owl.add_class_assertion'
-        - '@owl.add_prefix'
-        - '@owl.set_ontology_iri'
-        - '@owl.find_axioms'
-        - '@owl.get_all_axioms'
-        - '@owl.sparql_query'
+        - '@proforma.pf_reference'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_lint'
+        - '@proforma.pf_check_expression'
+        - '@proforma.pf_to_mermaid'
   - id: cig-formalization
     type: local
     def:
       path: ./skills/cig-formalization
       description: >-
-        Deterministic Step 6 emitter: materialize an APPROVED PROforma CIG
-        monitoring proposal into OWL via the ontology-editor tools. Default is
-        a fresh-file full re-emit (canonical IRIs, fixed per-action bundle,
-        ServiceRequest on both the Goal noun_phrase and the Action metaprops).
-        Coding-only requests use coding-patch mode: do not delete the OWL; add
-        typed coding keys on existing Actions only. Keep one rdfs:label/comment
-        with no hand-written counts, and self-apply the end-of-Step-6
-        determinism check. Use whenever an approved proposal must be
-        formalized/regenerated, or when adding SNOMED/OMOP/LOINC codes to an
-        existing CIG.
+        Deterministic Step 6 emitter: build an APPROVED PROforma CIG
+        monitoring proposal as a .pf guideline with the proforma tools.
+        Default is a fresh-file full re-emit (snapshot the previous guideline,
+        then create_guideline; canonical names; fixed per-action bundle;
+        ServiceRequest on both goal.noun_phrase and the metaprops keys;
+        executable preconditions). Coding-only requests use coding-patch
+        mode: do not rebuild; add typed coding keys on existing actions only.
+        Keep the metadata desc qualitative with no hand-written counts, and
+        self-apply the end-of-Step-6 determinism check. Use whenever an
+        approved proposal must be formalized/regenerated, or when adding
+        SNOMED/OMOP/LOINC codes to an existing CIG.
       requires:
-        - '@owl.add_axioms'
-        - '@owl.add_data_property_assertion'
-        - '@owl.add_annotation_assertion'
-        - '@owl.add_object_property_assertion'
-        - '@owl.add_class_assertion'
-        - '@owl.remove_axiom'
-        - '@owl.add_prefix'
-        - '@owl.set_ontology_iri'
-        - '@owl.find_axioms'
-        - '@owl.get_all_axioms'
-        - '@owl.ontology_metadata'
-        - '@owl.get_labels_for_iri'
-  - id: odp-pattern-selector
+        - '@proforma.pf_reference'
+        - '@proforma.pf_create_guideline'
+        - '@proforma.pf_set_metadata'
+        - '@proforma.pf_add_task'
+        - '@proforma.pf_add_component'
+        - '@proforma.pf_add_data_item'
+        - '@proforma.pf_add_source'
+        - '@proforma.pf_add_candidate'
+        - '@proforma.pf_add_argument'
+        - '@proforma.pf_set_attribute'
+        - '@proforma.pf_remove_attribute'
+        - '@proforma.pf_upsert_component'
+        - '@proforma.pf_schedule_constraint'
+        - '@proforma.pf_check_expression'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_format'
+        - '@proforma.pf_lint'
+        - '@proforma.pf_to_mermaid'
+  - id: proforma-editor
     type: local
     def:
-      path: ./skills/odp-pattern-selector
-      description: Select a pattern from the ODP pattern library
+      path: ./skills/proforma-editor
+      description: >-
+        proforma MCP tools for PROforma guideline files (.pf): read, search,
+        export as JSON, lint, type-check expressions, diagram, and edit
+        (tasks, data items, candidates, arguments, attributes, metadata).
+      requires:
+        - '@proforma.pf_reference'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_list_components'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_find_references'
+        - '@proforma.pf_plan_graph'
+        - '@proforma.pf_search'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_lint'
+        - '@proforma.pf_check_expression'
+        - '@proforma.pf_to_mermaid'
+        - '@proforma.pf_create_guideline'
+        - '@proforma.pf_upsert_component'
+        - '@proforma.pf_add_task'
+        - '@proforma.pf_add_component'
+        - '@proforma.pf_remove_component'
+        - '@proforma.pf_rename'
+        - '@proforma.pf_set_attribute'
+        - '@proforma.pf_add_attributes'
+        - '@proforma.pf_remove_attribute'
+        - '@proforma.pf_remove_element'
+        - '@proforma.pf_schedule_constraint'
+        - '@proforma.pf_add_candidate'
+        - '@proforma.pf_add_argument'
+        - '@proforma.pf_add_source'
+        - '@proforma.pf_add_data_item'
+        - '@proforma.pf_set_metadata'
+        - '@proforma.pf_format'
   - id: cq-verification
     type: local
     def:
       path: ./skills/cq-verification
       description: >-
-        Verify competency questions against an OWL ontology using SPARQL queries
-        with test data. Use during Step 7, or whenever the user asks to test,
-        validate, or verify an ontology against its CQs.
+        Verify competency questions against a PROforma guideline: one query
+        per CQ over the guideline's JSON export, run with scripts/run_cqs.mjs.
+        Use during Step 7, or whenever the user asks to test, validate, or
+        verify a CIG against its CQs.
       requires:
-        - '@owl.add_axiom'
-        - '@owl.add_axioms'
-        - '@owl.add_data_property_assertion'
-        - '@owl.add_object_property_assertion'
-        - '@owl.add_class_assertion'
-        - '@owl.add_prefix'
-        - '@owl.set_ontology_iri'
-        - '@owl.find_axioms'
-        - '@owl.sparql_query'
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_search'
   - id: cig-monitoring-review
     type: local
     def:
       path: ./skills/cig-monitoring-review
       description: >-
-        Mandatory Step 7 value-quality gate for CIG monitoring builds. Checks
-        that every monitoring Action's pf:metaprops has real content (rejects
-        placeholders like source=s), that the ServiceRequest order is on BOTH
-        the Goal noun_phrase and the Action metaprops, that case-report sources
-        document a drug harm and are in approved-proposal scope, that each
-        action traces to a monitored target, that no empty placeholder
-        components or unpopulated Enquiry/Decision remain, and that coding-only
-        runs do not rewrite IRIs, captions, or Decision candidates. Replaces
-        the gameable presence-only metaprops check.
+        Mandatory Step 7 value-quality gate for CIG monitoring builds. Runs
+        scripts/check_cig.mjs (lint, structure and scope, the metaprops
+        contract, ServiceRequest on both goal.noun_phrase and the metaprops,
+        executable preconditions, the approved action set, baseline
+        regressions, the coding-only freeze), then the reviewer's judgment
+        phases (case-report harm and scope, source fidelity, label coverage)
+        in the same report. Rejects placeholders like source=s.
       requires:
-        - '@owl.find_axioms'
-        - '@owl.get_all_axioms'
-        - '@owl.sparql_query'
-  - id: ontology-editor
-    type: local
+        - '@proforma.pf_export_json'
+        - '@proforma.pf_get_component'
+        - '@proforma.pf_outline'
+        - '@proforma.pf_lint'
+        - '@proforma.pf_search'
+  # PROforma authoring skill and the HTML guideline viewer. Minitour/proforma is
+  # private for now: run `capa auth github.com` once with an account that can read it.
+  - id: proforma
+    type: github
     def:
-      path: ./skills/ontology-editor
-      description: OWL-MCP tools for ontology editing (axioms, prefixes, IRI,
-        pitfalls, quality)
-      requires:
-        - '@owl.add_axiom'
-        - '@owl.add_axioms'
-        - '@owl.add_data_property_assertion'
-        - '@owl.add_annotation_assertion'
-        - '@owl.add_object_property_assertion'
-        - '@owl.add_class_assertion'
-        - '@owl.remove_axiom'
-        - '@owl.find_axioms'
-        - '@owl.get_all_axioms'
-        - '@owl.add_prefix'
-        - '@owl.ontology_metadata'
-        - '@owl.get_labels_for_iri'
-        - '@owl.set_ontology_iri'
-        - '@owl.test_quality'
-        - '@owl.test_pitfalls'
+      repo: Minitour/proforma@proforma
+      description: >-
+        PROforma (.pf) authoring with the proforma CLI, and the interactive
+        HTML guideline viewer (scripts/build_report.mjs: task tree, plan
+        canvas with pan/zoom/drill-down, properties, data and decision views).
+        Use to render a CIG's guideline/<name>.html after every emit.
+      requires: []
   - id: semlocal
     type: github
     def:
@@ -150,64 +175,55 @@ agents:
     - type: inline
       id: cig_monitoring_workflow
       content: >-
-        This kit's primary purpose is instantiating the PROforma CIG ontology
-        (cig/proforma.owl) for clinical guidelines, focusing on monitoring of
-        therapy completion and of desired/undesired effects. For CIG tasks
-        follow the cig-monitoring skill: read guideline PDFs from the shared
-        cig/guidelines/ library; extract therapy recommendations, clinical
-        goals, ADEs and monitoring (proposing monitoring frequencies with
-        justification when the guidelines omit them); then build a PROforma
-        Top-Level Plan with an Enquiry, a Decision, a Therapy Plan, and a
-        Monitoring Plan in sequence (the Monitoring Plan has parallel Monitor
-        Actions / Monitor Desired State / Monitor Undesired ADEs sub-plans).
-        Scope the design pattern to the request: build ONLY the requested
-        sub-structure and never emit empty placeholder components, an Enquiry
-        with no data items, or a Decision with no candidates/criteria — populate
-        the Enquiry's data items and the Decision's candidates+criteria from the
-        PROforma spec (see references/Enquiry.md and references/Decision.md).
-        Model each therapy intervention as an Action + Component with a State
-        Achievement Goal (verb achieve/avoid), and each monitoring item as an
-        Action + Component with an Action Enactment Goal (verb order, FHIR
-        ServiceRequest). The ServiceRequest order must carry ALL FIVE fields —
-        ServiceRequest.intent, ServiceRequest.code,
-        ServiceRequest.occurrenceTiming, ServiceRequest.patientInstruction, and
-        ServiceRequest.performerInstruction (performerInstruction is REQUIRED
-        whenever there is a triggered lab or an urgent/escalation step, e.g. "if
-        symptoms occur, order serum CK/CPK, creatinine/eGFR, electrolytes
-        including potassium and phosphate, urinalysis for blood/myoglobin
-        pattern, and assess hydration/AKI risk") — never stop at intent + code.
-        Assert pf:metaprops on every monitoring Action following the canonical
-        grammar in references/MetapropsSyntax.md — NO placeholder values
-        (source=s, instrument=i): the full ServiceRequest.* block must appear on
-        BOTH the Goal noun_phrase AND the Action metaprops, with real citations
-        and provenance/operationalization keys (category, monitored_target,
-        provenance_type, source(s), knowledge_origin, guideline_status,
-        literature_basis, assistant_invention, instrument,
-        monitoring_frequency_basis, trigger, cq) so sourced facts are separable
-        from self-designed ones and each action traces to the harm/goal it
-        monitors. Case-report sources are opt-in (only if the user/proposal
-        includes them) and must document a drug harm (not symptom resolution
-        after stopping). Write long metaprops/noun_phrase literals
-        with the structured assertion tools so they are not truncated. Step 6 is
-        a DETERMINISTIC emit: delegate it to the
-        cig-formalizer subagent, which treats the approved proposal as the
-        single source of truth. Full re-emits build into a FRESH/EMPTY file
-        (never append to a prior run). Coding-only requests (add SNOMED/OMOP/
-        LOINC) use coding-patch mode: do not delete the OWL; freeze IRIs,
-        captions, Decision candidates, occurrenceTiming, and source= strings;
-        add only typed coding keys. Use the canonical IRI fixed in the proposal
-        (one IRI per ADE/label section), and emit the approved action set
-        EXACTLY with no duplicates, no shared Goals, the ontology IRI set, and
-        a single rdfs:label/comment. Step 7 is a BLOCKING gate: delegate to the
-        cig-monitoring-reviewer subagent (runs cig-monitoring-review, which
-        inspects metaprops VALUES not just keys) and the cig-cq-verifier
-        subagent. The gate re-runs the FULL check set every time, treats
-        scope/residue/duplicate mismatches, missing ServiceRequest fields, out-
-        of-scope case-report actions, and coding-only caption/IRI drift as
-        hard FAILs, never waives a FAIL or inherits a prior PASS, and PASSes
-        only when zero FAILs remain. Reuse PROforma classes/properties by IRI
-        and imitate cig/examples/obesity-glp1-monitoring.owl plus
-        skills/cig-monitoring/references/ActionEnactmentGoal.md.
+        This kit's primary purpose is formalizing clinical guidelines as
+        executable PROforma CIGs (projects/<project_dir>/guideline/<name>.pf),
+        focusing on monitoring of therapy completion and of desired/undesired
+        effects. For CIG tasks follow the cig-monitoring skill: read guidelines
+        from the shared cig/guidelines/ library; extract therapy
+        recommendations, clinical goals, ADEs and monitoring (proposing
+        monitoring frequencies with justification when the guidelines omit
+        them); then build a PROforma Top-Level Plan with an Enquiry, a
+        Decision, a Therapy Plan, and a Monitoring Plan in sequence (the
+        Monitoring Plan has parallel Monitor Actions / Monitor Desired State /
+        Monitor Undesired ADEs sub-plans). Scope the design pattern to the
+        request: build ONLY the requested sub-structure and never emit empty
+        placeholder tasks, an Enquiry with no data items, or a Decision with no
+        candidates/criteria — populate the Enquiry's data items and the
+        Decision's candidates+criteria (see references/Enquiry.md and
+        references/Decision.md). Conditions are executable PROforma
+        expressions over data items the Enquiry collects, never sentences.
+        Model each therapy intervention as an Action with a State Achievement
+        goal (metaprops goal.verb achieve/avoid + goal.noun_phrase), and each
+        monitoring item as an Action with an Action Enactment goal
+        (goal.verb=order, FHIR ServiceRequest). The ServiceRequest order must
+        carry ALL FIVE fields — ServiceRequest.intent, ServiceRequest.code,
+        ServiceRequest.occurrenceTiming, ServiceRequest.patientInstruction,
+        and ServiceRequest.performerInstruction (performerInstruction is
+        REQUIRED whenever there is a triggered lab or an urgent/escalation
+        step) — in BOTH goal.noun_phrase and the metaprops keys, with identical
+        values; never stop at intent + code. Set the metaprops of every
+        monitoring Action following references/MetapropsSyntax.md (Java
+        properties, source.1..n) with NO placeholder values, real citations
+        and the provenance/operationalization keys (category, monitored_target
+        naming the task it traces to, applies_when, provenance_type,
+        source_kind, source.N, knowledge_origin, guideline_status,
+        monitoring_stance, literature_basis, assistant_invention, instrument,
+        monitoring_frequency_basis, trigger, cq). A population-scoped action
+        carries an executable precondition over an Enquiry data item.
+        Case-report sources are opt-in. The proposal fixes canonical names and
+        lists every Action in a ```cig-actions block. Step 6 is a
+        DETERMINISTIC emit: delegate it to the cig-formalizer subagent, which
+        treats the approved proposal as the single source of truth. Full
+        re-emits snapshot the previous guideline to guideline/baseline/ and
+        build a FRESH file (never append to a prior run). Coding-only requests
+        (add SNOMED/OMOP/LOINC) use coding-patch mode: freeze names, captions,
+        Decision candidates, occurrenceTiming and source strings; add only the
+        typed coding keys. Step 7 is a BLOCKING gate: delegate to the
+        cig-monitoring-reviewer subagent (scripts/check_cig.mjs plus the
+        judgment phases of cig-monitoring-review) and the cig-cq-verifier
+        subagent (scripts/run_cqs.mjs). The gate re-runs the FULL check set
+        every time, never waives a FAIL or inherits a prior PASS, and PASSes
+        only when zero FAILs remain. Imitate cig/examples/obesity-glp1-monitoring.pf.
     - type: inline
       id: capa_tool_usage
       content: >-
@@ -215,273 +231,396 @@ agents:
         to activate it, then use `call_tool(name: "<tool>", data: {...})` to
         invoke the relevant tool.
     - type: inline
-      id: ontology_builder_tools
+      id: proforma_tools
       content: >-
-        For ontology work: edit OWL only via the ontology-editor tools (never by
-        hand); check quality with the OWL-MCP test_pitfalls and test_quality
-        tools; and verify competency questions by running SPARQL with the
-        sparql_query tool (pass the ontology and test-data file paths together
-        so they are merged into one graph before querying).
+        Edit PROforma guideline files (.pf) only via the proforma-editor tools
+        (never by hand); every edit is re-parsed and reports lint counts.
+        Type-check every condition with check_expression before setting it,
+        keep lint at zero errors, read a guideline as data with export_json,
+        and regenerate the Mermaid diagram with to_mermaid after each emit.
 subagents:
   - id: cig-formalizer
     description: >-
-      Deterministic PROforma OWL emitter for Step 6 of a CIG monitoring build.
-      Use to formalize an APPROVED proposal into an OWL ABox. Full re-emits
-      regenerate from an empty file (never append to a prior run). Coding-only
-      requests patch typed coding keys on the existing file without deleting it
-      or rewriting captions, IRIs, or Decision candidates. Delegate the
-      formalization step to this subagent.
+      Deterministic PROforma emitter for Step 6 of a CIG monitoring build. Use
+      to formalize an APPROVED proposal as a .pf guideline. Full re-emits
+      snapshot the previous guideline and regenerate from a fresh file (never
+      append to a prior run). Coding-only requests patch typed coding keys on
+      the existing guideline without rebuilding it or rewriting captions,
+      names, or Decision candidates. Delegate the formalization step to this
+      subagent.
     skills:
       - cig-formalization
-      - ontology-editor
+      - proforma-editor
     tools:
-      - add_axioms
-      - add_data_property_assertion
-      - add_annotation_assertion
-      - add_object_property_assertion
-      - add_class_assertion
-      - remove_axiom
-      - find_axioms
-      - get_all_axioms
-      - add_prefix
-      - set_ontology_iri
-      - ontology_metadata
-      - get_labels_for_iri
-      - test_pitfalls
-      - test_quality
+      - pf_reference
+      - pf_create_guideline
+      - pf_set_metadata
+      - pf_add_task
+      - pf_add_component
+      - pf_add_data_item
+      - pf_add_source
+      - pf_add_candidate
+      - pf_add_argument
+      - pf_set_attribute
+      - pf_remove_attribute
+      - pf_upsert_component
+      - pf_schedule_constraint
+      - pf_check_expression
+      - pf_get_component
+      - pf_export_json
+      - pf_outline
+      - pf_format
+      - pf_lint
+      - pf_to_mermaid
     instructions: |
       You are the cig-formalizer. You run Step 6 (Formalization) of a CIG
       monitoring build and nothing else. FOLLOW THE `cig-formalization` SKILL
       (loaded for you) as the authoritative recipe — it defines emit-mode
-      selection (full re-emit vs coding-patch), the fresh-file rule for full
-      re-emits, canonical IRIs, the fixed per-action bundle, ServiceRequest-on-
-      both-sides, the annotation discipline, and the end-of-Step-6 determinism
-      check.
+      selection (full re-emit vs coding-patch), the baseline snapshot and
+      fresh-file rule for full re-emits, canonical names, the fixed per-action
+      bundle, ServiceRequest-on-both-sides, executable preconditions, the
+      metadata discipline, and the end-of-Step-6 determinism check.
 
       The APPROVED proposal (`projects/<project_dir>/plans/PROPOSAL-*.md`,
-      status: approved) is your SINGLE SOURCE OF TRUTH; its §6 Individuals tables
-      are the verbatim IRI list. Read it and the worked example
-      `cig/examples/obesity-glp1-monitoring.owl`, then emit OWL via the
-      ontology-editor tools only — never edit OWL by hand. If the proposal is
-      missing or not approved, stop and report instead of emitting.
+      status: approved) is your SINGLE SOURCE OF TRUTH; its §6 tasks table and
+      `cig-actions` block are the verbatim name list. Read it and the worked
+      example `cig/examples/obesity-glp1-monitoring.pf`, then build the
+      guideline with the proforma-editor tools only — never edit a .pf by hand.
+      If the proposal is missing or not approved, stop and report instead of
+      emitting.
 
       Choose the emit mode first. If the user asked only to add terminology
       codes (SNOMED/OMOP/LOINC) or the proposal marks `mode: coding-patch`, do
-      NOT delete the file. Patch only `ServiceRequest.supportingInfo.*Codes` on
-      existing Actions. MUST NOT rename IRIs, change captions, Decision
-      candidates, occurrenceTiming, or source= strings. If the proposal action
-      set differs from the existing OWL, stop — that is not a coding patch.
+      NOT rebuild. Snapshot the guideline, then patch only
+      `ServiceRequest.supportingInfo.*Codes` on existing Actions. MUST NOT
+      rename tasks, change captions, Decision candidates, occurrenceTiming, or
+      source strings. If the proposal action set differs from the existing
+      guideline, stop — that is not a coding patch.
 
-      Non-negotiables for a full re-emit (the skill expands each): build into a
-      FRESH/EMPTY file (delete any existing project ontology first; never append
-      to a prior run); emit the approved action set EXACTLY (no residue, no
-      renames, no duplicates, no two Actions sharing a Goal, single plan root);
-      every monitoring Goal noun_phrase AND Action metaprops carries all five
-      ServiceRequest.* fields (incl. performerInstruction for triggered/urgent
-      steps); no placeholder values; write long literals with
-      add_data_property_assertion. Before returning, run the skill's
-      determinism check with find_axioms/get_all_axioms and report each result
-      (Action count == approved §6; one metaprops + one Goal + one noun_phrase
-      per Action; ontology IRI + version IRI set; exactly one rdfs:label and one
-      rdfs:comment with no hand-written counts).
+      Non-negotiables for a full re-emit (the skill expands each): snapshot
+      the previous guideline to `guideline/baseline/`, then build a FRESH file
+      (never append to a prior run); emit the approved action set EXACTLY (no
+      residue, no renames, no duplicates, single root plan); every monitoring
+      Action's goal.noun_phrase AND metaprops carry all five ServiceRequest.*
+      fields with identical values (incl. performerInstruction for
+      triggered/urgent steps); no placeholder values; conditions are
+      executable expressions checked with check_expression. Before returning,
+      run `node scripts/check_cig.mjs <guideline> --proposal <proposal>` and
+      report each determinism item (action set == cig-actions; one goal and
+      one metaprops per Action; single root plan; lint 0 errors; metadata title
+      and a qualitative desc with no hand-written counts).
   - id: cig-monitoring-reviewer
     description: >-
       Independent BLOCKING value-quality + structural gate for Step 7 of a CIG
       monitoring build (runs the cig-monitoring-review skill). Use to review or
-      re-review a PROforma monitoring ontology. It re-runs the FULL check set
+      re-review a PROforma monitoring guideline. It re-runs the FULL check set
       every time, treats scope/duplicate/residue mismatches and missing
       ServiceRequest fields as hard FAILs, and never waives a FAIL.
     skills:
       - cig-monitoring-review
     tools:
-      - find_axioms
-      - get_all_axioms
-      - sparql_query
+      - pf_export_json
+      - pf_get_component
+      - pf_outline
+      - pf_lint
+      - pf_search
     instructions: |
       You are the cig-monitoring-reviewer. Run the cig-monitoring-review skill
-      as a TRUE BLOCKING GATE, independent of whoever built the ontology. Always
-      pass both the project ontology and `cig/proforma.owl` to sparql_query. When
-      this is an iteration (a prior approved `projects/<project_dir>/plans/
-      PROPOSAL-*.md`, a prior project ontology, or a `semlocal --collection
-      <project_dir>` baseline exists), also load that baseline and diff it
-      against the current build.
+      as a TRUE BLOCKING GATE, independent of whoever built the guideline.
+      Start with `node scripts/check_cig.mjs <guideline> --proposal <approved
+      proposal> --report projects/<project_dir>/reviews/cig-monitoring-review-<ts>.md`.
+      When this is an iteration (a prior approved proposal or a snapshot in
+      `projects/<project_dir>/guideline/baseline/` exists), add
+      `--baseline <newest snapshot>`; for a coding-only run add
+      `--coding-patch`. Then complete the judgment phases in the same report.
 
       Gate rules:
       - Re-run the COMPLETE check set every time, including on a re-check. A
         re-check may NEVER inherit a prior PASS, re-verify only a subset, or drop
         a previously reported FAIL from the verdict.
-      - PASS if and only if there are ZERO FAILs across the full set.
+      - PASS if and only if check_cig.mjs exits 0 AND the judgment phases have
+        ZERO FAILs.
       - The following are HARD blocking FAILs, not WARNs, notes, or "optional"
         recommendations:
-          * the built action set differs from the approved proposal's set
-            (extras, residue from a prior session, or missing actions);
-          * duplicate concepts / duplicate Action IRIs for the same ADE;
-          * two or more plan roots, or two Actions sharing one Goal;
-          * an individual with duplicate metaprops or duplicate noun_phrase;
-          * the ontology IRI is unset (anonymous Ontology(...) header);
-          * more than one rdfs:label or rdfs:comment;
-          * any monitoring Goal noun_phrase or Action metaprops missing any of
-            the five ServiceRequest.* fields (intent, code, occurrenceTiming,
-            patientInstruction, performerInstruction when a triggered/urgent step
-            exists);
-          * placeholder values, ServiceRequest inconsistency between Goal and
-            Action, untraceable monitored_target, or a stance↔schedule conflict;
+          * the built action set differs from the approved proposal's
+            cig-actions block (extras, residue from a prior session, or
+            missing actions);
+          * duplicate concepts (two tasks for the same ADE), an unreachable
+            task, or more than one root plan;
+          * lint errors;
+          * an Action without a goal, an Enquiry without data items, a
+            Decision or candidate without criteria, an empty plan;
+          * any monitoring Action whose goal.noun_phrase or metaprops lacks any
+            of the five ServiceRequest.* fields (intent, code,
+            occurrenceTiming, patientInstruction, performerInstruction when a
+            triggered/urgent step exists), or where the two disagree;
+          * placeholder values, untraceable monitored_target, a
+            population-scoped action without an executable precondition, or a
+            stance↔schedule conflict;
           * a case-report Action that is not explicitly in the approved
             proposal's scope;
-          * CODING-ONLY DRIFT: on a coding-patch run, any change to Action IRIs,
-            captions, Decision candidates, Goal noun_phrase, occurrenceTiming,
-            or source= strings (only the four supportingInfo.*Codes keys may be
+          * CODING-ONLY DRIFT: on a coding-patch run, any change to task names,
+            captions, Decision candidates, goal.noun_phrase, occurrenceTiming,
+            or source strings (only the four supportingInfo.*Codes keys may be
             added/updated);
           * BASELINE REGRESSION (iterations only): a therapy Action or goal —
-            especially an `avoid` State Achievement Goal or the top-plan `treat`
-            goal — an Enquiry Data/Source item, a Decision
-            Candidate/Argument/criterion/recommendation, or a monitoring Action
-            that is present in the prior approved baseline but ABSENT from the
-            current proposal/build without an explicit, source-grounded §10
-            Excluded-Candidate entry. A new source may only add or refine; a
-            silent drop of previously-approved content is a FAIL, not a WARN.
+            especially an `avoid` goal or the top-plan `treat` goal — an
+            Enquiry data item, a Decision candidate/argument, or a monitoring
+            Action that is present in the baseline but ABSENT from the current
+            guideline without an explicit, source-grounded §10 entry and a
+            cig-excluded line. A new source may only add or refine.
       - There is NO "keep it because it is well implemented" and NO "human
         confirmation needed" path to PASS. The artifact conforms to the approved
         plan or it FAILs.
-      - Emit the readable report under `projects/<project_dir>/reviews/` and, if
-        anything FAILs, hand the fix list back to the cig-formalizer; do not
+      - If anything FAILs, hand the fix list back to the cig-formalizer; do not
         report the CIG as done while any FAIL remains.
   - id: cig-cq-verifier
     description: >-
       Competency-question verification subagent for Step 7 (runs the
       cq-verification skill). Use to verify every CQ of a CIG monitoring
-      ontology with real SPARQL execution over the ontology + test data merged
-      into one graph.
+      guideline with real query execution over the guideline itself.
     skills:
       - cq-verification
     tools:
-      - add_axioms
-      - add_data_property_assertion
-      - add_object_property_assertion
-      - add_class_assertion
-      - add_prefix
-      - set_ontology_iri
-      - find_axioms
-      - sparql_query
+      - pf_export_json
+      - pf_outline
+      - pf_get_component
+      - pf_search
     instructions: |
       You are the cig-cq-verifier. Run the cq-verification skill for Step 7.
-      Create test data, write a SPARQL query for EVERY competency question in the
-      approved proposal, and execute each one with sparql_query, passing the
-      project ontology, `cig/proforma.owl`, and the test-data file together so
-      schema + individuals are merged into one graph (never query test data
-      alone). Every CQ must appear in the results table. If any CQ fails due to
-      an ontology gap, report it so the build returns to Step 6.
+      Write a query for EVERY competency question in the approved proposal in
+      `projects/<project_dir>/cqs/cq-queries.mjs` (all of them before running
+      any), then run `node scripts/run_cqs.mjs <guideline>
+      projects/<project_dir>/cqs/cq-queries.mjs --proposal <approved proposal>
+      --report projects/<project_dir>/reviews/cq-verification-<ts>.md`. Queries
+      read the guideline's JSON export; never answer a CQ from hand-made data.
+      Every CQ must appear in the results table. If any CQ fails because the
+      guideline lacks the content, report it so the build returns to Step 6.
 servers:
-  # Minitour/owl-mcp (Rust): https://github.com/Minitour/owl-mcp
-  - id: owl
+  # proforma-mcp (Rust): PROforma (.pf) guideline CLI + MCP server
+  # https://www.npmjs.com/package/proforma-mcp
+  - id: proforma
     type: mcp
-    description: OWL ontology editing via MCP (find/add/remove axioms, OWL
-      functional syntax)
+    description: PROforma guideline files (.pf) via MCP (read, edit, lint,
+      expression type checking, JSON export, Mermaid)
     def:
       cmd: npx
       args:
         - -y
-        - owl-mcp@1.0.11
+        - proforma-mcp@0.2.0
         - serve
 tools:
-  - id: add_axioms
-    type: mcp
-    description: Add multiple axioms to an OWL file
-    def:
-      server: '@owl'
-      tool: add_axioms
-  - id: add_data_property_assertion
+  - id: pf_reference
     type: mcp
     description: >-
-      Assert a data property value with the literal passed as a separate field
-      (no escaping/shell-quoting). Use for long or special-character literals
-      such as CIG pf:metaprops / noun_phrase strings.
+      Return the PROforma language reference.
     def:
-      server: '@owl'
-      tool: add_data_property_assertion
-  - id: add_annotation_assertion
+      server: '@proforma'
+      tool: proforma_reference
+  - id: pf_outline
     type: mcp
     description: >-
-      Assert an annotation value with the literal passed as a separate field (no
-      escaping). Use for long annotation literals (rdfs:comment, etc.).
+      Overview of a guideline.
     def:
-      server: '@owl'
-      tool: add_annotation_assertion
-  - id: add_object_property_assertion
-    type: mcp
-    description: Link two individuals via an object property (subject -> target).
-    def:
-      server: '@owl'
-      tool: add_object_property_assertion
-  - id: add_class_assertion
-    type: mcp
-    description: Assert that an individual is an instance of a class.
-    def:
-      server: '@owl'
-      tool: add_class_assertion
-  - id: remove_axiom
-    type: mcp
-    description: Remove one axiom from an OWL file
-    def:
-      server: '@owl'
-      tool: remove_axiom
-  - id: find_axioms
-    type: mcp
-    description: Find axioms matching a pattern in an OWL file
-    def:
-      server: '@owl'
-      tool: find_axioms
-  - id: get_all_axioms
-    type: mcp
-    description: Get all axioms from an OWL file
-    def:
-      server: '@owl'
-      tool: get_all_axioms
-  - id: add_prefix
-    type: mcp
-    description: Add a prefix mapping to an OWL file
-    def:
-      server: '@owl'
-      tool: add_prefix
-  - id: ontology_metadata
-    type: mcp
-    description: Get ontology metadata/annotations
-    def:
-      server: '@owl'
-      tool: ontology_metadata
-  - id: get_labels_for_iri
-    type: mcp
-    description: Get labels for an IRI in an OWL file
-    def:
-      server: '@owl'
-      tool: get_labels_for_iri
-  - id: set_ontology_iri
-    type: mcp
-    description: Set or update the ontology IRI and version IRI
-    def:
-      server: '@owl'
-      tool: set_ontology_iri
-  - id: test_pitfalls
-    type: mcp
-    description: Scan for common modeling pitfalls in an OWL file
-    def:
-      server: '@owl'
-      tool: test_pitfalls
-  - id: test_quality
+      server: '@proforma'
+      tool: outline
+  - id: pf_list_components
     type: mcp
     description: >-
-      Evaluate ontology quality with the OQuaRE framework (uses the whelk OWL EL
-      reasoner to compute the inferred class hierarchy); returns metrics,
-      subcharacteristics, and an overall 1-5 quality score
+      List top-level components (plans, decisions, actions, enquiries, tasks,
+      data items, functions) with kind, caption, type and line.
     def:
-      server: '@owl'
-      tool: test_quality
-  - id: sparql_query
+      server: '@proforma'
+      tool: list_components
+  - id: pf_get_component
     type: mcp
     description: >-
-      Run a SPARQL query over one or more OWL files. Pass several owl_file_paths
-      to merge a schema with its ABox/test data in-memory before querying (used
-      for competency-question verification). SELECT/ASK return SPARQL JSON.
+      Get a component or nested element as PROforma text (default) or JSON.
     def:
-      server: '@owl'
-      tool: sparql_query
+      server: '@proforma'
+      tool: get_component
+  - id: pf_find_references
+    type: mcp
+    description: >-
+      Find every reference to a task, data item, function or component name.
+    def:
+      server: '@proforma'
+      tool: find_references
+  - id: pf_plan_graph
+    type: mcp
+    description: >-
+      Return a plan's graph as JSON.
+    def:
+      server: '@proforma'
+      tool: plan_graph
+  - id: pf_search
+    type: mcp
+    description: >-
+      Case-insensitive search across names, captions, descriptions and
+      expressions.
+    def:
+      server: '@proforma'
+      tool: search
+  - id: pf_lint
+    type: mcp
+    description: >-
+      Validate a guideline like Deontics Composer does (syntax, Composer
+      compatibility, reference resolution, verifier type checks with the
+      engine's own messages) plus extra checks (scheduling cycles, recursive
+      plans, unknown candidates/tasks, crash-prone constructs).
+    def:
+      server: '@proforma'
+      tool: lint
+  - id: pf_check_expression
+    type: mcp
+    description: >-
+      Parse and type-check an expression (optionally against a .pf file).
+    def:
+      server: '@proforma'
+      tool: check_expression
+  - id: pf_to_mermaid
+    type: mcp
+    description: >-
+      Export a plan as a Mermaid flowchart.
+    def:
+      server: '@proforma'
+      tool: to_mermaid
+  - id: pf_export_json
+    type: mcp
+    description: >-
+      Export the whole guideline as query-friendly JSON (format
+      proforma-export/1).
+    def:
+      server: '@proforma'
+      tool: export_json
+  - id: pf_create_guideline
+    type: mcp
+    description: >-
+      Create a new, valid PROforma 1.9 guideline file (engine_version,
+      metadata, metaprops and an empty root plan).
+    def:
+      server: '@proforma'
+      tool: create_guideline
+  - id: pf_upsert_component
+    type: mcp
+    description: >-
+      Add or replace whole top-level components written as PROforma text (e.g.
+    def:
+      server: '@proforma'
+      tool: upsert_component
+  - id: pf_add_task
+    type: mcp
+    description: >-
+      Create a task (plan, decision, action, enquiry or generic task) inside a
+      plan.
+    def:
+      server: '@proforma'
+      tool: add_task
+  - id: pf_add_component
+    type: mcp
+    description: >-
+      Add a component to a plan that reuses an existing task definition,
+      optionally after other components and with extra component attributes
+      (optional, cycles, param_value).
+    def:
+      server: '@proforma'
+      tool: add_component
+  - id: pf_remove_component
+    type: mcp
+    description: >-
+      Remove a top-level task, data item or function.
+    def:
+      server: '@proforma'
+      tool: remove_component
+  - id: pf_rename
+    type: mcp
+    description: >-
+      Rename a task, data item or function and update all references
+      (task_definition, scheduling constraints, sources, expressions).
+    def:
+      server: '@proforma'
+      tool: rename
+  - id: pf_set_attribute
+    type: mcp
+    description: >-
+      Set one attribute on a component or nested element (replaces an existing
+      value).
+    def:
+      server: '@proforma'
+      tool: set_attribute
+  - id: pf_add_attributes
+    type: mcp
+    description: >-
+      Insert attributes or nested elements written as PROforma text into a
+      component or nested element, e.g.
+    def:
+      server: '@proforma'
+      tool: add_attributes
+  - id: pf_remove_attribute
+    type: mcp
+    description: >-
+      Remove all attributes with the given keyword from a component or nested
+      element.
+    def:
+      server: '@proforma'
+      tool: remove_attribute
+  - id: pf_remove_element
+    type: mcp
+    description: >-
+      Remove a nested element by selector.
+    def:
+      server: '@proforma'
+      tool: remove_element
+  - id: pf_schedule_constraint
+    type: mcp
+    description: >-
+      Add (or remove) a scheduling constraint.
+    def:
+      server: '@proforma'
+      tool: schedule_constraint
+  - id: pf_add_candidate
+    type: mcp
+    description: >-
+      Add a candidate (option) to a decision with caption, recommendation rule
+      (default `netsupport() > 0`) and priority.
+    def:
+      server: '@proforma'
+      tool: add_candidate
+  - id: pf_add_argument
+    type: mcp
+    description: >-
+      Add an argument (rule) to a decision candidate.
+    def:
+      server: '@proforma'
+      tool: add_argument
+  - id: pf_add_source
+    type: mcp
+    description: >-
+      Add a data source to an enquiry (or decision).
+    def:
+      server: '@proforma'
+      tool: add_source
+  - id: pf_add_data_item
+    type: mcp
+    description: >-
+      Add a data item with type, caption and optional range, default value,
+      derivation and unit.
+    def:
+      server: '@proforma'
+      tool: add_data_item
+  - id: pf_set_metadata
+    type: mcp
+    description: >-
+      Set guideline metadata: title, desc, author, version, cdate, mdate.
+    def:
+      server: '@proforma'
+      tool: set_metadata
+  - id: pf_format
+    type: mcp
+    description: >-
+      Rewrite a file in Deontics Composer's canonical layout (CRLF, 5-space
+      indent, fixed attribute order) and upgrade legacy files to
+      engine_version 1.9.
+    def:
+      server: '@proforma'
+      tool: format

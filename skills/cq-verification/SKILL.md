@@ -1,168 +1,204 @@
 ---
 name: cq-verification
-description: Verify competency questions against an OWL ontology using SPARQL queries with test data. Use to verify every CQ with real query execution. Also use whenever the user asks to test, validate, or verify an ontology against its CQs, run SPARQL verification, check CQ coverage, or asks "does the ontology answer the competency questions?"—e.g. "verify CQs", "test the ontology", "run CQ checks", "validate against competency questions".
+description: Verify every competency question against the PROforma guideline (.pf) itself, by writing one JavaScript query per CQ over the guideline's export_json model and running them with scripts/run_cqs.mjs. No test data, no SPARQL, no hand-made fixtures. Use during Step 7 of every CIG build, and whenever the user asks to test, validate or verify a CIG / guideline / .pf against its CQs, check CQ coverage, or asks "does the guideline answer the competency questions?", e.g. "verify CQs", "run CQ checks", "test the guideline".
 ---
 
 # CQ Verification Skill
 
-Use this skill during **Step 7 (Automated Review)** to verify that the ontology can answer every competency question.
+Use this skill during **Step 7 (Automated Review)** to verify that the guideline answers every competency question in the approved proposal. Run it as a **subagent** (`cig-cq-verifier`) so the verification is independent of the build. It reads the guideline; it never edits it.
 
 ## The Core Problem This Solves
 
-A common mistake is running SPARQL queries against hand-crafted test triples without loading the ontology schema. This only tests whether the test data was constructed correctly — not whether the ontology itself supports the queries. For example, a query like `?x :relatedTo ?y` will succeed against raw triples that contain that pattern, even if the ontology doesn't define `:relatedTo` at all.
+A common mistake is answering a CQ from data built for the test instead of from the artifact under test. In the OWL era that was SPARQL over hand-crafted test triples: the query succeeded because the test data contained the pattern, whether or not the ontology supported it. The same mistake is available here: a query that returns a hard-coded list, reads the proposal, or runs over a JSON object you typed yourself will "pass" and prove nothing.
 
-To truly verify the ontology, queries must run against a graph that contains **both** the ontology schema (classes, properties, axioms) and the test individuals. The **`sparql_query`** tool (OWL-MCP) does this for you: pass **multiple `owl_file_paths`** and it serializes each file and loads them **together** into one in-memory RDF graph before evaluating the query. Passing the ontology and the test-data file together makes class hierarchies, domains/ranges, and equivalences available to the query engine — no external merge step or Docker is needed.
+A PROforma guideline is already concrete: its tasks, plans, data items, candidates, arguments and metaprops are the answer. So a CQ is answered **from the actual guideline**: `scripts/run_cqs.mjs` runs `proforma export` on the `.pf` and hands every query the resulting model. There is no test-data file and no merge step. A CQ passes only if the guideline, as built, contains the answer.
+
+- **MUST** compute every answer from `g` / `h` (the exported guideline).
+- **MUST NOT** hard-code answers, read the proposal or any other file inside a query, or construct a stand-in model.
+- The "given" entity of a CQ is a concrete name from the proposal's §6 task table or data items table (e.g. `Prescribe_GLP1`, `Get_Eligibility_Data`), exactly as spelled in the guideline.
 
 ## Procedure
 
-### Phase 0 — Plan and Create Test Data
+### Phase 0: Plan
 
-Before writing any individuals, read the CQ list from the approved proposal and **plan the test data**. For each CQ, note which classes and properties it exercises, and which individuals and assertions are needed to produce a non-empty result.
+Read the CQ list from the approved proposal (§2). For each CQ, decide which part of the guideline answers it and what the **correct** answer is according to the proposal:
 
-A quick planning table helps (you don't need to write this to a file — it's a mental model):
+| CQ | Answered by | Correct answer (for `expect`) |
+|----|-------------|------------------------------|
+| CQ1: Which data items does the eligibility Enquiry collect? | `sources` of `Get_Eligibility_Data` | includes `BMI`, `weight_related_comorbidity`, `contraindications` |
+| CQ7: Which ADEs are monitored, for which patients? | children of `Monitor_Undesired_State`, `applies_when`, `precondition` | ≥4 actions; `Monitor_Hypoglycemia` gated by a precondition |
 
-| CQ | Needs individuals of | Needs property assertions |
-|----|---------------------|--------------------------|
-| CQ01: What items belong to a given category? | :Item, :Category | :belongsTo |
-| CQ02: Who created a given item? | :Item, :Person | :createdBy |
+This prevents two common problems: (1) a query that inspects the wrong part of the guideline, and (2) a query that passes on any non-empty answer, including a wrong one.
 
-This planning step prevents two common problems: (1) creating individuals that no query uses, and (2) missing assertions that leave queries returning empty results.
+### Phase 1: Write all queries
 
-**Create the test data file** at `projects/<project_dir>/queries/test-data.owl` using the ontology-editor tools:
+Write every query in **one file**: `projects/<project_dir>/cqs/cq-queries.mjs`. It default-exports an array with one entry per CQ:
 
-1. Call `setup_tools(skills: ["cq-verification"])` to activate tools
-2. Call `set_ontology_iri` on the test data file with a distinct IRI (e.g. append `/test-data` to the main ontology's namespace)
-3. Add the same prefixes as the main ontology using `add_prefix`
-4. Add test individuals using `add_axioms` — declarations, class assertions, and property assertions
-
-Example axioms (OWL functional syntax):
-
-```
-Declaration(NamedIndividual(:item1))
-ClassAssertion(:Item :item1)
-DataPropertyAssertion(:hasName :item1 "Example Item")
-ObjectPropertyAssertion(:belongsTo :item1 :category1)
+```js
+export default [
+  {
+    id: "CQ1",                       // the CQ id as spelled in the proposal
+    question: "Which data items does the eligibility Enquiry collect?",
+    query: (g, h) => h.task("Get_Eligibility_Data").sources.map((s) => s.data),
+    expect: (rows) => ["BMI", "weight_related_comorbidity", "contraindications"].every((d) => rows.includes(d)),
+  },
+  // ...
+];
 ```
 
-**Do not add `Import(...)` axioms to this file.** You will pass the ontology and the test-data file together to `sparql_query`, which merges them by local path. Import statements would require a resolvable URL or an XML catalog and are unnecessary here.
+**Write all queries before running any.** This prevents the pattern of writing one, running it, getting distracted, and never finishing the rest. Every CQ in the proposal must have a query.
 
-Keep the test data **minimal** — only the individuals and assertions needed by the CQs. One or two individuals per class is usually enough.
+#### `g`: the guideline model (`proforma-export/1`)
 
-### Phase 1 — Write All Queries
+The same JSON the `export_json` tool returns. Every field is always present (`null`, `[]` or `false` when unset).
 
-For every CQ in the approved proposal (section 2), write a SPARQL SELECT query. Save each as `projects/<project_dir>/queries/CQnn.rq` (e.g. `CQ01.rq`, `CQ02.rq`).
+- `metadata` {`name`, `title`, `desc`, `author`, `version`, …}; `metaprops` (guideline level); `root` (the root plan's name).
+- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `ServiceRequest.*`, `monitored_target`, `applies_when`, `source` / `source.N`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure`, …; for plans `components[]` {`name`, `task`, `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`}; and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
+- `data[]`: `name`, `type`, `caption`, `description`, `unit`, `range[]`, `default_value`, `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops`.
 
-Each `.rq` file should:
+#### `h`: the helpers `run_cqs.mjs` provides
 
-1. Start with a comment containing the CQ text: `# CQ01: What items belong to a given category?`
-2. Declare all necessary prefixes
-3. Use a concrete test individual as the "given" entity (e.g. `:category1` from the test data)
-4. SELECT the variables that answer the question
+| Helper | Returns |
+|---|---|
+| `h.tasks(kind?)` | all tasks, or the tasks of one `kind` |
+| `h.task(name)` | the task with that exact name, or `null` |
+| `h.data(name?)` | the data item with that exact name (or `null`); with no argument, all data items |
+| `h.meta(t, key, all?)` | `t.metaprops[key]` or `null`; with `all = true`, the values of a repeatable key (`key`, `key.1`, `key.2`, …) as an array in number order |
+| `h.goal(t)` | `{ verb, noun_phrase }` from `goal.verb` / `goal.noun_phrase` as written (each `null` if absent) |
+| `h.monitoringActions()` | actions whose `goal.verb` is `order` (trimmed, case-insensitive, as in `check_cig.mjs`) |
+| `h.therapyActions()` | actions whose `goal.verb` is `achieve` or `avoid` (trimmed, case-insensitive) |
+| `h.children(plan)` | the tasks run by the plan's components, one level |
+| `h.descendants(plan)` | every task below the plan, all levels |
+| `h.after(plan, name)` | names of the plan's components that wait for `name` (direct successors only) |
+| `h.monitorsOf(taskName)` | monitoring actions whose `monitored_target` contains `taskName` as a whole word |
 
-**Common query patterns:**
+Task and data item names are matched exactly and case-sensitively. A misspelt name makes `h.task` return `null`; reading a field of it throws, and the CQ FAILs with the error shown.
 
-- **Binary relationship** ("Which X belongs to Y?"): straightforward triple pattern
+#### Results and `expect`
 
-```sparql
-# CQ01: What items belong to a given category?
-PREFIX : <http://example.org/my-ontology#>
-SELECT ?item ?name WHERE {
-  ?item :belongsTo :category1 .
-  ?item :hasName ?name .
+- What `query` returns becomes the result rows: an array is the rows; `true` is one row; any other truthy value is one row; `false`, `null`, `undefined`, `0` or `""` is no rows. `query` may be `async`.
+- **Without `expect`**, a CQ passes when it returns at least one row. That only proves the guideline has *something* there.
+- **With `expect(rows)`**, the CQ passes only when `expect` returns true. Use `expect` to assert the **right answer** from the proposal: the named elements are present, the goal verb is the approved one, a conditional ADE is gated, a count is not below what the proposal approved. Prefer `expect` on every CQ whose answer the proposal fixes; a bare non-empty check is acceptable only for open questions (e.g. "which criteria decide eligibility?").
+- The report shows the first three rows: a string as is, an object by its `name`, anything else as JSON. Return `{ name: …, … }` objects for a readable report.
+
+#### Query patterns (from `cig/examples/obesity-glp1-monitoring.pf`)
+
+**Membership of a plan.** Which ADEs are monitored?
+
+```js
+{
+  id: "CQ7",
+  question: "Which adverse drug effects are monitored?",
+  query: (g, h) => h.children("Monitor_Undesired_State").filter((t) => t.kind === "action").map((t) => t.name),
+  expect: (rows) => ["Monitor_GI_ADE", "Monitor_Pancreatitis", "Monitor_Hypoglycemia"].every((n) => rows.includes(n)),
 }
 ```
 
-- **Data property** ("What is the name of X?"): match a literal value
+Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
 
-```sparql
-# CQ02: What is the name of a given item?
-PREFIX : <http://example.org/my-ontology#>
-SELECT ?name WHERE {
-  :item1 :hasName ?name .
+**Goal of a task.** What State Achievement goal does resistance exercise have?
+
+```js
+{
+  id: "CQ3",
+  question: "What goal does the resistance-exercise recommendation pursue?",
+  query: (g, h) => {
+    const goal = h.goal(h.task("Prescribe_Resistance_Exercise"));
+    return [{ name: `${goal.verb} ${goal.noun_phrase}`, ...goal }];
+  },
+  expect: (rows) => rows[0]?.verb === "avoid" && /lean-mass/.test(rows[0].noun_phrase),
 }
 ```
 
-- **Type/classification** ("What kind of X is this?"): check `rdf:type`
+**Monitors tracing to a therapy action.** Which monitors serve the GLP-1 prescription, in each category?
 
-```sparql
-# CQ03: What type is a given item?
-PREFIX : <http://example.org/my-ontology#>
-SELECT ?type WHERE {
-  :item1 a ?type .
-  FILTER(?type IN (:TypeA, :TypeB))
+```js
+{
+  id: "CQ4",
+  question: "Which monitoring actions trace to the GLP-1 prescription?",
+  query: (g, h) => h.monitorsOf("Prescribe_GLP1").map((m) => ({ name: m.name, category: h.meta(m, "category") })),
+  expect: (rows) => ["action_completion", "desired_outcome", "undesired_ade"].every((c) => rows.some((r) => r.category === c)),
 }
 ```
 
-- **Schema/hierarchy** ("Which subtypes of X exist?"): uses `rdfs:subClassOf` from the ontology — this is why loading the schema alongside the test data matters
+**Data items asked by an Enquiry.** Which eligibility facts are collected, with which types?
 
-```sparql
-# CQ04: Which subtypes of Role exist?
-PREFIX : <http://example.org/my-ontology#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT ?subtype ?label WHERE {
-  ?subtype rdfs:subClassOf :Role .
-  OPTIONAL { ?subtype rdfs:label ?label }
+```js
+{
+  id: "CQ1",
+  question: "Which data items does the eligibility Enquiry collect?",
+  query: (g, h) =>
+    h.task("Get_Eligibility_Data").sources.map((s) => ({ name: s.data, type: h.data(s.data)?.type, unit: h.data(s.data)?.unit })),
+  expect: (rows) => rows.some((r) => r.name === "BMI" && r.type === "real"),
 }
 ```
 
-**Write all query files before executing any.** This prevents the pattern of writing one, running it, getting distracted, and never finishing the rest.
+**Actions gated by a precondition.** Which monitors apply only to a sub-population, and is the gating fact actually asked?
 
-> **Note on reasoning:** `sparql_query` evaluates over **asserted** triples (no reasoner is applied), the same default as a plain SPARQL engine. Write queries against asserted structure. If a CQ depends on inferred subsumption (e.g. transitive `rdfs:subClassOf` closure), assert the intermediate facts in the test data or use a property path (e.g. `rdfs:subClassOf+`) in the query.
+```js
+{
+  id: "CQ8",
+  question: "Which monitoring actions are gated by a precondition, and on which Enquiry data?",
+  query: (g, h) =>
+    h.monitoringActions().filter((t) => t.precondition).map((t) => ({
+      name: t.name,
+      precondition: t.precondition,
+      data: (t.precondition.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).map((n) => h.data(n)).filter(Boolean),
+    })),
+  expect: (rows) =>
+    rows.some((r) => r.name === "Monitor_Hypoglycemia" &&
+      r.data.some((d) => d.name === "on_insulin_or_secretagogue" && d.asked_by.includes("Get_Eligibility_Data"))),
+}
+```
 
-### Phase 2 — Execute Queries
+Sequencing questions use `h.after`: `h.after("Obesity_GLP1_Plan", "Eligibility_Decision")` returns `["Obesity_Therapy"]`. Decision criteria are in `h.task("Eligibility_Decision").candidates[].arguments[].condition`. The full worked set is `cig/examples/obesity-glp1-monitoring.cqs.mjs`.
 
-Run each query with the **`sparql_query`** tool, passing **both** the ontology and the test-data file in `owl_file_paths` so they are merged into one graph:
+### Phase 2: Run
 
 ```
-call_tool(name: "sparql_query", data: {
-  "owl_file_paths": [
-    "projects/<project_dir>/ontology/<name>.owl",
-    "projects/<project_dir>/queries/test-data.owl"
-  ],
-  "query": "<contents of queries/CQ01.rq>"
-})
+node scripts/run_cqs.mjs projects/<project_dir>/guideline/<name>.pf \
+  projects/<project_dir>/cqs/cq-queries.mjs \
+  --proposal projects/<project_dir>/plans/PROPOSAL-<ts>.md \
+  --report projects/<project_dir>/reviews/cq-verification-<YYYYMMDD-HHmmss>.md
 ```
 
-Call `sparql_query` once per CQ (one query string per call). Use absolute paths, or paths relative to the workspace root. There is **no merge/convert step and no `merged.owl` artifact** — the merge happens in-memory on every call, so there is also nothing to keep stale.
-
-The tool returns **SPARQL 1.1 JSON results**:
-
-- `SELECT` → `{ "head": { "vars": [...] }, "results": { "bindings": [ ... ] } }`
-- `ASK` → `{ "head": {}, "boolean": true|false }`
+- **Always** pass `--proposal`. The script collects every CQ id written in the proposal (`CQ<n>` or `CQ-<n>`, anywhere in the text) and FAILs each one that has no query (`in the proposal but has no query`). Ids are compared by number, ignoring case, a hyphen and leading zeros: `CQ1`, `CQ-1`, `CQ01` and `cq1` are the same CQ. Prefer the proposal's spelling for every `id` so the report reads like the proposal.
+- Exit code: **0** = every CQ passes and none is missing; **1** = a CQ fails or is missing; **2** = usage or input error (an option without its value, guideline does not export, queries file does not load or does not default-export an array). Exit 2 is not a PASS.
+- The script prints `PASS|FAIL <id> (<n> row(s)): <sample>` per CQ and writes the report: the verdict, `n/m CQs pass`, and a table `CQ | Question | Result | Rows | Sample / error` with one row per query plus one row per missing CQ.
 
 **What results mean:**
 
-- **One or more `bindings`** (or `boolean: true`) → the ontology supports this CQ. Pass.
-- **Empty `bindings`** (or `boolean: false`) → either the test data is missing the necessary assertions, or the ontology is missing a class/property. Investigate which.
-- **An error string** (SPARQL parse error, RDF load error) → fix the `.rq` file (or the source OWL) and re-run.
+- **PASS**: the query ran and `expect` held (or, without `expect`, it returned at least one row). The guideline answers this CQ.
+- **FAIL, 0 rows or `expect` false**: either the query looks in the wrong place, or the guideline lacks the content. Investigate which.
+- **FAIL with an error**: the query threw (typically a misspelt name, so `h.task` returned `null`, or a field read on a missing value). Fix the query, or the guideline if the named element is genuinely missing.
+- **FAIL, no query written**: write it.
 
 **When something fails:**
 
-- Fix the root cause (query, test data, or ontology).
-- Because the merge is in-memory, simply re-run `sparql_query` after any edit — there is no merged file to rebuild.
-- If the ontology itself needed changes, return to Step 6 (formalization) to apply them via ontology-editor tools.
+- Find the root cause first: compare the query with the guideline (`export_json`, `get_component`, `outline`).
+- If the **query** is wrong (wrong name, wrong key, wrong plan), fix the query and re-run the whole file.
+- If the **guideline lacks the content** the CQ asks for (a task, a data item, a metaprops key, a precondition, a goal that the approved proposal specifies), that is a guideline gap: **return to Step 6** and have the formalizer add it per the proposal. Never loosen `expect`, drop a CQ, or rewrite a query to accept the gap.
+- If the approved proposal itself does not model what the CQ asks, report it as a proposal gap; do not invent content to make the CQ pass.
+- After any fix, re-run **all** queries with a new report timestamp. Never carry over a previous PASS.
 
-### Phase 3 — Report
+### Phase 3: Report
 
-Present results as a summary table covering every CQ:
-
-| CQ | Question | Query File | Result | Notes |
-|----|----------|------------|--------|-------|
-| CQ01 | What items belong to a given category? | CQ01.rq | PASS (1 row) | Returned item1 |
-| CQ02 | Who created a given item? | CQ02.rq | FAIL (0 rows) | Missing createdBy in test data |
-
-Every CQ must appear in the table. If any CQ fails due to an ontology gap, fix the ontology and re-run.
+The script's report is the deliverable: every CQ appears in its table, including missing ones. Below the table, add a **Notes** section with one line per failing CQ: the root cause (query, guideline gap, proposal gap) and the fix. Report the CQ gate as **PASS only if the script exited 0**. Keep `cqs/cq-queries.mjs` as a project deliverable; it is re-run on every review.
 
 ## Common Pitfalls
 
-### Querying test data without the schema
+### Answering from anything but the guideline
 
-If you call `sparql_query` with only the test-data file, hierarchy/domain/range patterns will silently fail (or pass trivially). Always pass **both** the ontology and the test-data paths so the schema is loaded too.
+A query that returns literals, reads the proposal, or filters a list you typed passes trivially. Every row must come from `g` or `h`.
 
-### Expecting inferred triples
+### Non-empty is not correct
 
-`sparql_query` runs over asserted triples — it does not classify or materialize entailments. For subsumption-style CQs, use property paths (`rdfs:subClassOf+`) or assert the needed facts in the test data.
+`h.monitorsOf("Prescribe_GLP1")` returns rows as long as *one* monitor names the task. If the CQ asks for all three categories, or for a specific gated action, say so in `expect`.
 
-### Clean Up
+### Repeatable and escaped metaprops
 
-Keep the test data and query files as project deliverables. There are no build artifacts to delete (no merged/converted files are produced).
+Repeatable keys are numbered (`source.1`, `source.2`); read them with `h.meta(t, "source", true)`. Values come back unescaped (`=` and `:`, not `\=` / `\:`), so match plain text.
+
+### Component name versus task name
+
+Plan components point to tasks through `component.task`. `h.children` and `h.descendants` resolve that for you; when walking `components` by hand, look up `c.task`, not `c.name`.

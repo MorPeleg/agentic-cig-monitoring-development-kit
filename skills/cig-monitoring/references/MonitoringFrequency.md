@@ -1,6 +1,6 @@
 # Reference: Monitoring Frequency (default-with-justification lookup)
 
-Guidelines often state *what* and *how* to monitor but omit *how often*. When the guideline gives no cadence, **propose one and justify it** — never leave `occurrenceTiming` blank or a placeholder. Record the chosen cadence in the Goal's `noun_phrase` (`ServiceRequest.occurrenceTiming`) and in the Action's `metaprops` (`ServiceRequest.occurrenceTiming` + `monitoring_frequency_basis`).
+Guidelines often state *what* and *how* to monitor but omit *how often*. When the guideline gives no cadence, **propose one and justify it** — never leave `occurrenceTiming` blank or a placeholder. Record the chosen cadence in the monitoring action's metaprops: inside `goal.noun_phrase` and in the `ServiceRequest.occurrenceTiming` key (identical values), with the justification in `monitoring_frequency_basis`. `ServiceRequest.occurrenceTiming` is the authoritative schedule; PROforma component cycles (`cycle_repeat`, `number_of_cycles`) are optional and not required by the kit.
 
 This table is the **default lookup** for an obesity GLP-1 CIG. Each row gives a frequency, the trigger (if event-driven), the basis, and the `provenance_type` to record. Adapt with justification; do not copy blindly.
 
@@ -17,6 +17,7 @@ This table is the **default lookup** for an obesity GLP-1 CIG. Each row gives a 
 | GI adverse effects (nausea/vomiting/diarrhea) | undesired_ade | each visit and around dose escalation | persistent vomiting / dehydration | label: GI effects cluster at titration | package_insert_specified |
 | Acute pancreatitis | undesired_ade | each visit; **test on symptoms** | severe persistent abdominal pain | label warning; presents acutely | package_insert_specified |
 | Mood / anhedonia / suicidality (PHQ-9, C-SSRS) | undesired_ade | baseline then each visit (monthly x3, then q3mo) | positive depression screen or any suicidal ideation | label monitoring advice; screened whenever drug reviewed | mechanism_prompted_then_assistant_independent_literature_search_and_operationalized |
+| Hypoglycemia (only with concomitant insulin / insulin secretagogue; precondition `on_insulin_or_secretagogue = true`) | undesired_ade | each visit and on dose change of the insulin / secretagogue | symptomatic hypoglycemia or low SMBG | label warning scopes the risk to the combination | package_insert_specified |
 
 ## Choosing a frequency when none is given
 
@@ -24,17 +25,17 @@ This table is the **default lookup** for an obesity GLP-1 CIG. Each row gives a 
 2. Make **acute/rare harms event-driven** with an explicit urgent trigger rather than a fixed calendar.
 3. Place safety screens **around dose escalation** when the harm clusters there (GI effects).
 4. Use **slower cadences** (q6mo) for slowly-changing outcomes (QoL).
-5. Always write the justification into `monitoring_frequency_basis` in `metaprops` (see `MetapropsSyntax.md`).
+5. Always write the justification into `monitoring_frequency_basis` in the metaprops (see `MetapropsSyntax.md`).
 
 ## When *not* to propose a routine schedule (negative recommendations)
 
 "Always propose a frequency" applies only when monitoring is actually warranted. Two cases override the default:
 
 - **The source advises against routine monitoring.** If a label or guideline states routine surveillance of a marker is of uncertain value or not recommended (classic example: **routine serum calcitonin / thyroid ultrasound** for GLP-1 medullary-thyroid C-cell risk — FDA states its value is uncertain), set `monitoring_stance=routine_not_recommended` and either scope the action to **symptom-triggered only** (neck mass, dysphagia, hoarseness → triggered work-up) or omit it. Do **not** manufacture a baseline/periodic screen the source recommends against.
-- **The harm applies only to a sub-population.** Frequency is moot if the action should not exist for the whole cohort. If the label qualifies the ADE (e.g. **hypoglycemia** only with concomitant insulin/secretagogue; **diabetic retinopathy** only in type 2 diabetes), record `applies_when` and gate the action with a `precondition`; choose the frequency for the applicable sub-population, not the whole cohort.
+- **The harm applies only to a sub-population.** Frequency is moot if the action should not exist for the whole cohort. If the label qualifies the ADE (e.g. **hypoglycemia** only with concomitant insulin/secretagogue; **diabetic retinopathy** only in type 2 diabetes), record `applies_when` and gate the action with an executable `precondition` over an Enquiry data item (e.g. `on_insulin_or_secretagogue = true`); choose the frequency for the applicable sub-population, not the whole cohort.
 
-Record the stance and condition in `metaprops` (`monitoring_stance`, `applies_when`) — see `MetapropsSyntax.md`. The `cig-monitoring-review` source-fidelity phase fails an action whose schedule contradicts the cited stance or whose applicability is broader than the source supports.
+Record the stance and condition in the metaprops (`monitoring_stance`, `applies_when`) — see `MetapropsSyntax.md`. The `cig-monitoring-review` gate fails an action whose schedule contradicts the cited stance or whose applicability is broader than the source supports (`check_cig.mjs` catches a routine `occurrenceTiming` under `routine_not_recommended` and a sub-population without a precondition; the reviewer's source-fidelity phase checks the rest).
 
 ## Related
 
-- `MetapropsSyntax.md`, `ActionEnactmentGoal.md`, `MonitoringPlan.md`, `cig/examples/obesity-glp1-monitoring.owl`.
+- `MetapropsSyntax.md`, `ActionEnactmentGoal.md`, `MonitoringPlan.md`, `cig/examples/obesity-glp1-monitoring.pf`.

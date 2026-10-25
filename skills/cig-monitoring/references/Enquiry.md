@@ -7,7 +7,8 @@
 - Task: `enquiry` (with `caption`, `description`)
 - Data item: `data` block with `type` (`real`, `integer`, `boolean`, `text`, `date`, …), `caption`, `description`, optional `unit`, `range`, `default_value`, `derivation`
 - Link: a `source` in the enquiry whose `data_definition` names the data item (the enquiry asks for it)
-- Tools: `add_task`, `add_data_item`, `add_source` (can create the data item itself with `create_type`), `set_attribute` (data item `description`)
+- Data item metaprops: Composer's Ontology coding of the observable or finding the item records (`ontology.coding=SNOMED:<id>` + `ontology.label`, e.g. BMI → `SNOMED:60621009` Body mass index (observable entity)), and a `source` + `quote` when the item comes from a specific passage (e.g. a contraindication or a sub-population flag). Leave an item uncoded when no single concept fits (e.g. a composite flag).
+- Tools: `add_task`, `add_data_item`, `add_source` (can create the data item itself with `create_type`), `set_attribute` (data item `description`, `metaprops`), `snomed_search`
 
 ## Types matter
 
@@ -38,7 +39,16 @@ add_task(plan: "<root>", kind: "enquiry", name: "Get_Eligibility_Data",
          caption: "Retrieve baseline data needed to judge GLP-1 eligibility and to set monitoring baselines")
 add_data_item(name: "BMI", type: "real", unit: "kg/m2")
 set_attribute(selector: "BMI", attribute: "description", value: "Body mass index; primary eligibility threshold")
+set_attribute(selector: "BMI", attribute: "metaprops",
+              value: "ontology.coding=SNOMED:60621009\nontology.label=Body mass index (observable entity)")
 add_source(task: "Get_Eligibility_Data", data: "BMI")
+```
+
+A data item modelled from a specific passage also carries that passage:
+
+```
+set_attribute(selector: "on_insulin_or_secretagogue", attribute: "metaprops",
+              value: "source=Wegovy (semaglutide) US Prescribing Information (revised 02/2026), §5.4 Hypoglycemia\nquote=§5.4: \"Patients with diabetes mellitus taking WEGOVY in combination with insulin or an insulin secretagogue may have an increased risk of hypoglycemia\"")
 ```
 
 ## `.pf` text (from the example)
@@ -57,6 +67,9 @@ end enquiry.
 data  :: 'BMI' ;
      type :: real ;
      description :: 'Body mass index; primary eligibility threshold' ;
+     metaprops :: 'ontology.coding=SNOMED\\:60621009
+ontology.label=Body mass index (observable entity)
+' ;
      unit :: 'kg/m2' ;
 end data.
 
@@ -68,7 +81,7 @@ end data.
 
 ## Worked example (`cig/examples/obesity-glp1-monitoring.pf`)
 
-`Get_Eligibility_Data` (enquiry) has sources for `BMI`, `weight_related_comorbidity`, `contraindications`, `on_insulin_or_secretagogue`, `baseline_weight`, `baseline_body_composition`, and `baseline_cardiometabolic_labs`, and enumerates the full item list in its `description`. Imitate this — never emit an Enquiry with no sources. Prefer wiring every item the Decision or a precondition uses as a typed data item over listing it only in the description.
+`Get_Eligibility_Data` (enquiry) has sources for `BMI`, `weight_related_comorbidity`, `contraindications`, `on_insulin_or_secretagogue`, `baseline_weight`, `baseline_body_composition`, and `baseline_cardiometabolic_labs`, and enumerates the full item list in its `description`; items that name a clinical concept carry their SNOMED CT coding. Imitate this — never emit an Enquiry with no sources. Prefer wiring every item the Decision or a precondition uses as a typed data item over listing it only in the description.
 
 ## Related patterns
 

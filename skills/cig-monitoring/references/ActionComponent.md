@@ -11,7 +11,7 @@
 ## Rule of thumb
 
 - The **component** carries plan membership and scheduling (`schedule_constraint`, `optional`, `cycle_repeat`, `number_of_cycles`, `ltwh` layout).
-- The **task** (`action`, sub-`plan`, `decision`, `enquiry`) carries clinical meaning (`caption`, `description`, `metaprops` with `goal.verb` / `goal.noun_phrase`, `precondition`).
+- The **task** (`action`, sub-`plan`, `decision`, `enquiry`) carries clinical meaning: the native fields (`caption`, `description`, `procedure`, `precondition`) and the `metaprops` (`goal.verb` / `goal.noun_phrase`, the `order.*` keys of a monitoring action, `source.N` + `quote.N`, and the Ontology coding `ontology.coding` + `ontology.label`).
 - One component points to exactly one task. Let `add_task` create both so the names match.
 
 ## Tool calls
@@ -23,22 +23,33 @@ Every call also takes `file`.
 add_task(plan: "Obesity_Therapy", kind: "action", name: "Prescribe_GLP1",
          caption: "Prescribe GLP-1 receptor agonist (semaglutide) with dose escalation")
 
-# The action's goal (State Achievement for therapy, Action Enactment for monitoring)
+# Native fields: why it was modelled, and what to do
+set_attribute(selector: "Prescribe_GLP1", attribute: "description", value: "Prescribes semaglutide ...")
+set_attribute(selector: "Prescribe_GLP1", attribute: "procedure", value: "Semaglutide 0.25 mg ...")
+
+# The action's goal (State Achievement for therapy, Action Enactment for monitoring),
+# its source + verbatim quote, and its Ontology coding (snomed_search "semaglutide")
 set_attribute(selector: "Prescribe_GLP1", attribute: "metaprops",
-              value: "goal.noun_phrase=body-weight reduction of 5-10 percent within 6-12 months\ngoal.verb=achieve")
+              value: "goal.noun_phrase=body-weight reduction of 5-10 percent within 6-12 months\ngoal.verb=achieve\nontology.coding=SNOMED:764283003\nontology.label=Semaglutide (substance)\nquote=§2.2: \"The recommended starting dosage of WEGOVY injection is 0.25 mg administered subcutaneously once weekly.\"\nsource=Wegovy (semaglutide) US Prescribing Information (revised 02/2026), §2.2 Recommended Dosage for WEGOVY Injection")
 
 # Optional ordering: this component runs after a sibling in the same plan
 add_task(plan: "<plan>", kind: "action", name: "<later_task>", after: ["<earlier_sibling>"])
 ```
 
-## `.pf` text (from the example)
+## `.pf` text
 
 ```
 action  :: 'Prescribe_GLP1' ;
      caption :: 'Prescribe GLP-1 receptor agonist (semaglutide) with dose escalation' ;
+     description :: 'Prescribes semaglutide with the label dose escalation as the obesity pharmacotherapy for eligible adults, aiming at 5-10 percent body-weight reduction (Wegovy PI §2.2).' ;
      metaprops :: 'goal.noun_phrase=body-weight reduction of 5-10 percent within 6-12 months
 goal.verb=achieve
+ontology.coding=SNOMED\\:764283003
+ontology.label=Semaglutide (substance)
+quote=§2.2\\: "The recommended starting dosage of WEGOVY injection is 0.25 mg administered subcutaneously once weekly."
+source=Wegovy (semaglutide) US Prescribing Information (revised 02/2026), §2.2 Recommended Dosage for WEGOVY Injection
 ' ;
+     procedure :: 'Semaglutide 0.25 mg subcutaneously once weekly for 4 weeks, then escalate every 4 weeks per label Table 1 to the 2.4 mg maintenance dose; delay escalation by 4 weeks if a dose is not tolerated.' ;
 end action.
 
 plan  :: 'Obesity_Therapy' ;

@@ -53,8 +53,8 @@ export default [
 The same JSON the `export_json` tool returns. Every field is always present (`null`, `[]` or `false` when unset).
 
 - `metadata` {`name`, `title`, `desc`, `author`, `version`, …}; `metaprops` (guideline level); `root` (the root plan's name).
-- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `ServiceRequest.*`, `monitored_target`, `applies_when`, `source` / `source.N`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure`, …; for plans `components[]` {`name`, `task`, `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`}; and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
-- `data[]`: `name`, `type`, `caption`, `description`, `unit`, `range[]`, `default_value`, `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops`.
+- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `order.code`, `order.timing`, `order.patient_instruction`, `order.performer_instruction`, `monitored_target`, `applies_when`, `source` / `source.N`, `quote` / `quote.N`, `ontology.coding`, `ontology.label`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure` (the native order / instruction text), …; for plans `components[]` {`name`, `task`, `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`}; and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
+- `data[]`: `name`, `type`, `caption`, `description`, `unit`, `range[]`, `default_value`, `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops` (e.g. `ontology.coding`, `source`, `quote`). Candidate and argument `metaprops` are in the export too.
 
 #### `h`: the helpers `run_cqs.mjs` provides
 
@@ -151,6 +151,27 @@ Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
 }
 ```
 
+**The order and its evidence.** How, when and on what source is acute pancreatitis monitored?
+
+```js
+{
+  id: "CQ9",
+  question: "What is ordered for acute pancreatitis, on what schedule, and which passage supports it?",
+  query: (g, h) => {
+    const t = h.task("Monitor_Pancreatitis");
+    return [{
+      name: t.name,
+      code: h.meta(t, "order.code"),
+      timing: h.meta(t, "order.timing"),
+      clinician: h.meta(t, "order.performer_instruction"),
+      quotes: h.meta(t, "quote", true),
+      coding: h.meta(t, "ontology.coding"),
+    }];
+  },
+  expect: (rows) => /lipase/.test(rows[0]?.code) && rows[0].clinician && rows[0].quotes.length > 0,
+}
+```
+
 Sequencing questions use `h.after`: `h.after("Obesity_GLP1_Plan", "Eligibility_Decision")` returns `["Obesity_Therapy"]`. Decision criteria are in `h.task("Eligibility_Decision").candidates[].arguments[].condition`. The full worked set is `cig/examples/obesity-glp1-monitoring.cqs.mjs`.
 
 ### Phase 2: Run
@@ -197,7 +218,7 @@ A query that returns literals, reads the proposal, or filters a list you typed p
 
 ### Repeatable and escaped metaprops
 
-Repeatable keys are numbered (`source.1`, `source.2`); read them with `h.meta(t, "source", true)`. Values come back unescaped (`=` and `:`, not `\=` / `\:`), so match plain text.
+Repeatable keys are numbered (`source.1`, `source.2`, and their `quote.1`, `quote.2`); read them with `h.meta(t, "source", true)` / `h.meta(t, "quote", true)`. Values come back unescaped (`=` and `:`, not `\=` / `\:`), so match plain text (`ontology.coding` reads `SNOMED:197456007`). The order lives in the `order.*` keys and the native `procedure`; there are no `ServiceRequest.*` keys to query.
 
 ### Component name versus task name
 

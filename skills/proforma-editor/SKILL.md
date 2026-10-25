@@ -97,17 +97,27 @@ truth.
   1-based index).
 - A source: `Get_Eligibility_Data/source:BMI`. A data warning:
   `BMI/warning_condition:1`.
-- Task-level attributes (caption, metaprops, precondition) go on the task name,
+- Task-level attributes (caption, description, procedure, metaprops, precondition) go on the task name,
   not on `Plan/component:X`.
 
 ## Typical edits
 
 ```
-# a monitoring action with a population-scoped precondition, then its metaprops in one call
+# a monitoring action with a population-scoped precondition, its native fields,
+# then its metaprops in one call (contract: skills/cig-monitoring/references/MetapropsSyntax.md)
 add_task(file, plan: "Monitor_Undesired_State", kind: "action", name: "Monitor_Hypoglycemia",
          caption: "Monitor for hypoglycemia ...", precondition: "on_insulin_or_secretagogue = true")
+set_attribute(file, selector: "Monitor_Hypoglycemia", attribute: "description", value: "Monitors hypoglycemia ...")
+set_attribute(file, selector: "Monitor_Hypoglycemia", attribute: "procedure",
+              value: "<order.code>, <order.timing>. Patient: ... Clinician: ...")
 set_attribute(file, selector: "Monitor_Hypoglycemia", attribute: "metaprops",
-              value: "ServiceRequest.intent=order\nServiceRequest.code=...\n...\nsource.1=...\ncq=CQ7")
+              value: "goal.verb=order\ngoal.noun_phrase=<order.code>, <order.timing>\norder.code=...\norder.timing=...\n...\nsource.1=...\nquote.1=§5.4: \"...\"\ncq=CQ7")
+
+# metaprops on a data item or a decision argument (Ontology coding, source + quote)
+set_attribute(file, selector: "BMI", attribute: "metaprops",
+              value: "ontology.coding=SNOMED:60621009\nontology.label=Body mass index (observable entity)")
+set_attribute(file, selector: "Eligibility_Decision/candidate:Eligible/argument:Arg_Eligible", attribute: "metaprops",
+              value: "source=...\nquote=...")
 
 # change one metaprops key: read the map, change it, write the whole map back
 export_json(file)  ->  tasks[name == "Monitor_X"].metaprops
@@ -149,6 +159,10 @@ add_source(file, task: "Get_Eligibility_Data", data: "on_insulin_or_secretagogue
   escaped by the writer (the file shows `\\=` / `\\:` inside the quoted atom);
   the tools and `export_json` read them back unescaped. A literal backslash in a
   value is consumed as an escape — do not use one.
+- **Composer's "Ontology coding" field is the metaprop `ontology.coding`**
+  (`SCHEME:code`, e.g. `SNOMED:197456007`); Composer hides the key in its
+  metaprops editor and shows the term as a field. Add `ontology.label` with
+  the preferred term. Find codes with the kit's `snomed_search` tool.
 - **Composer (and every tool save) sorts metaprops keys**, so key order is not
   significant; the key set and values are.
 - **`set_attribute` replaces** an attribute. For metaprops that means the whole

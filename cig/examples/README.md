@@ -9,6 +9,8 @@ Each example is a lint-clean PROforma guideline that passes the Step 7 gates (`s
 | `<name>.mmd` | Mermaid diagram of the plan structure |
 | `<name>.cqs.mjs` | competency-question queries |
 
+Both examples follow the task contract in `skills/cig-monitoring/references/MetapropsSyntax.md`: Composer's native fields first (caption, description, procedure, precondition), the monitoring order in the native `procedure` plus `order.*` metaprops, a verbatim `quote.N` with every `source.N`, and SNOMED CT Ontology coding (`ontology.coding`, found with the `snomed_search` tool). They were moved off the earlier FHIR `ServiceRequest.*` metaprops with `scripts/migrate_metaprops.mjs`.
+
 ## `obesity-glp1-monitoring`: the authoritative example
 
 GLP-1 obesity therapy with eligibility, therapy and monitoring. It was converted from the kit's earlier OWL example. The skills point to it as the pattern to imitate.
@@ -17,7 +19,7 @@ GLP-1 obesity therapy with eligibility, therapy and monitoring. It was converted
 
 Monitoring of immune checkpoint inhibitor therapy for immune-related adverse events. Source: ESMO Clinical Practice Guidelines, *Management of toxicities from immunotherapy* (Haanen et al., Ann Oncol 2017;28 Suppl 4:iv119–iv142, doi:10.1093/annonc/mdx225). The source PDF is not included.
 
-It was built end to end by the kit's own workflow and subagents (`capa install -p claude-code`, then Steps 0–7). `ici-irae-monitoring-build/` keeps the record. The `projects/...` paths inside those files refer to the original project directory.
+It was built end to end by the kit's own workflow and subagents (`capa install -p claude-code`, then Steps 0–7). `ici-irae-monitoring-build/` keeps the record. The `projects/...` paths inside those files refer to the original project directory, and the files describe the build as it was then, on the earlier FHIR `ServiceRequest` contract; the `.pf` has since been migrated.
 
 1. `EXTRACTION-20261025.md`: Steps 2–3. Every organ-system section is accounted for, with citations, data items, draft conditions and open questions.
 2. `PROPOSAL-20261025-101500.md`: the first approved proposal, now superseded.

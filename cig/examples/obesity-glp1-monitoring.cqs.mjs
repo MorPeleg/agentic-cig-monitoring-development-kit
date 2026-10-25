@@ -55,10 +55,12 @@ export default [
     query: (g, h) =>
       h.monitorsOf("Prescribe_Resistance_Exercise").map((m) => ({
         name: m.name,
-        code: h.meta(m, "ServiceRequest.code"),
-        timing: h.meta(m, "ServiceRequest.occurrenceTiming"),
+        code: h.meta(m, "order.code"),
+        timing: h.meta(m, "order.timing"),
         instrument: h.meta(m, "instrument"),
       })),
+    // the order is held in order.* (skills/cig-monitoring/references/MetapropsSyntax.md)
+    expect: (rows) => rows.length > 0 && rows.every((r) => r.code && r.timing && r.instrument),
   },
   {
     id: "CQ7",

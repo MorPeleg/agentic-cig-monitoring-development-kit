@@ -63,10 +63,10 @@ Install these before starting:
 ## How a CIG is built
 
 1. **Scope and CQs**: the agent agrees with you on the population, therapy and the competency questions (CQs) the CIG must answer.
-2. **Extraction**: therapy recommendations, goals, monitoring, ADEs and the data each condition depends on, with citations.
+2. **Extraction**: therapy recommendations, goals, monitoring, ADEs and the data each condition depends on, each with its citation and the verbatim passage it comes from.
 3. **Proposal**: `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md`, an executable spec with canonical task names, data items, conditions written as PROforma expressions, and a `cig-actions` list. Nothing is built until you approve it.
-4. **Formalization**: the `cig-formalizer` subagent builds `projects/<project_dir>/guideline/<name>.pf` from the approved proposal with the proforma tools. It keeps the file lint-clean and draws a Mermaid diagram of it.
-5. **Blocking review**: `scripts/check_cig.mjs` (structure, metaprops contract, executable preconditions, approved action set, regressions) plus the reviewer's source-fidelity judgment, and `scripts/run_cqs.mjs` (one query per CQ). The build is done only when both pass with zero FAILs.
+4. **Formalization**: the `cig-formalizer` subagent builds `projects/<project_dir>/guideline/<name>.pf` from the approved proposal with the proforma tools. Every task uses Composer's native fields first (caption, description, procedure, precondition); a monitoring action's order is its `procedure` plus `order.*` metaprops, and each cited source carries a short verbatim `quote`. A coding pass then sets Composer's Ontology coding (`ontology.coding=SNOMED:<id>`) on actions and data items with the `snomed_search` tool (EBI OLS4, SNOMED CT only). The task contract is [`skills/cig-monitoring/references/MetapropsSyntax.md`](skills/cig-monitoring/references/MetapropsSyntax.md). The formalizer keeps the file lint-clean and draws a Mermaid diagram of it.
+5. **Blocking review**: `scripts/check_cig.mjs` (structure, the native-field and metaprops contract, the order agreeing across `order.*`, `procedure` and the goal, quoted citations, ontology coding format, executable preconditions, approved action set, regressions, and the coding-only freeze) plus the reviewer's source- and quote-fidelity judgment, and `scripts/run_cqs.mjs` (one query per CQ). The build is done only when both pass with zero FAILs.
 
 Each build also produces `guideline/<name>.html` with the **proforma** skill's `scripts/build_report.mjs`: a self-contained viewer (one HTML file, nothing fetched) laid out like a guideline editor: task tree, plan canvas (stored task positions, scheduling arrows, decision branches; pan, zoom, double-click a plan to open it), properties panel, and data, decision, lint and source views. Open [`cig/examples/ici-irae-monitoring.html`](cig/examples/ici-irae-monitoring.html) or [`obesity-glp1-monitoring.html`](cig/examples/obesity-glp1-monitoring.html) to see it.
 
@@ -79,6 +79,14 @@ node .claude/skills/proforma/scripts/build_report.mjs cig/examples/ici-irae-moni
 ```
 
 The scripts find the `proforma` CLI automatically (`PROFORMA_BIN`, a global `npm install -g proforma-mcp`, a `proforma` binary on PATH, or a private install of the pinned version).
+
+## Migrating a guideline built on the old FHIR contract
+
+Guidelines built before the native-field contract stored the monitoring order as FHIR `ServiceRequest.*` metaprops, which the gate now FAILs. `scripts/migrate_metaprops.mjs` converts one in place through the proforma CLI: it moves the order to `order.*`, rewrites `goal.noun_phrase`, writes the native `procedure`, fills an empty `description`, and lists the dropped `supportingInfo.*Codes` so the coding pass can record them as `ontology.coding`. Source quotes are not generated; add them from the sources.
+
+```bash
+node scripts/migrate_metaprops.mjs projects/<project_dir>/guideline/<name>.pf [--dry-run]
+```
 
 ## Migrating an OWL CIG
 
@@ -105,6 +113,6 @@ agentic-cig-monitoring-development-kit/
 │       ├── cqs/        # cq-queries.mjs
 │       ├── reviews/    # Step 7 reports
 │       └── resources/  # Resources to give to the agent (PDFs, CSVs, etc.)
-├── scripts/            # check_cig.mjs, run_cqs.mjs, owl2pf.mjs
+├── scripts/            # check_cig.mjs, run_cqs.mjs, migrate_metaprops.mjs, owl2pf.mjs
 └── skills/             # Agent skills (cig-monitoring, cig-formalization, proforma-editor, cig-monitoring-review, cq-verification)
 ```

@@ -16,7 +16,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { exportGuideline, lintGuideline, metaValues } from "./lib/proforma.mjs";
+import { exportGuideline, inCp1252, lintGuideline, metaValues } from "./lib/proforma.mjs";
 
 // ------------------------------------------------------------------ args
 
@@ -72,10 +72,9 @@ const VOCAB = {
   monitoring_stance: ["recommended", "symptom_triggered_only", "routine_not_recommended", "proposed_by_assistant"],
 };
 const REQUIRED = [
-  "ServiceRequest.intent",
-  "ServiceRequest.code",
-  "ServiceRequest.occurrenceTiming",
-  "ServiceRequest.patientInstruction",
+  "order.code",
+  "order.timing",
+  "order.patient_instruction",
   "category",
   "monitored_target",
   "applies_when",
@@ -91,8 +90,16 @@ const REQUIRED = [
   "trigger",
   "cq",
 ];
-const SR_FIELDS = ["intent", "code", "occurrenceTiming", "patientInstruction", "performerInstruction"];
-const CODE_KEYS = /^ServiceRequest\.supportingInfo\.(finding|lab|condition|medication)Codes$/;
+// Composer's native "Ontology coding" property (metaprop ontology.coding, SCHEME:code) and its
+// preferred term. These are the only keys a coding-only run may add or change.
+const ONTOLOGY_KEYS = /^ontology\.(coding|label)$/;
+const CODING = /^[A-Za-z][A-Za-z0-9_-]*:[A-Za-z0-9][A-Za-z0-9.-]*$/;
+const SNOMED_CODE = /^\d{6,18}$/;
+// the FHIR ServiceRequest block is no longer part of the contract
+const LEGACY_FHIR = /^ServiceRequest\./;
+// a quote is a verbatim excerpt in double quotes, normally prefixed by its page or section
+const QUOTED = /"[^"]{3,}"|“[^”]{3,}”/;
+const QUOTE_MAX_WORDS = 40;
 const PLACEHOLDERS = new Set(["", "o", "p", "s", "i", "t", "x", "tbd", "todo", "xxx", "...", "n/a", "na", "none?", "?"]);
 const CADENCE = /baseline|visit|daily|weekly|monthly|quarterly|annual|yearly|q\d|every|escalat|event|symptom|trigger|onset|dose|day|week|month|year|hour/i;
 const ROUTINE = /baseline|daily|weekly|monthly|quarterly|annual|yearly|\bq\d|every \d/i;
@@ -189,6 +196,27 @@ for (const d of lint) {
   else if (d.severity === "warning") warn("lint", where, `${d.code}: ${d.message}`);
 }
 
+// encoding: Composer (Java 8 on Windows) reads a .pf as windows-1252. The CLI keeps that
+// encoding while every character fits, and switches the whole file to UTF-8 otherwise, which
+// Composer then misreads. Text attributes must spell such characters in ASCII (>=, <=, ...);
+// metaprops escape them as \uXXXX (scripts/lib/proforma.mjs does both).
+{
+  const bytes = fs.readFileSync(opts.file);
+  let text = null;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    /* not UTF-8: a windows-1252 file, which is what Composer expects */
+  }
+  const outside = text ? [...new Set([...text].filter((ch) => !inCp1252(ch)))] : [];
+  if (outside.length) {
+    const holders = tasks
+      .filter((t) => [t.caption, t.description, t.procedure, ...Object.values(t.metaprops)].some((v) => v && [...String(v)].some((ch) => outside.includes(ch))))
+      .map((t) => t.name);
+    fail("structure", "guideline", `the file holds characters outside windows-1252 (${outside.map((c) => `"${c}" U+${c.codePointAt(0).toString(16).toUpperCase()}`).join(", ")}), so it is saved as UTF-8 and Composer will misread it${holders.length ? `; found in ${holders.slice(0, 8).join(", ")}${holders.length > 8 ? ", ..." : ""}` : ""}. Spell them in ASCII in text attributes; metaprops values take \\uXXXX escapes`);
+  }
+}
+
 // structure and scope
 if (!g.root) fail("structure", "guideline", "no root plan");
 for (const t of tasks) {
@@ -212,10 +240,64 @@ for (const t of tasks) {
   for (const k of Object.keys(t.metaprops)) {
     if (k.startsWith("owl.")) fail("structure", t.name, `migration leftover ${k}: formalize it as PROforma or remove it`);
   }
+  const fhir = Object.keys(t.metaprops).filter((k) => LEGACY_FHIR.test(k));
+  if (fhir.length) fail("structure", t.name, `FHIR keys ${fhir.join(", ")} are no longer part of the contract; migrate with scripts/migrate_metaprops.mjs`);
 }
 for (const d of g.data) {
   if (!d.type) fail("structure", d.name, "data item without a type");
   if (!d.asked_by.length && !d.derivation) warn("structure", d.name, "data item no Enquiry asks for and nothing derives");
+}
+
+// ontology coding (Composer's native field) on every element that can carry it, and quotes
+// wherever a citation is given
+const codedElements = [
+  ...tasks.map((t) => [t.name, t.metaprops]),
+  ...g.data.map((d) => [d.name, d.metaprops]),
+  ...tasks.flatMap((t) =>
+    t.candidates.flatMap((c) => [
+      [`${t.name}/${c.name}`, c.metaprops],
+      ...c.arguments.map((a, i) => [`${t.name}/${c.name}/${a.name || i + 1}`, a.metaprops]),
+    ])
+  ),
+];
+function codingProblems(mp) {
+  const v = (mp?.["ontology.coding"] || "").trim();
+  if (!v) return mp?.["ontology.label"] ? ["ontology.label without ontology.coding"] : [];
+  if (!CODING.test(v)) return [`ontology.coding must be SCHEME:code (e.g. SNOMED:197456007), is "${v}"`];
+  const [scheme, code] = v.split(":");
+  if (/^SNOMED(CT)?$/i.test(scheme) && !SNOMED_CODE.test(code)) return [`ontology.coding ${v} is not a SNOMED CT concept id (6-18 digits)`];
+  return [];
+}
+// An element that cites sources must quote at least one of them verbatim (FAIL); a citation
+// without its own quote is a WARN, since some cited works (e.g. an instrument's validation
+// paper) are not in the source library.
+function quoteProblems(mp) {
+  const out = [];
+  const keys = Object.keys(mp || {});
+  const cited = keys.filter((k) => /^source(?:\.\d+)?$/.test(k));
+  const quoted = keys.filter((k) => /^quote(?:\.\d+)?$/.test(k) && (mp[k] || "").trim());
+  if (cited.length && !quoted.length) out.push({ level: "FAIL", message: "cites sources but quotes none (add quote.N: the verbatim passage it was modelled from)" });
+  for (const k of keys) {
+    const s = /^source(?:\.(\d+))?$/.exec(k);
+    if (s && quoted.length) {
+      const qk = s[1] ? `quote.${s[1]}` : "quote";
+      if (!(mp[qk] || "").trim()) out.push({ level: "WARN", message: `${k} has no ${qk}; quote it if the cited document is available` });
+    }
+    const q = /^quote(?:\.(\d+))?$/.exec(k);
+    if (q) {
+      const v = (mp[k] || "").trim();
+      const sk = q[1] ? `source.${q[1]}` : "source";
+      if (!(mp[sk] || "").trim()) out.push({ level: "FAIL", message: `${k} has no matching ${sk} citation` });
+      if (!QUOTED.test(v)) out.push({ level: "FAIL", message: `${k} holds no verbatim excerpt in double quotes: ${v}` });
+      else if (v.split(/\s+/).length > QUOTE_MAX_WORDS) out.push({ level: "WARN", message: `${k} is longer than ${QUOTE_MAX_WORDS} words; quote the passage, not the section` });
+    }
+  }
+  return out;
+}
+for (const [where, mp] of codedElements) {
+  for (const p of codingProblems(mp)) fail("annotation", where, p);
+  if (mp?.["ontology.coding"] && !mp["ontology.label"]) warn("annotation", where, "ontology.coding without ontology.label (the term's preferred name)");
+  for (const p of quoteProblems(mp)) (p.level === "FAIL" ? fail : warn)("annotation", where, p.message);
 }
 if (!g.metadata.title) fail("annotation", "metadata", "no metadata title");
 if (g.metadata.desc && HAND_COUNT.test(g.metadata.desc)) {
@@ -272,9 +354,18 @@ for (const d of g.data) {
   if (names.length) fail("structure", d.name, `derivation uses unknown name(s) ${names.join(", ")}`);
 }
 
-// therapy actions
+// therapy actions: goal, native fields, and the source passage the recommendation came from
 for (const t of therapy) {
   if (!(t.metaprops["goal.noun_phrase"] || "").trim()) fail("therapy", t.name, "State Achievement goal without goal.noun_phrase");
+  if (!(t.caption || "").trim()) fail("therapy", t.name, "therapy action without a caption");
+  if (!(t.description || "").trim()) fail("therapy", t.name, "therapy action without a description (why it was modelled)");
+  if (!(t.procedure || "").trim()) warn("therapy", t.name, "therapy action without a procedure (what to do, e.g. the dose and titration)");
+  const sources = metaValues(t.metaprops, "source");
+  if (!sources.length) fail("therapy", t.name, "therapy action without a source / source.N citation and its quote");
+  for (const s of sources) {
+    if (s.trim().length < 6 || !CITATION.test(s)) fail("therapy", t.name, `source without a citation token (PMID/DOI or a named guideline/label/instrument): ${s}`);
+  }
+  if (!t.metaprops["ontology.coding"]) warn("therapy", t.name, "no ontology.coding (SNOMED CT concept for the procedure or substance)");
 }
 
 // monitoring actions: the metaprops contract
@@ -303,49 +394,51 @@ for (const t of monitors) {
   ok("required");
   ok("placeholders");
 
-  // ServiceRequest on the Action
-  if (m["ServiceRequest.intent"] && m["ServiceRequest.intent"].trim() !== "order") {
-    bad("serviceRequest", `ServiceRequest.intent must be order (is ${m["ServiceRequest.intent"]})`);
+  // the order: what is done, when, and the patient and clinician instructions
+  if (Object.keys(m).some((k) => LEGACY_FHIR.test(k))) bad("order", "FHIR ServiceRequest.* keys present; the order lives in order.* and the native procedure");
+  const code = (m["order.code"] || "").trim();
+  const timing = (m["order.timing"] || "").trim();
+  if (timing && !CADENCE.test(timing)) bad("order", `order.timing names no cadence or trigger: ${timing}`);
+  const triggered = TRIGGERED.test(`${code} ${timing}`);
+  if (triggered && !m["order.performer_instruction"]) {
+    bad("order", "triggered/urgent step without order.performer_instruction");
+  } else if (!m["order.performer_instruction"] && m.trigger && m.trigger.trim().toLowerCase() !== "none") {
+    warn("metaprops", t.name, `trigger is set ("${m.trigger}") but there is no order.performer_instruction; confirm none is needed`);
   }
-  const timing = m["ServiceRequest.occurrenceTiming"] || "";
-  if (timing && !CADENCE.test(timing)) bad("serviceRequest", `occurrenceTiming names no cadence or trigger: ${timing}`);
-  const triggered = TRIGGERED.test(`${m["ServiceRequest.code"] || ""} ${timing}`);
-  if (triggered && !m["ServiceRequest.performerInstruction"]) {
-    bad("serviceRequest", "triggered/urgent step without ServiceRequest.performerInstruction");
-  } else if (!m["ServiceRequest.performerInstruction"] && m.trigger && m.trigger.trim().toLowerCase() !== "none") {
-    warn("metaprops", t.name, `trigger is set ("${m.trigger}") but there is no ServiceRequest.performerInstruction; confirm none is needed`);
-  }
-  ok("serviceRequest");
+  ok("order");
 
-  // ServiceRequest on the Goal, consistent with the Action. goal.noun_phrase joins the
-  // fields with "; ", so a value containing ";" cannot round-trip.
-  for (const f of SR_FIELDS) {
-    if ((m[`ServiceRequest.${f}`] || "").includes(";")) {
-      bad("goalConsistency", `ServiceRequest.${f} contains ";" (the goal.noun_phrase field separator); use commas inside the value`);
-    }
-  }
-  const np = m["goal.noun_phrase"] || "";
-  const goalSR = {};
-  for (const part of np.split(/;\s*/)) {
-    const mm = /^ServiceRequest\.([A-Za-z.]+)\s*=\s*([\s\S]*)$/.exec(part.trim());
-    if (mm) goalSR[mm[1]] = mm[2].trim();
-  }
-  for (const f of SR_FIELDS) {
-    const onAction = (m[`ServiceRequest.${f}`] || "").trim();
-    const onGoal = goalSR[f];
-    if (onAction && onGoal === undefined) bad("goalConsistency", `goal.noun_phrase lacks ServiceRequest.${f}`);
-    else if (!onAction && onGoal !== undefined) bad("goalConsistency", `goal.noun_phrase has ServiceRequest.${f} but the metaprops do not`);
-    else if (onAction && onGoal !== onAction) bad("goalConsistency", `ServiceRequest.${f} differs between goal.noun_phrase and metaprops`);
-  }
+  // native fields: what Composer shows on the task itself
+  if (!(t.caption || "").trim()) bad("native", "no caption");
+  if (!(t.description || "").trim()) bad("native", "no description (what is monitored and why it was modelled)");
+  const proc = (t.procedure || "").trim();
+  if (!proc) bad("native", "no procedure (the order as the instruction Composer shows on the action)");
+  else if (code && !proc.toLowerCase().includes(code.toLowerCase())) bad("native", "procedure does not state order.code");
+  else if (timing && !proc.toLowerCase().includes(timing.toLowerCase())) bad("native", "procedure does not state order.timing");
+  ok("native");
+
+  // the goal states the same order
+  const np = (m["goal.noun_phrase"] || "").trim().toLowerCase();
+  if (code && !np.includes(code.toLowerCase())) bad("goalConsistency", "goal.noun_phrase does not state order.code");
+  if (timing && !np.includes(timing.toLowerCase())) bad("goalConsistency", "goal.noun_phrase does not state order.timing");
   ok("goalConsistency");
 
-  // citations
+  // citations, each with the verbatim passage it came from
   const sources = metaValues(m, "source");
   if (!sources.length) bad("citations", "no source / source.N citation");
   for (const s of sources) {
     if (s.trim().length < 6 || !CITATION.test(s)) bad("citations", `source without a citation token (PMID/DOI or a named guideline/label/instrument): ${s}`);
   }
   ok("citations");
+  const qp = quoteProblems(m).filter((p) => p.level === "FAIL");
+  if (qp.length) {
+    row.checks.quotes = false; // already reported as annotation FAILs above
+    row.verdictNote = qp.map((p) => p.message).join("; ");
+  }
+  ok("quotes");
+
+  // ontology coding: optional (added by the coding pass), but checked when present
+  row.checks.coding = !codingProblems(m).length;
+  if (!m["ontology.coding"]) warn("metaprops", t.name, "no ontology.coding (SNOMED CT concept for the monitored condition or measurement); run the coding pass");
 
   // controlled vocabularies
   for (const [k, vocab] of Object.entries(VOCAB)) {
@@ -384,7 +477,7 @@ for (const t of monitors) {
 
   // stance <-> schedule
   if ((m.monitoring_stance || "").trim() === "routine_not_recommended" && ROUTINE.test(timing) && !/symptom|trigger|event/i.test(timing)) {
-    bad("stance", `monitoring_stance=routine_not_recommended but occurrenceTiming is a routine schedule (${timing})`);
+    bad("stance", `monitoring_stance=routine_not_recommended but order.timing is a routine schedule (${timing})`);
   }
   ok("stance");
 
@@ -405,7 +498,7 @@ for (const t of monitors) {
   const m = t.metaprops;
   const keys = [
     (m["goal.noun_phrase"] || "").trim().toLowerCase(),
-    `${(m["ServiceRequest.code"] || "").trim().toLowerCase()}|${(m["ServiceRequest.occurrenceTiming"] || "").trim().toLowerCase()}`,
+    `${(m["order.code"] || "").trim().toLowerCase()}|${(m["order.timing"] || "").trim().toLowerCase()}`,
   ];
   for (const k of keys) {
     if (!k || k === "|") continue;
@@ -430,6 +523,14 @@ if (proposal) {
 }
 
 // baseline: regressions (iteration) or the coding-patch freeze
+// (a copy of candidates / data items without the ontology keys, which a coding run may change)
+const stripCoding = (mp) => Object.fromEntries(Object.entries(mp || {}).filter(([k]) => !ONTOLOGY_KEYS.test(k)));
+const uncoded = (items) =>
+  JSON.parse(JSON.stringify(items || [])).map((x) => ({
+    ...x,
+    metaprops: stripCoding(x.metaprops),
+    ...(x.arguments ? { arguments: x.arguments.map((a) => ({ ...a, metaprops: stripCoding(a.metaprops) })) } : {}),
+  }));
 if (base) {
   const names = (gg) => ({
     tasks: new Set(gg.tasks.map((t) => t.name)),
@@ -474,15 +575,15 @@ if (base) {
         if ((t[f] ?? null) !== (b[f] ?? null)) fail("codingPatch", t.name, `${f} changed in a coding-only run`);
       }
       if (JSON.stringify(t.components) !== JSON.stringify(b.components)) fail("codingPatch", t.name, "plan components/scheduling changed");
-      if (JSON.stringify(t.candidates) !== JSON.stringify(b.candidates)) fail("codingPatch", t.name, "decision candidates/arguments changed");
+      if (JSON.stringify(uncoded(t.candidates)) !== JSON.stringify(uncoded(b.candidates))) fail("codingPatch", t.name, "decision candidates/arguments changed");
       if (JSON.stringify(t.sources) !== JSON.stringify(b.sources)) fail("codingPatch", t.name, "enquiry sources changed");
       const keys = new Set([...Object.keys(t.metaprops), ...Object.keys(b.metaprops)]);
       for (const k of keys) {
-        if (CODE_KEYS.test(k)) continue;
-        if (t.metaprops[k] !== b.metaprops[k]) fail("codingPatch", t.name, `metaprops ${k} changed (only the supportingInfo.*Codes keys may change)`);
+        if (ONTOLOGY_KEYS.test(k)) continue;
+        if (t.metaprops[k] !== b.metaprops[k]) fail("codingPatch", t.name, `metaprops ${k} changed (only ontology.coding and ontology.label may change)`);
       }
     }
-    if (JSON.stringify(g.data) !== JSON.stringify(base.data)) fail("codingPatch", "data", "data items changed in a coding-only run");
+    if (JSON.stringify(uncoded(g.data)) !== JSON.stringify(uncoded(base.data))) fail("codingPatch", "data", "data items changed in a coding-only run");
   }
 }
 
@@ -517,7 +618,7 @@ else {
 
 if (opts.report) {
   const yes = (v) => (v === false ? "no" : "yes");
-  const cols = ["required", "placeholders", "serviceRequest", "goalConsistency", "citations", "vocab", "traceability", "appliesWhen", "stance", "caseReport"];
+  const cols = ["required", "placeholders", "order", "native", "goalConsistency", "citations", "quotes", "coding", "vocab", "traceability", "appliesWhen", "stance", "caseReport"];
   const L = [];
   L.push(`# CIG monitoring review: ${path.basename(opts.file)}`, "");
   L.push(`**Deterministic gate: ${verdict}** (${fails.length} FAIL, ${warns.length} WARN). Generated by \`scripts/check_cig.mjs\` on ${new Date().toISOString()}.`, "");

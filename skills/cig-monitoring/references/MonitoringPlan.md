@@ -11,7 +11,7 @@ The three sub-plans are parallel: they are all components of the Monitoring Plan
 ## PROforma elements
 
 - Tasks: `plan` (monitoring plan and its three sub-plans), `action` (monitoring actions)
-- Tools: `add_task` (no `after` between the sub-plans), `set_attribute` (metaprops, precondition)
+- Tools: `add_task` (no `after` between the sub-plans), `set_attribute` (description, procedure, metaprops, precondition), `snomed_search` (the coding pass)
 
 ## Tool calls
 
@@ -32,7 +32,7 @@ add_task(plan: "Monitoring_Plan", kind: "plan", name: "Monitor_Undesired_State",
          caption: "Monitor undesired states and adverse drug effects")
 ```
 
-Each sub-plan then gets its monitoring actions (`add_task(plan: "Monitor_Undesired_State", kind: "action", ...)`, one per item to monitor), each with an Action Enactment Goal and the full metaprops — see `ActionEnactmentGoal.md` and `MetapropsSyntax.md`. Never leave a sub-plan without actions; if a sub-plan has nothing to hold within the requested scope, omit it.
+Each sub-plan then gets its monitoring actions (`add_task(plan: "Monitor_Undesired_State", kind: "action", ...)`, one per item to monitor), each with an Action Enactment Goal, its native caption / description / procedure and the full metaprops — see `ActionEnactmentGoal.md` and `MetapropsSyntax.md`. Never leave a sub-plan without actions; if a sub-plan has nothing to hold within the requested scope, omit it.
 
 ## `.pf` text (from the example)
 
@@ -64,8 +64,9 @@ Each action in **Monitor Undesired ADEs** must be **operationalized**, not just 
 1. Map the harm/syndrome to **observable manifestations** (e.g. acute pancreatitis → severe persistent abdominal pain radiating to the back; anhedonia/depression → loss of interest/motivation, possible suicidality).
 2. Choose an **instrument**: patient symptom report, named lab test, validated questionnaire (e.g. PHQ-9 and C-SSRS for mood/suicidality; CoEQ for cravings), or clinician exam.
 3. Set a **frequency** with justification, and an **urgent trigger** for same-day assessment.
-4. **Document provenance in the action's metaprops** (full contract in `MetapropsSyntax.md`): `source` / `source.1..n` (cite each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` order — plus `monitored_target` naming the therapy task the action traces to (**traceability**: a reviewer can see which monitoring task each source drove).
+4. **Document provenance in the action's metaprops** (full contract in `MetapropsSyntax.md`): `source` / `source.1..n` (cite each) with `quote` / `quote.1..n` (the verbatim passage of each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `order.*` keys (also stated in the native `procedure` and `goal.noun_phrase`) — plus `monitored_target` naming the therapy task the action traces to (**traceability**: a reviewer can see which monitoring task each source drove).
 5. If the source limits the harm to a sub-population, set `applies_when` accordingly and add an executable `precondition` over an Enquiry data item (e.g. `Monitor_Hypoglycemia` → `on_insulin_or_secretagogue = true`).
+6. **Code the harm** in the coding pass: `ontology.coding=SNOMED:<id>` + `ontology.label` for the disorder or finding (e.g. `SNOMED:197456007` Acute pancreatitis (disorder)), found with `snomed_search`.
 
 **Case-report sources are opt-in.** Do not build them unless the user (or approved proposal) includes them. When used, they must document a harm *caused by/occurring during* the drug — not merely that symptoms resolve after stopping it (see the source-quality rule in `ActionEnactmentGoal.md`).
 

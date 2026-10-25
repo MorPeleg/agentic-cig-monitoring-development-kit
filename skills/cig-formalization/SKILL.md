@@ -5,10 +5,11 @@ description: >-
   monitoring proposal into a PROforma 1.9 guideline file
   (`projects/<project_dir>/guideline/<name>.pf`) via the proforma-editor tools.
   Default is a fresh-file full re-emit (snapshot to guideline/baseline/, delete,
-  create_guideline, rebuild). Coding-only requests (add SNOMED/OMOP/LOINC/RxNorm
-  codes) use coding-patch mode: do not delete the .pf; add the typed coding keys
-  on existing monitoring Actions only. Use this skill — alongside
-  proforma-editor — whenever an approved
+  create_guideline, rebuild with native fields, order.* metaprops, quoted
+  sources, then a SNOMED CT coding pass with snomed_search). Coding-only
+  requests (add SNOMED CT codes) use coding-patch mode: do not delete the .pf;
+  add or change only ontology.coding and ontology.label. Use this skill —
+  alongside proforma-editor — whenever an approved
   `projects/<project_dir>/plans/PROPOSAL-*.md` must be turned into (or
   regenerated as) the project guideline, or when the user asks only to add
   terminology codes to an existing CIG. Treat formalization as a
@@ -29,7 +30,7 @@ the agent built on top of a stale artifact (16 then 20 actions, two
 disconnected plan roots), gave one ADE two different names across runs
 (`Monitor_AKI` vs `Monitor_Acute_Kidney_Injury`), left a hand-written count in
 the guideline description that drifted from the real action set, or dropped a
-`ServiceRequest.*` field. None of these are clinical mistakes — they are
+field of the order. None of these are clinical mistakes — they are
 bookkeeping mistakes. So this skill is deliberately small and rule-shaped: it
 removes the room for merges, duplicates, renames, and stale prose. Follow it
 literally and the emit becomes reproducible.
@@ -44,10 +45,13 @@ more, no fewer, never renamed. The proposal also fixes, per task: kind, parent
 plan, `after` siblings, the goal `verb`, the precondition (whether there is one,
 and over which data item), the `applies_when` sub-population, and the
 `monitoring_stance`. §5 (data items table) fixes every Enquiry data item: name,
-type, unit, source, users. Where the proposal gives a `noun_phrase` *summary*
-rather than the full string, you compose the full `ServiceRequest`/metaprops
-lines from the proposal's §3 extraction + §6 rows, formatted to the canonical
-contract (see References) — that formatting is deterministic, not a new decision.
+type, unit, source, users. §9 (Sources) holds the citation and verbatim passage
+behind each element. Where the proposal gives a `noun_phrase` *summary* rather
+than the full order, you compose the `order.*` keys, `goal.noun_phrase`,
+`procedure`, `description` and the other metaprops lines from the proposal's §3
+extraction + §6 rows + §9 quotes, formatted to the canonical contract (see
+References) — that formatting is deterministic, not a new decision. Quotes are
+copied from the source document, never reworded.
 
 If the proposal is missing or its `status` is not `approved`, **stop** and report
 that — do not emit from an unapproved draft. If the proposal is internally
@@ -66,9 +70,11 @@ during emission.
   emit — take it before touching an existing guideline.
 - **Worked example to imitate (authoritative):** `cig/examples/obesity-glp1-monitoring.pf`
   (lint clean, passes the gate) and its diagram `obesity-glp1-monitoring.mmd`.
-- **Canonical metaprops contract (required keys, numbered repeat keys, controlled vocab, anti-placeholder rules, typed coding keys):**
-  `skills/cig-monitoring/references/MetapropsSyntax.md` — this file is the single
-  source for the metaprops contract; do not re-invent or duplicate it.
+- **Canonical task contract (native fields, the order, required keys, source
+  quotes, ontology coding, numbered repeat keys, controlled vocab,
+  anti-placeholder rules):** `skills/cig-monitoring/references/MetapropsSyntax.md`
+  — this file is the single source for the contract; do not re-invent or
+  duplicate it.
 - **Goal side + opt-in case-report source rule + labeled-ADE skeleton:**
   `skills/cig-monitoring/references/ActionEnactmentGoal.md`.
 - **Structural patterns (only when the approved scope includes them):**
@@ -77,6 +83,15 @@ during emission.
   `skills/cig-monitoring/references/`).
 - **Language:** the `proforma_reference` tool. Read it before writing any
   expression.
+- **SNOMED CT lookup:** the `snomed_search` tool (EBI OLS4, restricted to
+  SNOMED CT). It returns `shortForm` `SNOMED_<id>` and the preferred label;
+  record `SNOMED:<id>` and the label exactly as returned.
+- **Older guidelines:** a `.pf` built on the old FHIR `ServiceRequest.*`
+  contract is converted with `node scripts/migrate_metaprops.mjs <guideline.pf>`
+  (it moves the order to `order.*`, rewrites `goal.noun_phrase`, writes the
+  native `procedure`, fills an empty `description`, and lists the dropped
+  `supportingInfo.*Codes` for the coding pass). It does not add quotes; add them
+  from the sources.
 
 Do all `.pf` editing through the **proforma-editor** tools. Read
 `skills/proforma-editor/SKILL.md` and `setup_tools(skills: ["proforma-editor"])`
@@ -90,17 +105,17 @@ never fall back to writing the file manually. Pass the `.pf` path as an
 
 **Full re-emit (default).** New CIG, first emit of an approved proposal, or any request that changes the clinical action set. Follow *Prime directive: regenerate from empty* below.
 
-**Coding-patch mode.** Use this when the user asks **only** to add terminology codes (SNOMED / OMOP / LOINC / RxNorm / finding codes) to an **existing** CIG — or the proposal header marks `mode: coding-patch`. This is **not** a rebuild. Detect it before touching the file. If the request could be either a rebuild or a patch, **stop and ask**; never assume a full rebuild for a coding request.
+**Coding-patch mode.** Use this when the user asks **only** to add terminology codes (SNOMED CT) to an **existing** CIG — or the proposal header marks `mode: coding-patch`. This is **not** a rebuild. Detect it before touching the file. If the request could be either a rebuild or a patch, **stop and ask**; never assume a full rebuild for a coding request.
 
 Coding-patch rules (MUST / MUST NOT):
 
 1. **Do not delete the `.pf`.** Snapshot it to `guideline/baseline/<name>-<YYYYMMDD-HHmmss>.pf` first, then patch the existing file in place.
 2. **Do not add, remove, or rename tasks, components, candidates, arguments, sources or data items.** The Action name set, plan structure, scheduling, Decision candidates and Enquiry data items MUST stay identical to the snapshot.
-3. **Do not change captions, descriptions, preconditions, `goal.noun_phrase`, `ServiceRequest.occurrenceTiming`, `source.N`, `literature_basis`, `applies_when`, Decision arguments, or the metadata.** Those strings are frozen from the prior approved emit.
-4. **Only add or replace the typed coding keys** on existing monitoring Actions: `ServiceRequest.supportingInfo.findingCodes`, `labCodes`, `conditionCodes`, `medicationCodes` (value format in `MetapropsSyntax.md`). Every other key keeps its exact value. Key order does not matter (the tools sort keys on save).
-5. **Patch a metaprops map by read → add → write back whole**, in one `set_attribute` per Action:
-   - read the current map with `export_json` (the task's `metaprops` object, already unescaped) — or `get_component(selector: "Monitor_X", format: "json")`, which returns the raw properties text;
-   - add the coding keys to that map;
+3. **Do not change captions, descriptions, procedures, preconditions, `goal.noun_phrase`, the `order.*` keys, `source.N` / `quote.N`, `literature_basis`, `applies_when`, Decision arguments, or the metadata.** Those strings are frozen from the prior approved emit.
+4. **Only add or replace `ontology.coding` and `ontology.label`** on existing monitoring actions, therapy actions and data items (candidates and arguments only when a real concept fits), with the code and label `snomed_search` returns (value format in `MetapropsSyntax.md`, "Ontology coding"). Every other key keeps its exact value. Key order does not matter (the tools sort keys on save).
+5. **Patch a metaprops map by read → add → write back whole**, in one `set_attribute` per element:
+   - read the current map with `export_json` (the element's `metaprops` object, already unescaped) — or `get_component(selector: "Monitor_X", format: "json")`, which returns the raw properties text;
+   - add the two coding keys to that map;
    - write every line back with `set_attribute(file, selector: "Monitor_X", attribute: "metaprops", value: "<all key=value lines>")`. It **replaces** the whole metaprops; a key you leave out is deleted.
    Never write a partial map; never write metaprops on the component instead of the task.
 6. If the approved proposal's action set **differs** from the existing `.pf`, this is **not** a coding patch — stop and report. Do not silently switch to a full rebuild.
@@ -108,7 +123,7 @@ Coding-patch rules (MUST / MUST NOT):
 
 After the patch, run `format` and `lint` (0 errors), regenerate the `.mmd` and the `.html` report, then run the freeze gate:
 `node scripts/check_cig.mjs projects/<p>/guideline/<name>.pf --proposal projects/<p>/plans/PROPOSAL-<ts>.md --baseline projects/<p>/guideline/baseline/<snapshot>.pf --coding-patch`.
-It FAILs on any change outside the four coding keys.
+It FAILs on any change other than `ontology.coding` / `ontology.label`.
 
 ## Prime directive: regenerate from empty (full re-emit only)
 
@@ -145,27 +160,39 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
    metaprops per task (`set_attribute` replaces, never appends); exactly one
    root plan for the requested sub-structure; every task reachable from it.
 5. **One fixed bundle per action** (see below) — emit it and only it.
-6. **ServiceRequest completeness on BOTH sides** (the recurring failure):
-   `goal.noun_phrase` AND the separate keys MUST EACH contain all five fields —
-   `ServiceRequest.intent`, `ServiceRequest.code`,
-   `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, and
-   `ServiceRequest.performerInstruction` (required whenever there is a triggered
-   lab or an urgent/escalation step) — with identical values on the two sides.
-   Never stop at `intent` + `code`.
-7. **No placeholders.** Never `source=s`, `instrument=i`, `provenance_type=p`,
+6. **The order, stated three ways that agree** (the recurring failure): the
+   metaprops MUST carry `order.code`, `order.timing`,
+   `order.patient_instruction`, and `order.performer_instruction` (required
+   whenever there is a triggered lab or an urgent/escalation step); the native
+   `procedure` is `<order.code>, <order.timing>. Patient: <...>. Clinician: <...>.`
+   and `goal.noun_phrase` is `<order.code>, <order.timing>`, both stating
+   `order.code` and `order.timing` verbatim. Never stop at the code. MUST NOT
+   write any `ServiceRequest.*` key (the gate FAILs them).
+7. **Native fields filled.** Every monitoring and therapy action has a
+   `caption` and a `description` (monitoring: `Monitors <monitored_target>.
+   <literature_basis>.`; therapy: the recommendation and why it was modelled);
+   every monitoring action has its `procedure`, and every therapy action has
+   one when the proposal gives something concrete to do (dose, titration).
+8. **Every citation quoted.** Each `source.N` on a monitoring or therapy action
+   is paired with `quote.N`: the verbatim passage (at most about 25 words, in
+   double quotes, prefixed with page/section, `...` for omissions) copied from
+   the source document (`cig/guidelines/*.md`, the PDF in
+   `cig/guidelines/source/`, or `projects/<p>/resources/`). An action that cites
+   sources but quotes none FAILs.
+9. **No placeholders.** Never `source=s`, `instrument=i`, `provenance_type=p`,
    `tbd`, `TODO`, empty values, or a data item typed `text` just to avoid
    choosing. Use the real content and the real type fixed in the proposal.
-8. **Scope to the request.** Build only the sub-structure the approved proposal
-   asks for, fully populated. MUST NOT emit empty placeholder components — no
-   task without a caption and `goal.verb`, no Enquiry with no sources, no
-   Decision with no candidates or a candidate with no argument, no plan with no
-   components. An "ADE monitoring only" build is a single populated monitoring
-   plan as the root — never the full Top-Level Plan with empty
-   Enquiry/Decision/Therapy stubs.
-9. **Executable conditions only.** Every precondition and argument condition is
-   a PROforma expression that `check_expression` types as `truth_value` with
-   every name resolving to the intended data item or decision (not to "text
-   literal" by accident). A sentence is not a precondition.
+10. **Scope to the request.** Build only the sub-structure the approved proposal
+    asks for, fully populated. MUST NOT emit empty placeholder components — no
+    task without a caption and `goal.verb`, no Enquiry with no sources, no
+    Decision with no candidates or a candidate with no argument, no plan with no
+    components. An "ADE monitoring only" build is a single populated monitoring
+    plan as the root — never the full Top-Level Plan with empty
+    Enquiry/Decision/Therapy stubs.
+11. **Executable conditions only.** Every precondition and argument condition is
+    a PROforma expression that `check_expression` types as `truth_value` with
+    every name resolving to the intended data item or decision (not to "text
+    literal" by accident). A sentence is not a precondition.
 
 ## The deterministic recipe
 
@@ -173,11 +200,11 @@ All calls below take `file: "<absolute path to guideline/<name>.pf>"`; it is
 omitted from the listings for brevity. Through capa the tool ids are
 `pf_<tool>` (see `skills/proforma-editor/SKILL.md`).
 
-1. **Choose the emit mode.** If this is coding-only, follow *Coding-patch mode* and skip steps 3–11. Still read the approved proposal, then run the freeze gate.
+1. **Choose the emit mode.** If this is coding-only, follow *Coding-patch mode* and skip steps 3–12. Still read the approved proposal, then run the freeze gate.
 2. **Read** the approved proposal, the worked example
    `cig/examples/obesity-glp1-monitoring.pf`, and `proforma_reference`.
    Confirm `status: approved`; note the output path, the §5 data items, the §6
-   task table and the `cig-actions` block.
+   task table, the §9 sources and quotes, and the `cig-actions` block.
 3. **Fresh file.** If `guideline/<name>.pf` exists: copy it to
    `guideline/baseline/<name>-<YYYYMMDD-HHmmss>.pf`, then delete it.
 4. **`create_guideline`** `(name: "<Root_Plan>", title: "<proposal title>", author: "<author>")`.
@@ -203,13 +230,15 @@ omitted from the listings for brevity. Through capa the tool ids are
    `after` lists siblings in the same plan and writes
    `schedule_constraint :: completed('<sibling>')`. Lint warns about the empty
    Enquiry and Decision (and the not-yet-existing `Eligible` candidate) until
-   the next steps fill them; it never warns about an empty plan, so step 11 and
+   the next steps fill them; it never warns about an empty plan, so step 12 and
    the gate check for those.
 7. **Enquiry data items** — one per §5 row, then one source each:
    ```
    add_data_item(name: "BMI", type: "real", caption: "Body mass index", unit: "kg/m2")
    set_attribute(selector: "BMI", attribute: "description", value: "Body mass index; primary eligibility threshold")
    add_data_item(name: "on_insulin_or_secretagogue", type: "boolean", caption: "On insulin or an insulin secretagogue?")
+   set_attribute(selector: "on_insulin_or_secretagogue", attribute: "metaprops",
+                 value: "source=Wegovy (semaglutide) US Prescribing Information (revised 02/2026), §5.4 Hypoglycemia\nquote=§5.4: \"Patients with diabetes mellitus taking WEGOVY in combination with insulin or an insulin secretagogue may have an increased risk of hypoglycemia\"")
    add_source(task: "Get_Eligibility_Data", data: "BMI")
    add_source(task: "Get_Eligibility_Data", data: "on_insulin_or_secretagogue")
    ```
@@ -217,7 +246,10 @@ omitted from the listings for brevity. Through capa the tool ids are
    `boolean` for yes/no facts, `text` (with `range` when the values are a closed
    list, e.g. `range: "\"none\", \"prior_pancreatitis\""`) otherwise.
    `add_data_item` has no `description` parameter; set it with `set_attribute`.
-   Create data items **before** any expression that uses them.
+   A data item modelled from a specific passage (a contraindication, a
+   sub-population flag) gets that `source` + `quote` in its metaprops; its
+   Ontology coding is added in step 11. Create data items **before** any
+   expression that uses them.
 8. **Decision** — candidates, then at least one argument each:
    ```
    check_expression(expression: "(BMI >= 30 or (BMI >= 27 and weight_related_comorbidity = true)) and contraindications = none")
@@ -225,7 +257,9 @@ omitted from the listings for brevity. Through capa the tool ids are
    set_attribute(selector: "Eligibility_Decision/candidate:Eligible", attribute: "description", value: "<free-text rationale>")
    add_argument(decision: "Eligibility_Decision", candidate: "Eligible", support: "for",
                 condition: "(BMI >= 30 or (BMI >= 27 and weight_related_comorbidity = true)) and contraindications = none",
-                name: "Arg_Eligible")
+                name: "Arg_Eligible", caption: "<rationale, with the evidence grade if the source gives one>")
+   set_attribute(selector: "Eligibility_Decision/candidate:Eligible/argument:Arg_Eligible", attribute: "metaprops",
+                 value: "source=<guideline, recommendation, page>\nquote=<page/section>: \"<verbatim criterion passage>\"")
    ```
    Run `check_expression` on every condition first: the type must be
    `truth_value` and each name must resolve to the intended `data (...)` item;
@@ -235,13 +269,26 @@ omitted from the listings for brevity. Through capa the tool ids are
    `choice_mode` only when §6 says `multiple`
    (`set_attribute(selector: "Eligibility_Decision", attribute: "choice_mode", value: "multiple")`,
    and then gate with `result_set(D) includes C`).
-9. **Therapy actions** (full-CIG scope) — `add_task(plan: "<therapy plan>", kind: "action", name, caption)`
-   then one `set_attribute` metaprops with `goal.verb=achieve|avoid` and
+9. **Therapy actions** (full-CIG scope) — `add_task(plan: "<therapy plan>", kind: "action", name, caption)`,
+   then `set_attribute` for `description` and (when the proposal gives one)
+   `procedure`, then one `set_attribute` metaprops with `goal.verb=achieve|avoid`,
    `goal.noun_phrase` (State Achievement Goal, both polarities as the proposal
-   fixes them — see `references/StateAchievementGoal.md`).
+   fixes them — see `references/StateAchievementGoal.md`) and at least one
+   `source.N` + `quote.N`.
 10. **For each monitoring action in the §6 table (and only those), emit the fixed bundle**
     (next section). Iterate the table top to bottom; do not add or skip rows.
-11. **Finish:** `format`, `lint` (0 errors; read every warning and fix the ones
+11. **Coding pass.** For each monitoring action (the disorder, finding or
+    measurement it watches), each therapy action (the procedure or substance
+    it delivers) and each data item that names a clinical concept (the
+    observable or finding it records), run `snomed_search` with the concept's
+    plain name, pick the closest single concept, and write it back into the
+    element's metaprops map (read → add → write whole) as
+    `ontology.coding=SNOMED:<id>` + `ontology.label=<label as returned>`. Use
+    the proposal's §7 Terminology Reuse choice when it fixes one. Code
+    candidates and arguments only when a real concept fits; leave structural
+    options such as `Eligible` / `Not_Eligible` uncoded. Record a narrower or
+    broader choice in `assistant_invention` (monitors) or the description.
+12. **Finish:** `format`, `lint` (0 errors; read every warning and fix the ones
     the proposal does not explain; run once with `include_info: true` and
     confirm every PF-X060 "treated as text literal" is an intended literal, not
     a misspelt data item), `to_mermaid(output: "<abs>/guideline/<name>.mmd")`,
@@ -259,21 +306,27 @@ add_task(plan: "Monitor_Undesired_State", kind: "action", name: "Monitor_Hypogly
          caption: "Monitor for hypoglycemia in patients on concomitant insulin or an insulin secretagogue",
          precondition: "on_insulin_or_secretagogue = true")
 
-# 2) Exactly one metaprops: the whole contract in one call (replaces any existing metaprops)
+# 2) Native fields: what is monitored and why, and the order as Composer's instruction
+set_attribute(selector: "Monitor_Hypoglycemia", attribute: "description", value:
+"Monitors hypoglycemia as a labeled adverse effect when GLP-1 is combined with insulin or an insulin secretagogue, tracing to the GLP-1 prescription therapy recommendation (Prescribe_GLP1). Label states concomitant use with insulin or an insulin secretagogue may increase the risk of hypoglycemia and that reducing the insulin/secretagogue dose may be necessary.")
+set_attribute(selector: "Monitor_Hypoglycemia", attribute: "procedure", value:
+"Hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients, each visit and on dose change of concomitant insulin or insulin secretagogue. Patient: report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic. Clinician: if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol.")
+
+# 3) Exactly one metaprops: the whole contract in one call (replaces any existing metaprops)
 set_attribute(selector: "Monitor_Hypoglycemia", attribute: "metaprops", value:
-"ServiceRequest.intent=order
-ServiceRequest.code=hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients
-ServiceRequest.occurrenceTiming=each visit and on dose change of concomitant insulin or insulin secretagogue
-ServiceRequest.patientInstruction=report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic
-ServiceRequest.performerInstruction=if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol
-goal.verb=order
-goal.noun_phrase=ServiceRequest.intent = order; ServiceRequest.code = hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients; ServiceRequest.occurrenceTiming = each visit and on dose change of concomitant insulin or insulin secretagogue; ServiceRequest.patientInstruction = report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic; ServiceRequest.performerInstruction = if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol
+"goal.verb=order
+goal.noun_phrase=hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients, each visit and on dose change of concomitant insulin or insulin secretagogue
+order.code=hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients
+order.timing=each visit and on dose change of concomitant insulin or insulin secretagogue
+order.patient_instruction=report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic
+order.performer_instruction=if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol
 category=undesired_ade
 monitored_target=hypoglycemia as a labeled adverse effect when GLP-1 is combined with insulin or an insulin secretagogue, tracing to the GLP-1 prescription therapy recommendation (Prescribe_GLP1)
 applies_when=concomitant insulin or insulin secretagogue therapy (not patients on GLP-1 monotherapy)
 provenance_type=package_insert_specified
 source_kind=package_insert
-source.1=Wegovy (semaglutide) US Prescribing Information, Warnings and Precautions: Hypoglycemia (5.4)
+source.1=Wegovy (semaglutide) US Prescribing Information (revised 02/2026), §5.4 Hypoglycemia
+quote.1=§5.4: \"Patients with diabetes mellitus taking WEGOVY in combination with insulin or an insulin secretagogue may have an increased risk of hypoglycemia\"
 knowledge_origin=drug label warning, which scopes the risk to concomitant insulin/secretagogue use
 guideline_status=not_specified_as_a_guideline_monitoring_task
 monitoring_stance=recommended
@@ -283,6 +336,11 @@ instrument=patient symptom report plus self-monitored blood glucose (SMBG)
 monitoring_frequency_basis=tied to follow-up visits and to insulin/secretagogue dose changes when the interaction risk is highest
 trigger=symptomatic hypoglycemia (shakiness, sweating, confusion, palpitations) or low SMBG
 cq=CQ7")
+
+# 4) Coding pass (step 11): snomed_search(query: "hypoglycemia") -> SNOMED_302866003,
+#    then read the map, add the two keys, write it back whole
+#    ontology.coding=SNOMED:302866003
+#    ontology.label=Hypoglycemia (disorder)
 ```
 
 The resulting `.pf` text (after `format`; keys sorted, `=` and `:` inside
@@ -292,16 +350,12 @@ quoted PROforma atom; the tools and `export_json` read them back as `=` / `:`):
 ```
 action  :: 'Monitor_Hypoglycemia' ;
      caption :: 'Monitor for hypoglycemia in patients on concomitant insulin or an insulin secretagogue' ;
-     metaprops :: 'ServiceRequest.code=hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients
-ServiceRequest.intent=order
-ServiceRequest.occurrenceTiming=each visit and on dose change of concomitant insulin or insulin secretagogue
-ServiceRequest.patientInstruction=report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic
-ServiceRequest.performerInstruction=if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol
-applies_when=concomitant insulin or insulin secretagogue therapy (not patients on GLP-1 monotherapy)
+     description :: 'Monitors hypoglycemia as a labeled adverse effect when GLP-1 is combined with insulin or an insulin secretagogue, tracing to the GLP-1 prescription therapy recommendation (Prescribe_GLP1). Label states concomitant use with insulin or an insulin secretagogue may increase the risk of hypoglycemia and that reducing the insulin/secretagogue dose may be necessary.' ;
+     metaprops :: 'applies_when=concomitant insulin or insulin secretagogue therapy (not patients on GLP-1 monotherapy)
 assistant_invention=SMBG operationalization and visit-based screening cadence for the at-risk subgroup
 category=undesired_ade
 cq=CQ7
-goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= hypoglycemia symptom screen ...; ServiceRequest.performerInstruction \\= if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol
+goal.noun_phrase=hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients, each visit and on dose change of concomitant insulin or insulin secretagogue
 goal.verb=order
 guideline_status=not_specified_as_a_guideline_monitoring_task
 instrument=patient symptom report plus self-monitored blood glucose (SMBG)
@@ -310,12 +364,20 @@ literature_basis=label states concomitant use with insulin or an insulin secreta
 monitored_target=hypoglycemia as a labeled adverse effect when GLP-1 is combined with insulin or an insulin secretagogue, tracing to the GLP-1 prescription therapy recommendation (Prescribe_GLP1)
 monitoring_frequency_basis=tied to follow-up visits and to insulin/secretagogue dose changes when the interaction risk is highest
 monitoring_stance=recommended
+ontology.coding=SNOMED\\:302866003
+ontology.label=Hypoglycemia (disorder)
+order.code=hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients
+order.patient_instruction=report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic
+order.performer_instruction=if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol
+order.timing=each visit and on dose change of concomitant insulin or insulin secretagogue
 provenance_type=package_insert_specified
-source.1=Wegovy (semaglutide) US Prescribing Information, Warnings and Precautions\\: Hypoglycemia (5.4)
+quote.1=§5.4\\: "Patients with diabetes mellitus taking WEGOVY in combination with insulin or an insulin secretagogue may have an increased risk of hypoglycemia"
+source.1=Wegovy (semaglutide) US Prescribing Information (revised 02/2026), §5.4 Hypoglycemia
 source_kind=package_insert
 trigger=symptomatic hypoglycemia (shakiness, sweating, confusion, palpitations) or low SMBG
 ' ;
      precondition ::on_insulin_or_secretagogue = true;
+     procedure :: 'Hypoglycemia symptom screen with self-monitored blood glucose (SMBG) in at-risk patients, each visit and on dose change of concomitant insulin or insulin secretagogue. Patient: report shakiness, sweating, confusion, palpitations, or hunger and check SMBG when symptomatic. Clinician: if hypoglycemia is confirmed, reduce or stop the concomitant insulin or insulin secretagogue per protocol.' ;
 end action.
 ```
 plus, in `Monitor_Undesired_State`, the component the same `add_task` call wrote:
@@ -329,11 +391,20 @@ Rules for the bundle:
 - The required key set, value rules and controlled vocabulary are defined in
   `MetapropsSyntax.md` — follow it exactly. Key order is not significant (the
   tools sort keys on save); the key *set* and the values are.
-- The `ServiceRequest.*` values inside `goal.noun_phrase` MUST equal the
-  separate `ServiceRequest.*` keys, field for field.
-- Repeatable keys are numbered: `source.1`, `source.2`, … (one per citation). A
-  repeated bare key collapses to its last value. A single citation may be
-  `source` or `source.1`.
+- `goal.noun_phrase` is `<order.code>, <order.timing>` and `procedure` is
+  `<order.code>, <order.timing>. Patient: <order.patient_instruction>. Clinician: <order.performer_instruction>.`
+  (capitalize the first letter; the `Clinician:` sentence only when there is a
+  performer instruction). Both MUST contain `order.code` and `order.timing`
+  verbatim.
+- `description` is `Monitors <monitored_target>. <literature_basis>.`
+- Repeatable keys are numbered: `source.1`, `source.2`, … (one per citation),
+  each with its `quote.1`, `quote.2`, …. A repeated bare key collapses to its
+  last value. A single citation may be `source` + `quote` or `source.1` +
+  `quote.1`.
+- Each `quote.N` is copied verbatim from the cited document and kept short
+  (the gate warns above 40 words). A citation whose document is not in the
+  source library (e.g. an instrument's validation paper) may stand without its
+  own quote (WARN), but the action must quote at least one source.
 - `monitored_target` names the task it traces to, e.g. `(Prescribe_GLP1)`.
 - Emit a `precondition` **iff** `applies_when` names a sub-population (not
   `all_patients_on_therapy`). It is an executable expression over a data item
@@ -341,12 +412,13 @@ Rules for the bundle:
   `check_expression` first. Boolean data items are compared with `= true` /
   `= false`. Universal-but-event-triggered actions (e.g. AKI triggered by
   dehydration) do **not** get a precondition — the trigger lives in
-  `occurrenceTiming`/`trigger`, per the proposal.
+  `order.timing`/`trigger`, per the proposal.
 - Therapy interventions (full-CIG scope) carry a **State Achievement Goal**
-  (`goal.verb=achieve`/`avoid`) instead of the `order` goal — see
+  (`goal.verb=achieve`/`avoid`) instead of the `order` goal, no `order.*` keys,
+  and their own caption, description, procedure and quoted source — see
   `references/StateAchievementGoal.md`.
-- The coding keys (`ServiceRequest.supportingInfo.*Codes`) are included on a
-  full re-emit only when the approved proposal already fixes their values.
+- `ontology.coding` / `ontology.label` are added in the coding pass (step 11),
+  not guessed: always from a `snomed_search` result.
 
 ## Structural backbone (only when the approved scope includes it)
 
@@ -371,16 +443,18 @@ candidates and arguments (`Enquiry.md`, `Decision.md`) — never leave them empt
 
 ## Writing long values safely
 
-`metaprops` values are long and contain punctuation. Pass them as the `value`
-field of `set_attribute` (a JSON string; use `\n` between lines in the JSON):
-the tool quotes the PROforma atom and applies the properties escapes itself.
-Do not pre-escape `=`, `:` or `'`, and do not wrap the value in quotes. Keep
+`metaprops`, `description` and `procedure` values are long and contain
+punctuation. Pass them as the `value` field of `set_attribute` (a JSON string;
+use `\n` between metaprops lines in the JSON): the tool quotes the PROforma
+atom and applies the properties escapes itself. Do not pre-escape `=`, `:` or
+`'`, and do not wrap the value in quotes; the double quotes of a `quote.N` are
+plain characters inside the value (escape them only as JSON requires). Keep
 each value on one line (no line break inside a value). Never put a backslash in
 a value — the properties format treats it as an escape and drops it. Avoid a
-trailing `;` on the last line (the tool strips it). Captions and descriptions
-are plain text in `caption` / `description`. Do not use `upsert_component` or
-`add_attributes` for metaprops: those take raw PROforma text and you would have
-to escape by hand.
+trailing `;` on the last line (the tool strips it). Captions, descriptions and
+procedures are plain text in `caption` / `description` / `procedure`. Do not
+use `upsert_component` or `add_attributes` for metaprops: those take raw
+PROforma text and you would have to escape by hand.
 
 ## Annotation discipline (kills the drift bug)
 
@@ -397,8 +471,9 @@ to escape by hand.
   the count. If a count is truly needed, derive it from `export_json` at
   verification time — never type it by hand. The same applies to the root plan
   caption.
-- Give every task a concise `caption`; give Enquiry/Decision and data items a
-  `description` where the proposal provides one.
+- Give every task a concise `caption`; give every action, the Enquiry/Decision
+  and data items a `description` (for data items and the Enquiry/Decision,
+  where the proposal provides one).
 
 ## End-of-Step-6 determinism check (self-apply before handoff)
 
@@ -417,11 +492,19 @@ re-emit if any fails:
 - [ ] Each Action and Plan has **one** metaprops with `goal.verb` and
       `goal.noun_phrase` (monitoring: `order`; therapy: `achieve`/`avoid`; root:
       as the proposal fixes it).
-- [ ] Each monitoring action's metaprops has **all five** `ServiceRequest.*`
-      keys (incl. `performerInstruction` for any triggered/urgent step), the same
-      five fields with identical values inside `goal.noun_phrase`, and every
-      required key from `MetapropsSyntax.md` with a real value; citations are
-      `source` / `source.1..n`.
+- [ ] Each monitoring action has a `caption`, `description` and `procedure`;
+      its metaprops have `order.code`, `order.timing`,
+      `order.patient_instruction` (plus `order.performer_instruction` for any
+      triggered/urgent step) and every required key from `MetapropsSyntax.md`
+      with a real value; `procedure` and `goal.noun_phrase` both state
+      `order.code` and `order.timing`; no `ServiceRequest.*` key anywhere.
+- [ ] Each therapy action has a goal, `caption`, `description` (and a
+      `procedure` where the proposal gives one) and at least one source.
+- [ ] Every monitoring and therapy action pairs its `source` / `source.1..n`
+      with `quote` / `quote.1..n` holding a verbatim passage in double quotes.
+- [ ] Every `ontology.coding` is `SNOMED:<id>` with an `ontology.label`, both
+      as returned by `snomed_search`; monitoring actions, therapy actions and
+      concept-bearing data items are coded.
 - [ ] Every action whose `applies_when` is a sub-population carries a
       `precondition` that `check_expression` types as `truth_value`, over a data
       item asked by an Enquiry (`data[].asked_by` non-empty); no precondition on
@@ -434,13 +517,14 @@ re-emit if any fails:
 - [ ] `guideline/<name>.mmd` regenerated from this file with `to_mermaid`, and `guideline/<name>.html` with the proforma skill's `scripts/build_report.mjs`.
 - [ ] `node scripts/check_cig.mjs projects/<p>/guideline/<name>.pf --proposal projects/<p>/plans/PROPOSAL-<ts>.md`
       (add `--baseline projects/<p>/guideline/baseline/<newest>.pf` on an
-      iteration) exits 0 with no FAIL.
+      iteration) exits 0 with no FAIL; review its WARNs (missing coding, a
+      citation without its own quote, an over-long quote).
 - [ ] **Coding-patch freeze (coding-only runs):** the same command with
       `--baseline <snapshot> --coding-patch` exits 0: the action set, names,
-      captions, preconditions, Decision candidates, `goal.noun_phrase`,
-      `source.N` and `occurrenceTiming` equal the snapshot, and the only
-      metaprops keys that differ are the four
-      `ServiceRequest.supportingInfo.*Codes` keys.
+      captions, descriptions, procedures, preconditions, Decision candidates,
+      data items, `goal.noun_phrase`, `order.*` and `source`/`quote` strings
+      equal the snapshot, and the only metaprops keys that differ are
+      `ontology.coding` and `ontology.label`.
 
 This skill ends at a clean, self-verified `.pf`. Step 7 (the blocking
 `cig-monitoring-review` gate and `cq-verification`) is run separately by the

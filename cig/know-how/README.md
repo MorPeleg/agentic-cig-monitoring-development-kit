@@ -89,6 +89,6 @@ The most important goal is the **State Achievement Goal**: a verb of *achieve* /
 
 For each therapy goal defined in the previous step, and for each desired and undesired outcome of the therapy interventions, define monitoring `Action`s within the Monitoring Plan. For each such monitoring action define a goal. The goal would probably be an **Action Enactment Goal**: a verb of *order* plus a noun phrase.
 
-> **Example:** order `ServiceRequest.code = body weight measurement via BIA scale`.
+> **Example:** order `body weight measurement via BIA scale`.
 >
-> *(ServiceRequest is an HL7 FHIR resource.)*
+> *(The order is recorded as the action's `procedure` plus the `order.*` metaprops: `order.code`, `order.timing`, `order.patient_instruction`, `order.performer_instruction`.)*

@@ -144,10 +144,12 @@ skills:
         - '@proforma.pf_search'
   # PROforma authoring skill and the HTML guideline viewer. Minitour/proforma is
   # private for now: run `capa auth github.com` once with an account that can read it.
+  # Pinned to main: the interactive viewer is not in a release tag yet (v0.2.0
+  # still ships the old per-plan Mermaid report).
   - id: proforma
     type: github
     def:
-      repo: Minitour/proforma@proforma
+      repo: Minitour/proforma@proforma:main
       description: >-
         PROforma (.pf) authoring with the proforma CLI, and the interactive
         HTML guideline viewer (scripts/build_report.mjs: task tree, plan

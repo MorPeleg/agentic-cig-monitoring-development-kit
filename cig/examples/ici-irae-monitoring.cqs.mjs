@@ -107,8 +107,8 @@ export default [
           name: t.name,
           verb: h.goal(t).verb,
           category: h.meta(t, "category"),
-          code: h.meta(t, "order.code"),
-          timing: h.meta(t, "order.timing"),
+          code: h.meta(t, "ServiceRequest.code"),
+          timing: h.meta(t, "ServiceRequest.occurrenceTiming"),
         })),
     // exactly the 13 irAE monitors, each an `order` in category undesired_ade with a test and a timing
     expect: (rows) =>
@@ -175,7 +175,7 @@ export default [
         .map((t) => ({
           name: t.name,
           trigger: h.meta(t, "trigger"),
-          performerInstruction: h.meta(t, "order.performer_instruction"),
+          performerInstruction: h.meta(t, "ServiceRequest.performerInstruction"),
         })),
     // every one of the 13 irAE monitors has a trigger and a performer instruction
     expect: (rows) =>
@@ -193,8 +193,8 @@ export default [
           name: t.name,
           parents: t.used_by,
           target: h.meta(t, "monitored_target"),
-          code: h.meta(t, "order.code"),
-          timing: h.meta(t, "order.timing"),
+          code: h.meta(t, "ServiceRequest.code"),
+          timing: h.meta(t, "ServiceRequest.occurrenceTiming"),
         })),
     // exactly Monitor_PreInfusion_Surveillance, inside Monitor_Actions, tracing to Administer_ICI
     expect: (rows) =>

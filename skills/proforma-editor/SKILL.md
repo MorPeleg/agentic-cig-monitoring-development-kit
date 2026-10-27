@@ -7,8 +7,8 @@ description: Read, edit, validate and diagram PROforma 1.9 guideline files (.pf,
 
 Use this skill whenever you need to **inspect or modify a PROforma guideline
 file (`.pf`)** in this kit — the CIG at
-`projects/<project_dir>/guideline/<name>.pf`, the worked example
-`cig/examples/obesity-glp1-monitoring.pf`, or a scratch copy. The tools are
+`projects/<project_dir>/guideline/<name>.pf`, the structural example
+`cig/examples/ici-irae-monitoring.pf`, or a scratch copy. The tools are
 provided by the **proforma** MCP server (npm `proforma-mcp`, pinned
 `proforma-mcp@0.2.0`) and operate on the file on disk, which is the source of
 truth.
@@ -30,7 +30,7 @@ truth.
 
 - **capa:** after reading this skill, call `setup_tools(skills: ["proforma-editor"])`,
   then invoke a tool with `call_tool(name: "pf_<tool>", data: {...})`, e.g.
-  `call_tool(name: "pf_lint", data: {file: "C:/.../guideline/glp1.pf"})`.
+  `call_tool(name: "pf_lint", data: {file: "C:/.../guideline/<name>.pf"})`.
   The capa ids are `pf_` + the tool name below, except the language
   reference, whose id is `pf_reference`.
 - **File path:** every tool except `proforma_reference` takes `file` — pass an
@@ -90,32 +90,60 @@ truth.
 
 ## Selectors
 
-- A top-level name: `Monitor_Pancreatitis`, `BMI`, `Eligibility_Decision`.
+- A top-level name: `Monitor_<Harm>`, `threshold_measure`, `Eligibility_Decision`.
 - A plan component: `Monitoring_Plan/component:Monitor_Actions`.
 - A candidate / argument: `Eligibility_Decision/candidate:Eligible`,
   `Eligibility_Decision/candidate:Eligible/argument:1` (by `argument_name` or
   1-based index).
-- A source: `Get_Eligibility_Data/source:BMI`. A data warning:
-  `BMI/warning_condition:1`.
+- A source: `Get_Eligibility_Data/source:threshold_measure`. A data warning:
+  `threshold_measure/warning_condition:1`.
 - Task-level attributes (caption, description, procedure, metaprops, precondition) go on the task name,
   not on `Plan/component:X`.
 
+## Task properties
+
+Composer's property sheet gives every task, candidate and data item a set of
+**native properties**; `skills/cig-monitoring/references/TaskProperties.md`
+lists each one with the `.pf` attribute it is stored as and the call that
+sets it. In short:
+
+- **All tasks:** Caption (`caption`), Description (`description`),
+  **Ontology coding** (metaprop `ontology.coding` + `ontology.label`),
+  Metaproperties (`metaprops`); the control properties **Precondition**
+  (`precondition`), Wait condition (`wait_condition`), Postcondition
+  (`postcondition`), Event trigger (`trigger`), Context (`context`); on the
+  component, scheduling (`schedule_constraint`), the repeat properties
+  (`cycle_repeat`, `number_of_cycles` or `cycle_until`) and the agent flags
+  (`autonomous`, `optional`, `terminal`).
+- **Kind-specific:** an action's `procedure`; a decision's `choice_mode`,
+  `support_mode`, `preselect_candidates`; an enquiry's sources; a plan's
+  `terminate` and `abort` conditions.
+- **Data items:** `caption`, `description`, Ontology coding, `type`, `unit`,
+  `range`, `default_value`, `derivation`, `dynamic`.
+
+Set a text property or a condition with `set_attribute` (type-check a
+condition with `check_expression` first). Fill the native property before
+reaching for a free metaprop. In a CIG the **Precondition** and the **Ontology
+coding** are the two most often missing: set them wherever they apply.
+
 ## Typical edits
 
+Names are illustrative.
+
 ```
-# a monitoring action with a population-scoped precondition, its native fields,
+# a monitoring action with a population-scoped precondition, its native properties,
 # then its metaprops in one call (contract: skills/cig-monitoring/references/MetapropsSyntax.md)
-add_task(file, plan: "Monitor_Undesired_State", kind: "action", name: "Monitor_Hypoglycemia",
-         caption: "Monitor for hypoglycemia ...", precondition: "on_insulin_or_secretagogue = true")
-set_attribute(file, selector: "Monitor_Hypoglycemia", attribute: "description", value: "Monitors hypoglycemia ...")
-set_attribute(file, selector: "Monitor_Hypoglycemia", attribute: "procedure",
-              value: "<order.code>, <order.timing>. Patient: ... Clinician: ...")
-set_attribute(file, selector: "Monitor_Hypoglycemia", attribute: "metaprops",
-              value: "goal.verb=order\ngoal.noun_phrase=<order.code>, <order.timing>\norder.code=...\norder.timing=...\n...\nsource.1=...\nquote.1=§5.4: \"...\"\ncq=CQ7")
+add_task(file, plan: "Monitor_Undesired_State", kind: "action", name: "Monitor_<Harm>",
+         caption: "Monitor for <harm> ...", precondition: "on_interacting_medication = true")
+set_attribute(file, selector: "Monitor_<Harm>", attribute: "description", value: "Monitors <harm> ...")
+set_attribute(file, selector: "Monitor_<Harm>", attribute: "procedure",
+              value: "<code>, <occurrenceTiming>. Patient: ... Clinician: ...")
+set_attribute(file, selector: "Monitor_<Harm>", attribute: "metaprops",
+              value: "goal.verb=order\ngoal.noun_phrase=ServiceRequest.intent = order; ServiceRequest.code = <code>; ServiceRequest.occurrenceTiming = <timing>; ServiceRequest.patientInstruction = ...; ServiceRequest.performerInstruction = ...\nServiceRequest.intent=order\nServiceRequest.code=<code>\nServiceRequest.occurrenceTiming=<timing>\nServiceRequest.patientInstruction=...\nServiceRequest.performerInstruction=...\n...\nsource.1=...\nquote.1=§<n>: \"...\"\ncq=CQ7")
 
 # metaprops on a data item or a decision argument (Ontology coding, source + quote)
-set_attribute(file, selector: "BMI", attribute: "metaprops",
-              value: "ontology.coding=SNOMED:60621009\nontology.label=Body mass index (observable entity)")
+set_attribute(file, selector: "threshold_measure", attribute: "metaprops",
+              value: "ontology.coding=SNOMED:<id>\nontology.label=<preferred term, as returned by snomed_search>")
 set_attribute(file, selector: "Eligibility_Decision/candidate:Eligible/argument:Arg_Eligible", attribute: "metaprops",
               value: "source=...\nquote=...")
 
@@ -124,9 +152,9 @@ export_json(file)  ->  tasks[name == "Monitor_X"].metaprops
 set_attribute(file, selector: "Monitor_X", attribute: "metaprops", value: "<every key=value line>")
 
 # a typed data item the enquiry asks for
-add_data_item(file, name: "on_insulin_or_secretagogue", type: "boolean", caption: "On insulin or an insulin secretagogue?")
-set_attribute(file, selector: "on_insulin_or_secretagogue", attribute: "description", value: "...")
-add_source(file, task: "Get_Eligibility_Data", data: "on_insulin_or_secretagogue")
+add_data_item(file, name: "on_interacting_medication", type: "boolean", caption: "On <the interacting medication class>?")
+set_attribute(file, selector: "on_interacting_medication", attribute: "description", value: "...")
+add_source(file, task: "Get_Eligibility_Data", data: "on_interacting_medication")
 ```
 
 ## PROforma gotchas
@@ -136,12 +164,12 @@ add_source(file, task: "Get_Eligibility_Data", data: "on_insulin_or_secretagogue
   `title`, `version`, `group`, `goal`, `context`, `for`, `end` must be written
   `'unit'`. Better: do not use a keyword as a name.
 - **Names are identifiers** (`[A-Za-z_][A-Za-z0-9_]*`) and unique
-  **case-insensitively** (`bmi` clashes with `BMI`), but expression references
-  are matched by exact spelling: `bmi > 30` against a data item `BMI` is read as
-  the text literal `"bmi"` (lint: PF-V034 untypeable, PF-V011). Use the
+  **case-insensitively** (`egfr` clashes with `eGFR`), but expression references
+  are matched by exact spelling: `egfr < 30` against a data item `eGFR` is read as
+  the text literal `"egfr"` (lint: PF-V034 untypeable, PF-V011). Use the
   declared spelling.
 - **An unknown bare word is a text literal**, silently: `result_of(D) = Eligible`,
-  `contraindications = none`. That is how candidate names and enumerated values
+  `contraindication = none`. That is how candidate names and enumerated values
   are written, but a typo in a data item name also becomes a literal (lint
   reports it only as info PF-X060). Always read the `references` list from
   `check_expression`.
@@ -151,7 +179,7 @@ add_source(file, task: "Get_Eligibility_Data", data: "on_insulin_or_secretagogue
 - **Decision results:** `result_of(D) = C` for a single-choice decision;
   `result_set(D) includes C` for `choice_mode :: multiple`.
 - **Boolean data** is typed as text by the verifier: compare with `= true` /
-  `= false` (e.g. `weight_related_comorbidity = true`), not `true()` and not a
+  `= false` (e.g. `on_interacting_medication = true`), not `true()` and not a
   bare name.
 - **metaprops is Java properties text:** one `key=value` per line, no line
   break inside a value. Repeatable keys are numbered (`source.1`, `source.2`);

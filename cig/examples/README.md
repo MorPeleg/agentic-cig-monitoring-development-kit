@@ -1,6 +1,6 @@
-# Worked PROforma CIGs
+# Worked PROforma CIG
 
-Each example is a lint-clean PROforma guideline that passes the Step 7 gates (`scripts/check_cig.mjs` with 0 FAIL, and every CQ in `scripts/run_cqs.mjs`). For each one there is:
+The kit has one worked example, `ici-irae-monitoring`. It is a lint-clean PROforma guideline that passes the Step 7 gates (`scripts/check_cig.mjs` with 0 FAIL, and every CQ in `scripts/run_cqs.mjs`). It comes as:
 
 | File | What it is |
 |---|---|
@@ -9,17 +9,15 @@ Each example is a lint-clean PROforma guideline that passes the Step 7 gates (`s
 | `<name>.mmd` | Mermaid diagram of the plan structure |
 | `<name>.cqs.mjs` | competency-question queries |
 
-Both examples follow the task contract in `skills/cig-monitoring/references/MetapropsSyntax.md`: Composer's native fields first (caption, description, procedure, precondition), the monitoring order in the native `procedure` plus `order.*` metaprops, a verbatim `quote.N` with every `source.N`, and SNOMED CT Ontology coding (`ontology.coding`, found with the `snomed_search` tool). They were moved off the earlier FHIR `ServiceRequest.*` metaprops with `scripts/migrate_metaprops.mjs`.
+**Use it as a structural example only.** It shows the plan layout, how the Enquiry's data items and the Decision's candidates and arguments are populated, and the task contract in `skills/cig-monitoring/references/MetapropsSyntax.md`: Composer's native task properties first (caption, description, procedure, precondition, Ontology coding; see `skills/cig-monitoring/references/TaskProperties.md`), the monitoring order as an HL7 FHIR `ServiceRequest` (the `ServiceRequest.*` metaprops, repeated in `goal.noun_phrase` and stated in the native `procedure`), a verbatim `quote.N` with every `source.N`, and SNOMED CT Ontology coding (`ontology.coding`, found with the `snomed_search` tool).
 
-## `obesity-glp1-monitoring`: the authoritative example
-
-GLP-1 obesity therapy with eligibility, therapy and monitoring. It was converted from the kit's earlier OWL example. The skills point to it as the pattern to imitate.
+Its clinical content (immune checkpoint inhibitor toxicity, ADE-focused) is **not** a template for which monitors a new CIG should model, and its task names are not names to reuse: those come from the user's own guidelines (in `projects/<project_dir>/resources/`) and the approved proposal. The design patterns to follow are in `skills/cig-monitoring/references/`. A better example is planned.
 
 ## `ici-irae-monitoring`: a full kit session on a new guideline
 
 Monitoring of immune checkpoint inhibitor therapy for immune-related adverse events. Source: ESMO Clinical Practice Guidelines, *Management of toxicities from immunotherapy* (Haanen et al., Ann Oncol 2017;28 Suppl 4:iv119–iv142, doi:10.1093/annonc/mdx225). The source PDF is not included.
 
-It was built end to end by the kit's own workflow and subagents (`capa install -p claude-code`, then Steps 0–7). `ici-irae-monitoring-build/` keeps the record. The `projects/...` paths inside those files refer to the original project directory, and the files describe the build as it was then, on the earlier FHIR `ServiceRequest` contract; the `.pf` has since been migrated.
+It was built end to end by the kit's own workflow and subagents (`capa install -p claude-code`, then Steps 0–7). `ici-irae-monitoring-build/` keeps the record, and is the kit's real example of a Step 4 proposal (in a project, `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md`), an extraction and a review record. The record is historical and is not updated: the `projects/...` paths inside those files refer to the original project directory, and the files describe the build as it was then, before the native-field contract (procedure, description, source quotes, Ontology coding). The `.pf` has since been migrated with `scripts/migrate_metaprops.mjs` and completed.
 
 1. `EXTRACTION-20261025.md`: Steps 2–3. Every organ-system section is accounted for, with citations, data items, draft conditions and open questions.
 2. `PROPOSAL-20261025-101500.md`: the first approved proposal, now superseded.

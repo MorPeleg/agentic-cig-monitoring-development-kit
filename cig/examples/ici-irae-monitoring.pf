@@ -152,11 +152,16 @@ end plan.
 action  :: 'Monitor_PreInfusion_Surveillance' ;
      caption :: 'Monitor completion of the pre-infusion blood panel before each ICI infusion' ;
      description :: 'Monitors completion of the planned pre-infusion surveillance bloods before each infusion of Administer_ICI. TFTs "before every infusion or at least once a month (in the case of 2-weekly infusions)", with the regimen schedule in Fig 5; transaminases and bilirubin "before every cycle"; sodium, potassium, creatinine and urea "before every infusion".' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=completion check of the pre-infusion blood tests due at each infusion\\: ALT, AST and bilirubin, sodium, potassium, creatinine and urea, and blood glucose at every infusion, plus TSH and FT4 when due per the regimen-specific TFT schedule of Monitor_Thyroid
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=before every ICI infusion (each cycle), for the duration of ICI therapy
+ServiceRequest.patientInstruction=attend for blood tests before each scheduled infusion
+ServiceRequest.performerInstruction=if any test due at this infusion is missing, obtain it and review the results before administering the ICI
+applies_when=all_patients_on_therapy
 assistant_invention=framing the tests due at each infusion as one completion audit, adding glucose to the same draw, and the obtain-before-administering rule; ontology coding Blood test (procedure) is the closest single SNOMED CT concept for the audited pre-infusion bloods
 category=action_completion
 cq=CQ6, CQ7
-goal.noun_phrase=completion check of the pre-infusion blood tests due at each infusion\\: ALT, AST and bilirubin, sodium, potassium, creatinine and urea, and blood glucose at every infusion, plus TSH and FT4 when due per the regimen-specific TFT schedule of Monitor_Thyroid, before every ICI infusion (each cycle), for the duration of ICI therapy
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= completion check of the pre-infusion blood tests due at each infusion\\: ALT, AST and bilirubin, sodium, potassium, creatinine and urea, and blood glucose at every infusion, plus TSH and FT4 when due per the regimen-specific TFT schedule of Monitor_Thyroid; ServiceRequest.occurrenceTiming \\= before every ICI infusion (each cycle), for the duration of ICI therapy; ServiceRequest.patientInstruction \\= attend for blood tests before each scheduled infusion; ServiceRequest.performerInstruction \\= if any test due at this infusion is missing, obtain it and review the results before administering the ICI
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=order/result audit of the named lab tests
@@ -167,10 +172,6 @@ monitoring_frequency_basis=the guideline sets transaminases and bilirubin "befor
 monitoring_stance=recommended
 ontology.coding=SNOMED\\:396550006
 ontology.label=Blood test (procedure)
-order.code=completion check of the pre-infusion blood tests due at each infusion\\: ALT, AST and bilirubin, sodium, potassium, creatinine and urea, and blood glucose at every infusion, plus TSH and FT4 when due per the regimen-specific TFT schedule of Monitor_Thyroid
-order.patient_instruction=attend for blood tests before each scheduled infusion
-order.performer_instruction=if any test due at this infusion is missing, obtain it and review the results before administering the ICI
-order.timing=before every ICI infusion (each cycle), for the duration of ICI therapy
 provenance_type=assistant_completed_from_guidelines
 quote.1=iv124\\: "they should be carried out before every infusion or at least once a month (in the case of 2-weekly infusions)"
 quote.2=iv126\\: "serum transaminases and bilirubin measured before every cycle of treatment"
@@ -196,11 +197,16 @@ end plan.
 action  :: 'Monitor_Thyroid' ;
      caption :: 'Monitor thyroid function (TSH, FT4)' ;
      description :: 'Monitors thyroid dysfunction (hypothyroidism or hyperthyroidism) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). Thyroid dysfunction is mostly detected by routine TSH/FT4, which "should be carried out before every infusion or at least once a month". Fig 5 gives the regimen-specific schedule and the management algorithm.' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=thyroid function tests (TSH, FT4, T3 when indicated)
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline, then for anti-CTLA4-containing regimens every cycle plus 4-6 weeks after cycle 4. For anti-PD-1/PD-L1, every cycle for the first 3 months, then every second cycle on a 2-weekly schedule (at least monthly)
+ServiceRequest.patientInstruction=report fatigue, weight change, palpitations, heat or cold intolerance, or feeling unwell
+ServiceRequest.performerInstruction=interpret TSH/FT4 per the ESMO thyroid algorithm. If symptomatic hyperthyroidism and unwell, withhold ICI and start a beta-blocker. If hypothyroid with symptoms, start thyroxine and continue ICI. If TSH falls across two measurements with normal or low FT4, or TSH is low with low FT4, check 9 am cortisol. Note that CT iodine may affect TFTs
+applies_when=all_patients_on_therapy
 assistant_invention=patient symptom wording (generic thyroid symptoms)
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=thyroid function tests (TSH, FT4, T3 when indicated), baseline, then for anti-CTLA4-containing regimens every cycle plus 4-6 weeks after cycle 4. For anti-PD-1/PD-L1, every cycle for the first 3 months, then every second cycle on a 2-weekly schedule (at least monthly)
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= thyroid function tests (TSH, FT4, T3 when indicated); ServiceRequest.occurrenceTiming \\= baseline, then for anti-CTLA4-containing regimens every cycle plus 4-6 weeks after cycle 4. For anti-PD-1/PD-L1, every cycle for the first 3 months, then every second cycle on a 2-weekly schedule (at least monthly); ServiceRequest.patientInstruction \\= report fatigue, weight change, palpitations, heat or cold intolerance, or feeling unwell; ServiceRequest.performerInstruction \\= interpret TSH/FT4 per the ESMO thyroid algorithm. If symptomatic hyperthyroidism and unwell, withhold ICI and start a beta-blocker. If hypothyroid with symptoms, start thyroxine and continue ICI. If TSH falls across two measurements with normal or low FT4, or TSH is low with low FT4, check 9 am cortisol. Note that CT iodine may affect TFTs
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=serum TSH and FT4 (T3 when indicated)
@@ -211,10 +217,6 @@ monitoring_frequency_basis=guideline-stated (iv124 text; Fig 5). "Late endocrine
 monitoring_stance=recommended
 ontology.coding=SNOMED\\:264580006
 ontology.label=Thyroid dysfunction (disorder)
-order.code=thyroid function tests (TSH, FT4, T3 when indicated)
-order.patient_instruction=report fatigue, weight change, palpitations, heat or cold intolerance, or feeling unwell
-order.performer_instruction=interpret TSH/FT4 per the ESMO thyroid algorithm. If symptomatic hyperthyroidism and unwell, withhold ICI and start a beta-blocker. If hypothyroid with symptoms, start thyroxine and continue ICI. If TSH falls across two measurements with normal or low FT4, or TSH is low with low FT4, check 9 am cortisol. Note that CT iodine may affect TFTs
-order.timing=baseline, then for anti-CTLA4-containing regimens every cycle plus 4-6 weeks after cycle 4. For anti-PD-1/PD-L1, every cycle for the first 3 months, then every second cycle on a 2-weekly schedule (at least monthly)
 provenance_type=guideline_specified
 quote.1=iv124\\: "thyroid dysfunction is found by routine blood tests (TSH and FT4); they should be carried out before every infusion or at least once a month"
 quote.2=Fig 5, iv125\\: "Anti-PD-1/Anti-PD-L1 ... TFTs every cycle for first 3 months, every second cycle thereafter (in case of 2-weekly schedule)"
@@ -229,11 +231,16 @@ end action.
 action  :: 'Monitor_Hypophysitis' ;
      caption :: 'Monitor for hypophysitis (pituitary symptoms, triggered 9 am cortisol)' ;
      description :: 'Monitors hypophysitis (pituitary dysfunction, hypoadrenalism) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). "Headache and visual disturbances require immediate evaluation". Weekly cortisol when TSH falls with normal or low T4. Fig 6 gives severity tiers and the pituitary bloods. Hypophysitis is mainly seen with anti-CTLA4 and is very rare with anti-PD-1 and anti-PD-L1 (iv126). Fig 6 gives the severe and moderate management tiers.' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=pituitary symptom screen with triggered 9 am cortisol (and pituitary axis bloods)
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (symptom review), 9 am cortisol when indicated by symptoms or by a falling TSH, weekly while TSH is falling across two measurements with normal or low FT4
+ServiceRequest.patientInstruction=report headache, visual disturbance, marked fatigue, mood change, dizziness or feeling faint, and seek urgent review if unwell
+ServiceRequest.performerInstruction=if severe mass-effect symptoms (severe headache, any visual disturbance) or severe hypoadrenalism (hypotension, severe electrolyte disturbance), send pituitary axis bloods (9 am cortisol, ACTH, TSH and FT4, LH, FSH, sex hormones, IGF-1, prolactin), start i.v. methylprednisolone 1 mg/kg, withhold ICI, arrange pituitary MRI and consult endocrinology. If moderate symptoms (headache without visual disturbance, or fatigue or mood change while haemodynamically stable with no electrolyte disturbance), start oral prednisolone 0.5-1 mg/kg once daily after sending the pituitary axis bloods, withhold ICI, arrange pituitary MRI and visual field assessment, and treat as severe if there is no improvement in 48 h
+applies_when=all_patients_on_therapy
 assistant_invention=each-visit symptom review cadence; patient symptom wording beyond headache and visual disturbance (from Fig 6 tiers)
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=pituitary symptom screen with triggered 9 am cortisol (and pituitary axis bloods), each visit (symptom review), 9 am cortisol when indicated by symptoms or by a falling TSH, weekly while TSH is falling across two measurements with normal or low FT4
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= pituitary symptom screen with triggered 9 am cortisol (and pituitary axis bloods); ServiceRequest.occurrenceTiming \\= each visit (symptom review), 9 am cortisol when indicated by symptoms or by a falling TSH, weekly while TSH is falling across two measurements with normal or low FT4; ServiceRequest.patientInstruction \\= report headache, visual disturbance, marked fatigue, mood change, dizziness or feeling faint, and seek urgent review if unwell; ServiceRequest.performerInstruction \\= if severe mass-effect symptoms (severe headache, any visual disturbance) or severe hypoadrenalism (hypotension, severe electrolyte disturbance), send pituitary axis bloods (9 am cortisol, ACTH, TSH and FT4, LH, FSH, sex hormones, IGF-1, prolactin), start i.v. methylprednisolone 1 mg/kg, withhold ICI, arrange pituitary MRI and consult endocrinology. If moderate symptoms (headache without visual disturbance, or fatigue or mood change while haemodynamically stable with no electrolyte disturbance), start oral prednisolone 0.5-1 mg/kg once daily after sending the pituitary axis bloods, withhold ICI, arrange pituitary MRI and visual field assessment, and treat as severe if there is no improvement in 48 h
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=patient symptom report; 9 am serum cortisol; pituitary axis panel; pituitary MRI when indicated
@@ -244,10 +251,6 @@ monitoring_frequency_basis=guideline-stated triggers (Fig 5, Fig 6). The each-vi
 monitoring_stance=recommended
 ontology.coding=SNOMED\\:237705001
 ontology.label=Hypophysitis (disorder)
-order.code=pituitary symptom screen with triggered 9 am cortisol (and pituitary axis bloods)
-order.patient_instruction=report headache, visual disturbance, marked fatigue, mood change, dizziness or feeling faint, and seek urgent review if unwell
-order.performer_instruction=if severe mass-effect symptoms (severe headache, any visual disturbance) or severe hypoadrenalism (hypotension, severe electrolyte disturbance), send pituitary axis bloods (9 am cortisol, ACTH, TSH and FT4, LH, FSH, sex hormones, IGF-1, prolactin), start i.v. methylprednisolone 1 mg/kg, withhold ICI, arrange pituitary MRI and consult endocrinology. If moderate symptoms (headache without visual disturbance, or fatigue or mood change while haemodynamically stable with no electrolyte disturbance), start oral prednisolone 0.5-1 mg/kg once daily after sending the pituitary axis bloods, withhold ICI, arrange pituitary MRI and visual field assessment, and treat as severe if there is no improvement in 48 h
-order.timing=each visit (symptom review), 9 am cortisol when indicated by symptoms or by a falling TSH, weekly while TSH is falling across two measurements with normal or low FT4
 provenance_type=guideline_specified
 quote.1=iv126\\: "Headache and visual disturbances require immediate evaluation and differentiation between cerebral metastasis, leptomeningeal disease, cerebrovascular disease and hypophysitis."
 quote.2=Fig 5, iv125\\: "A falling TSH across two measurements with normal or lowered T4 may also suggest pituitary dysfunction and weekly cortisol measurements should be performed"
@@ -264,11 +267,16 @@ end action.
 action  :: 'Monitor_Hepatitis' ;
      caption :: 'Monitor liver function for immune-related hepatitis (ALT, AST, bilirubin)' ;
      description :: 'Monitors immune-related hepatitis (hepatotoxicity) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). "All patients undergoing ICPi therapy should be assessed ... with serum transaminases and bilirubin measured before every cycle". Hepatitis is usually asymptomatic and detected on routine blood monitoring.' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=serum transaminases (ALT, AST) and total bilirubin
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline and before every cycle of ICI
+ServiceRequest.patientInstruction=report jaundice, dark urine, or right-upper-abdominal pain (hepatitis is usually asymptomatic)
+ServiceRequest.performerInstruction=if ALT/AST is >ULN to 3\\u00D7ULN, repeat in 1 week. If 3-5\\u00D7ULN (G2), withhold ICI, recheck LFTs/INR/albumin every 3 days, review medications and alcohol, and do a liver screen. If 5-20\\u00D7ULN (G3), stop ICI and start steroids. If >20\\u00D7ULN (G4), permanently discontinue ICI, start i.v. methylprednisolone 2 mg/kg, and get a hepatology consult
+applies_when=all_patients_on_therapy
 assistant_invention=patient symptom wording (the guideline says hepatitis is usually asymptomatic)
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=serum transaminases (ALT, AST) and total bilirubin, baseline and before every cycle of ICI
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= serum transaminases (ALT, AST) and total bilirubin; ServiceRequest.occurrenceTiming \\= baseline and before every cycle of ICI; ServiceRequest.patientInstruction \\= report jaundice, dark urine, or right-upper-abdominal pain (hepatitis is usually asymptomatic); ServiceRequest.performerInstruction \\= if ALT/AST is >ULN to 3\\u00D7ULN, repeat in 1 week. If 3-5\\u00D7ULN (G2), withhold ICI, recheck LFTs/INR/albumin every 3 days, review medications and alcohol, and do a liver screen. If 5-20\\u00D7ULN (G3), stop ICI and start steroids. If >20\\u00D7ULN (G4), permanently discontinue ICI, start i.v. methylprednisolone 2 mg/kg, and get a hepatology consult
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=serum ALT, AST, total bilirubin (INR and albumin when abnormal)
@@ -279,10 +287,6 @@ monitoring_frequency_basis=guideline-stated "before every cycle"
 monitoring_stance=recommended
 ontology.coding=SNOMED\\:235876009
 ontology.label=Drug-induced hepatitis (disorder)
-order.code=serum transaminases (ALT, AST) and total bilirubin
-order.patient_instruction=report jaundice, dark urine, or right-upper-abdominal pain (hepatitis is usually asymptomatic)
-order.performer_instruction=if ALT/AST is >ULN to 3\\u00D7ULN, repeat in 1 week. If 3-5\\u00D7ULN (G2), withhold ICI, recheck LFTs/INR/albumin every 3 days, review medications and alcohol, and do a liver screen. If 5-20\\u00D7ULN (G3), stop ICI and start steroids. If >20\\u00D7ULN (G4), permanently discontinue ICI, start i.v. methylprednisolone 2 mg/kg, and get a hepatology consult
-order.timing=baseline and before every cycle of ICI
 provenance_type=guideline_specified
 quote.1=iv126\\: "All patients undergoing ICPi therapy should be assessed for signs and symptoms of hepatitis with serum transaminases and bilirubin measured before every cycle of treatment."
 quote.2=Fig 7, iv128\\: "Re-check LFTs/INR/albumin every 3 days"
@@ -297,11 +301,16 @@ end action.
 action  :: 'Monitor_Diabetes' ;
      caption :: 'Monitor blood glucose for immune-related type 1 diabetes' ;
      description :: 'Monitors immune-related type 1 diabetes mellitus and diabetic ketoacidosis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). "It is recommended that blood glucose levels are regularly monitored in patients treated with ICPis". Ketoacidosis is life-threatening. Type 1 DM G3-4 requires immediate admission [I, A].' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=blood glucose (with triggered ketone/acid-base assessment)
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline and before every ICI infusion with the pre-infusion bloods (assistant-proposed), plus on symptoms
+ServiceRequest.patientInstruction=report excessive thirst, frequent urination, weight loss, nausea or vomiting, abdominal pain, or drowsiness
+ServiceRequest.performerInstruction=if new hyperglycaemia, measure C-peptide and GAD and islet-cell antibodies to distinguish type 1 from type 2 DM. If ketoacidosis (G3-4), admit immediately and treat per local guidelines, corticosteroids are not recommended
+applies_when=all_patients_on_therapy
 assistant_invention=cadence (before every infusion); patient DKA symptom wording
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=blood glucose (with triggered ketone/acid-base assessment), baseline and before every ICI infusion with the pre-infusion bloods (assistant-proposed), plus on symptoms
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= blood glucose (with triggered ketone/acid-base assessment); ServiceRequest.occurrenceTiming \\= baseline and before every ICI infusion with the pre-infusion bloods (assistant-proposed), plus on symptoms; ServiceRequest.patientInstruction \\= report excessive thirst, frequent urination, weight loss, nausea or vomiting, abdominal pain, or drowsiness; ServiceRequest.performerInstruction \\= if new hyperglycaemia, measure C-peptide and GAD and islet-cell antibodies to distinguish type 1 from type 2 DM. If ketoacidosis (G3-4), admit immediately and treat per local guidelines, corticosteroids are not recommended
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=blood glucose; triggered C-peptide, GAD/ICA antibodies, ketones
@@ -312,10 +321,6 @@ monitoring_frequency_basis=the guideline says "regularly monitored" without a ca
 monitoring_stance=recommended
 ontology.coding=SNOMED\\:46635009
 ontology.label=Diabetes mellitus type 1 (disorder)
-order.code=blood glucose (with triggered ketone/acid-base assessment)
-order.patient_instruction=report excessive thirst, frequent urination, weight loss, nausea or vomiting, abdominal pain, or drowsiness
-order.performer_instruction=if new hyperglycaemia, measure C-peptide and GAD and islet-cell antibodies to distinguish type 1 from type 2 DM. If ketoacidosis (G3-4), admit immediately and treat per local guidelines, corticosteroids are not recommended
-order.timing=baseline and before every ICI infusion with the pre-infusion bloods (assistant-proposed), plus on symptoms
 provenance_type=assistant_completed_from_guidelines
 quote.1=iv126\\: "It is recommended that blood glucose levels are regularly monitored in patients treated with ICPis in order to detect the emergence of DM."
 quote.2=Table 2, iv139\\: "In patients with type I DM grade 3 to 4 [ketoacidotic (sub)coma], admit to hospital immediately and start treatment of newly onset type I DM"
@@ -330,11 +335,16 @@ end action.
 action  :: 'Monitor_Nephritis' ;
      caption :: 'Monitor renal function for immune-related nephritis (Na, K, creatinine, urea)' ;
      description :: 'Monitors immune-related nephritis (renal toxicity) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). "Serum sodium, potassium, creatinine and urea should be measured before every infusion". Fig 14 grades against baseline creatinine.' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=serum sodium, potassium, creatinine and urea
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline and before every ICI infusion
+ServiceRequest.patientInstruction=report reduced urine output, blood in urine, or swelling
+ServiceRequest.performerInstruction=grade creatinine against the patient\'s baseline. G1 (1.5\\u00D7baseline or >ULN to 1.5\\u00D7ULN)\\: continue ICI and repeat creatinine weekly. G2 (>1.5-3\\u00D7 baseline)\\: withhold ICI, hydrate, review in 48-72 h, and discuss with a nephrologist if not improving. G3 (>3\\u00D7 baseline or >3-6\\u00D7ULN)\\: withhold ICI, admit, and repeat creatinine every 24 h. Oliguria means inpatient admission. Stop nephrotoxic drugs and rule out infection or obstruction
+applies_when=all_patients_on_therapy
 assistant_invention=patient symptom wording (only oliguria is source-stated\\: "Advise patient to notify if oliguric")
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=serum sodium, potassium, creatinine and urea, baseline and before every ICI infusion
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= serum sodium, potassium, creatinine and urea; ServiceRequest.occurrenceTiming \\= baseline and before every ICI infusion; ServiceRequest.patientInstruction \\= report reduced urine output, blood in urine, or swelling; ServiceRequest.performerInstruction \\= grade creatinine against the patient\'s baseline. G1 (1.5\\u00D7baseline or >ULN to 1.5\\u00D7ULN)\\: continue ICI and repeat creatinine weekly. G2 (>1.5-3\\u00D7 baseline)\\: withhold ICI, hydrate, review in 48-72 h, and discuss with a nephrologist if not improving. G3 (>3\\u00D7 baseline or >3-6\\u00D7ULN)\\: withhold ICI, admit, and repeat creatinine every 24 h. Oliguria means inpatient admission. Stop nephrotoxic drugs and rule out infection or obstruction
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=serum Na, K, creatinine, urea; triggered urinalysis/UPCR, renal ultrasound
@@ -345,10 +355,6 @@ monitoring_frequency_basis=guideline-stated "before every infusion"
 monitoring_stance=recommended
 ontology.coding=SNOMED\\:111491000119107
 ontology.label=Nephritis caused by drug (disorder)
-order.code=serum sodium, potassium, creatinine and urea
-order.patient_instruction=report reduced urine output, blood in urine, or swelling
-order.performer_instruction=grade creatinine against the patient\'s baseline. G1 (1.5\\u00D7baseline or >ULN to 1.5\\u00D7ULN)\\: continue ICI and repeat creatinine weekly. G2 (>1.5-3\\u00D7 baseline)\\: withhold ICI, hydrate, review in 48-72 h, and discuss with a nephrologist if not improving. G3 (>3\\u00D7 baseline or >3-6\\u00D7ULN)\\: withhold ICI, admit, and repeat creatinine every 24 h. Oliguria means inpatient admission. Stop nephrotoxic drugs and rule out infection or obstruction
-order.timing=baseline and before every ICI infusion
 provenance_type=guideline_specified
 quote.1=iv133\\: "Serum sodium, potassium, creatinine and urea should be measured before every infusion of checkpoint inhibitor"
 quote.2=Fig 14, iv138\\: "Attention needs to be paid to the patient\'s baseline creatinine, not just abnormal results per biochemistry ULN."
@@ -363,11 +369,16 @@ end action.
 action  :: 'Monitor_Skin' ;
      caption :: 'Monitor for immune-related skin toxicity' ;
      description :: 'Monitors immune-related skin toxicity including SJS/TEN/DRESS as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). When a patient presents with a skin AE, rule out other causes, then do "a careful and thorough physical examination of the skin including the mucosal areas". Life-threatening reactions mean permanent discontinuation and hospitalisation.' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=skin and mucosa symptom screen with triggered physical examination and CTCAE grading
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (symptom review), with full skin exam on any skin symptom
+ServiceRequest.patientInstruction=report any new rash, itching, blistering, skin peeling, mouth or genital sores, or rash with fever
+ServiceRequest.performerInstruction=exclude other causes. Examine all skin including mucosa, grade by BSA (CTCAE), and check FBC, liver and kidney tests if needed. G2\\: continue and recheck weekly. G3\\: withhold ICI and refer to dermatology. G4, SJS/TEN/DRESS\\: permanently discontinue ICI, hospitalise and get urgent dermatology care
+applies_when=all_patients_on_therapy
 assistant_invention=each-visit symptom review cadence; patient symptom wording; ontology coding Generalized skin eruption caused by drug and medicament (disorder) is the closest single SNOMED CT concept (narrower than skin toxicity as a whole; SJS/TEN/DRESS have their own concepts)
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=skin and mucosa symptom screen with triggered physical examination and CTCAE grading, each visit (symptom review), with full skin exam on any skin symptom
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= skin and mucosa symptom screen with triggered physical examination and CTCAE grading; ServiceRequest.occurrenceTiming \\= each visit (symptom review), with full skin exam on any skin symptom; ServiceRequest.patientInstruction \\= report any new rash, itching, blistering, skin peeling, mouth or genital sores, or rash with fever; ServiceRequest.performerInstruction \\= exclude other causes. Examine all skin including mucosa, grade by BSA (CTCAE), and check FBC, liver and kidney tests if needed. G2\\: continue and recheck weekly. G3\\: withhold ICI and refer to dermatology. G4, SJS/TEN/DRESS\\: permanently discontinue ICI, hospitalise and get urgent dermatology care
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=patient symptom report; physical examination with BSA/CTCAE grading
@@ -378,10 +389,6 @@ monitoring_frequency_basis=skin AEs develop "within the first few weeks". The gu
 monitoring_stance=symptom_triggered_only
 ontology.coding=SNOMED\\:200892002
 ontology.label=Generalized skin eruption caused by drug and medicament (disorder)
-order.code=skin and mucosa symptom screen with triggered physical examination and CTCAE grading
-order.patient_instruction=report any new rash, itching, blistering, skin peeling, mouth or genital sores, or rash with fever
-order.performer_instruction=exclude other causes. Examine all skin including mucosa, grade by BSA (CTCAE), and check FBC, liver and kidney tests if needed. G2\\: continue and recheck weekly. G3\\: withhold ICI and refer to dermatology. G4, SJS/TEN/DRESS\\: permanently discontinue ICI, hospitalise and get urgent dermatology care
-order.timing=each visit (symptom review), with full skin exam on any skin symptom
 provenance_type=guideline_specified
 quote.1=iv122\\: "the severity of the skin AE needs to be evaluated by a careful and thorough physical examination of the skin including the mucosal areas"
 quote.2=Fig 3, iv123\\: "Grade 3\\: rash covers > 30% BSA (see Figure 4) or grade 2 with substantial symptoms Withhold ICPi"
@@ -396,11 +403,16 @@ end action.
 action  :: 'Monitor_Colitis' ;
      caption :: 'Monitor for immune-related diarrhoea and colitis' ;
      description :: 'Monitors immune-related diarrhoea and colitis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). Severe diarrhoea definition (iv129). Diarrhoea on anti-CTLA4 needs work-up with CBC, electrolytes and stool analyses. No routine predictive biomarker; prophylactic budesonide is ineffective.' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=diarrhoea and colitis symptom screen with triggered blood and stool work-up
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (symptom review) and on any diarrhoea, continuing after the last dose (enterocolitis may occur months after ipilimumab)
+ServiceRequest.patientInstruction=report any increase in stool frequency over baseline, blood or mucus in stool, abdominal pain, nocturnal stools, fever, or signs of dehydration
+ServiceRequest.performerInstruction=on diarrhoea, test FBC, UEC, LFTs, CRP and TFTs, plus stool microscopy and culture, viral PCR and C. difficile toxin (mandatory for significant diarrhoea on anti-CTLA4). G2 (4-6 stools/day over baseline)\\: withhold ICI, contact the patient every 72 h, and book sigmoidoscopy/colonoscopy. Severe (\\u22657 stools/day, or G1-2 with dehydration, fever, tachycardia or haematochezia)\\: hospitalise, give i.v. methylprednisolone 1-2 mg/kg, and do endoscopy
+applies_when=all_patients_on_therapy
 assistant_invention=each-visit review cadence; patient symptom wording
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=diarrhoea and colitis symptom screen with triggered blood and stool work-up, each visit (symptom review) and on any diarrhoea, continuing after the last dose (enterocolitis may occur months after ipilimumab)
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= diarrhoea and colitis symptom screen with triggered blood and stool work-up; ServiceRequest.occurrenceTiming \\= each visit (symptom review) and on any diarrhoea, continuing after the last dose (enterocolitis may occur months after ipilimumab); ServiceRequest.patientInstruction \\= report any increase in stool frequency over baseline, blood or mucus in stool, abdominal pain, nocturnal stools, fever, or signs of dehydration; ServiceRequest.performerInstruction \\= on diarrhoea, test FBC, UEC, LFTs, CRP and TFTs, plus stool microscopy and culture, viral PCR and C. difficile toxin (mandatory for significant diarrhoea on anti-CTLA4). G2 (4-6 stools/day over baseline)\\: withhold ICI, contact the patient every 72 h, and book sigmoidoscopy/colonoscopy. Severe (\\u22657 stools/day, or G1-2 with dehydration, fever, tachycardia or haematochezia)\\: hospitalise, give i.v. methylprednisolone 1-2 mg/kg, and do endoscopy
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=patient symptom report (stool count vs baseline); triggered FBC, UEC, LFT, CRP, TFT, stool tests, endoscopy
@@ -411,10 +423,6 @@ monitoring_frequency_basis=symptom-triggered. The guideline gives a triggered wo
 monitoring_stance=symptom_triggered_only
 ontology.coding=SNOMED\\:1345085000
 ontology.label=Immune checkpoint inhibitor therapy induced enterocolitis
-order.code=diarrhoea and colitis symptom screen with triggered blood and stool work-up
-order.patient_instruction=report any increase in stool frequency over baseline, blood or mucus in stool, abdominal pain, nocturnal stools, fever, or signs of dehydration
-order.performer_instruction=on diarrhoea, test FBC, UEC, LFTs, CRP and TFTs, plus stool microscopy and culture, viral PCR and C. difficile toxin (mandatory for significant diarrhoea on anti-CTLA4). G2 (4-6 stools/day over baseline)\\: withhold ICI, contact the patient every 72 h, and book sigmoidoscopy/colonoscopy. Severe (\\u22657 stools/day, or G1-2 with dehydration, fever, tachycardia or haematochezia)\\: hospitalise, give i.v. methylprednisolone 1-2 mg/kg, and do endoscopy
-order.timing=each visit (symptom review) and on any diarrhoea, continuing after the last dose (enterocolitis may occur months after ipilimumab)
 provenance_type=guideline_specified
 quote.1=iv128\\: "Stool analyses for bacterial enteropathogens and Clostridium difficile toxin should be carried out in every patient with significant diarrhoea treated with anti-CTLA4."
 quote.2=iv129, Staging and risk assessment (Figure 8 itself is an image with no extractable text)\\: "Severe diarrhoea refers to grade 3 or 4 diarrhoea but also to patients with grade 1 or 2 diarrhoea with dehydration, fever, tachycardia or haematochezia."
@@ -429,11 +437,16 @@ end action.
 action  :: 'Monitor_Pneumonitis' ;
      caption :: 'Monitor for immune-related pneumonitis' ;
      description :: 'Monitors immune-related pneumonitis as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). "any new respiratory symptom should prompt a dedicated evaluation". Patients with new cough, shortness of breath or hypoxia "should be assessed by CT".' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=respiratory symptom screen with triggered chest CT
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (symptom review) and on any new respiratory symptom, throughout therapy (pneumonitis tends to occur months after initiation)
+ServiceRequest.patientInstruction=report new or worsening cough, shortness of breath, chest pain, or fever
+ServiceRequest.performerInstruction=on any new respiratory symptom, do a dedicated evaluation with CT. Order chest X-ray and bloods (FBC/UEC/LFTs/TFTs/Ca/ESR/CRP), and consider sputum and infection screen. G2\\: withhold ICI and monitor symptoms daily. G3-4 (severe symptoms, new or worsening hypoxia)\\: discontinue ICI, admit, give i.v. methylprednisolone 2-4 mg/kg/day, and arrange respiratory review and HRCT \\u00B1 bronchoscopy/BAL
+applies_when=all_patients_on_therapy
 assistant_invention=each-visit review cadence
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=respiratory symptom screen with triggered chest CT, each visit (symptom review) and on any new respiratory symptom, throughout therapy (pneumonitis tends to occur months after initiation)
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= respiratory symptom screen with triggered chest CT; ServiceRequest.occurrenceTiming \\= each visit (symptom review) and on any new respiratory symptom, throughout therapy (pneumonitis tends to occur months after initiation); ServiceRequest.patientInstruction \\= report new or worsening cough, shortness of breath, chest pain, or fever; ServiceRequest.performerInstruction \\= on any new respiratory symptom, do a dedicated evaluation with CT. Order chest X-ray and bloods (FBC/UEC/LFTs/TFTs/Ca/ESR/CRP), and consider sputum and infection screen. G2\\: withhold ICI and monitor symptoms daily. G3-4 (severe symptoms, new or worsening hypoxia)\\: discontinue ICI, admit, give i.v. methylprednisolone 2-4 mg/kg/day, and arrange respiratory review and HRCT \\u00B1 bronchoscopy/BAL
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=patient symptom report; triggered chest CT, chest X-ray, oxygen saturation, bloods
@@ -444,10 +457,6 @@ monitoring_frequency_basis=guideline says "Any respiratory symptom or sign must 
 monitoring_stance=symptom_triggered_only
 ontology.coding=SNOMED\\:427046006
 ontology.label=Drug-induced pneumonitis
-order.code=respiratory symptom screen with triggered chest CT
-order.patient_instruction=report new or worsening cough, shortness of breath, chest pain, or fever
-order.performer_instruction=on any new respiratory symptom, do a dedicated evaluation with CT. Order chest X-ray and bloods (FBC/UEC/LFTs/TFTs/Ca/ESR/CRP), and consider sputum and infection screen. G2\\: withhold ICI and monitor symptoms daily. G3-4 (severe symptoms, new or worsening hypoxia)\\: discontinue ICI, admit, give i.v. methylprednisolone 2-4 mg/kg/day, and arrange respiratory review and HRCT \\u00B1 bronchoscopy/BAL
-order.timing=each visit (symptom review) and on any new respiratory symptom, throughout therapy (pneumonitis tends to occur months after initiation)
 provenance_type=guideline_specified
 quote.1=iv131\\: "All patients presenting with pulmonary symptoms, such as an upper respiratory infection, new cough, shortness of breath or hypoxia should be assessed by CT."
 quote.2=Fig 9, iv132\\: "Grade 2\\: Mild/moderate new symptoms Dyspnoea, cough, chest pain Withhold ICPi"
@@ -462,11 +471,16 @@ end action.
 action  :: 'Monitor_Neurological' ;
      caption :: 'Monitor for immune-related neurological toxicity' ;
      description :: 'Monitors immune-related neurological toxicity as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). Rule out other causes. "Early consultation with a neurologist is advised". Withhold ICI for all but grade 1 until the AE is defined [V, B].' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=neurological symptom screen with triggered neurological examination and work-up
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (symptom review) and on any new neurological symptom
+ServiceRequest.patientInstruction=report new weakness, numbness or tingling, double vision or drooping eyelids, facial weakness, difficulty swallowing or breathing, confusion, severe headache, or neck stiffness
+ServiceRequest.performerInstruction=exclude progression, seizures, infection and metabolic causes. For any symptom beyond mild (or any cranial nerve problem), withhold ICI. Get an early neurology consult and MRI, NCS/EMG, lumbar puncture as indicated. If severe (limits self-care, respiratory involvement), admit, give i.v. methylprednisolone 2 mg/kg, and arrange daily neurological review \\u00B1 vital capacity
+applies_when=all_patients_on_therapy
 assistant_invention=each-visit review cadence; patient symptom wording drawn from the syndromes in Fig 10-12
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=neurological symptom screen with triggered neurological examination and work-up, each visit (symptom review) and on any new neurological symptom
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= neurological symptom screen with triggered neurological examination and work-up; ServiceRequest.occurrenceTiming \\= each visit (symptom review) and on any new neurological symptom; ServiceRequest.patientInstruction \\= report new weakness, numbness or tingling, double vision or drooping eyelids, facial weakness, difficulty swallowing or breathing, confusion, severe headache, or neck stiffness; ServiceRequest.performerInstruction \\= exclude progression, seizures, infection and metabolic causes. For any symptom beyond mild (or any cranial nerve problem), withhold ICI. Get an early neurology consult and MRI, NCS/EMG, lumbar puncture as indicated. If severe (limits self-care, respiratory involvement), admit, give i.v. methylprednisolone 2 mg/kg, and arrange daily neurological review \\u00B1 vital capacity
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=patient symptom report; triggered neurological exam, MRI, NCS/EMG, lumbar puncture, vital capacity
@@ -477,10 +491,6 @@ monitoring_frequency_basis=onset 6-13 weeks (iv133). The guideline specifies tri
 monitoring_stance=symptom_triggered_only
 ontology.coding=SNOMED\\:19466003
 ontology.label=Neurotoxicity (disorder)
-order.code=neurological symptom screen with triggered neurological examination and work-up
-order.patient_instruction=report new weakness, numbness or tingling, double vision or drooping eyelids, facial weakness, difficulty swallowing or breathing, confusion, severe headache, or neck stiffness
-order.performer_instruction=exclude progression, seizures, infection and metabolic causes. For any symptom beyond mild (or any cranial nerve problem), withhold ICI. Get an early neurology consult and MRI, NCS/EMG, lumbar puncture as indicated. If severe (limits self-care, respiratory involvement), admit, give i.v. methylprednisolone 2 mg/kg, and arrange daily neurological review \\u00B1 vital capacity
-order.timing=each visit (symptom review) and on any new neurological symptom
 provenance_type=guideline_specified
 quote.1=iv133\\: "It is important to rule out progression of the underlying cancer, seizure activity, infection and metabolic derangement as causes of neurological impairment."
 quote.2=Fig 10, iv134\\: "Severe\\: limits self-care and aids warranted, life threatening, e.g. respiratory problems Withhold ICPi and admit patient Initiate (methyl)prednisolone 2 mg/kg i.v."
@@ -495,11 +505,16 @@ end action.
 action  :: 'Monitor_Myocarditis' ;
      caption :: 'Monitor for immune-related myocarditis and cardiac toxicity' ;
      description :: 'Monitors immune-related cardiac toxicity (myocarditis) as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). Myocarditis, pericarditis, arrhythmias, cardiomyopathy and impaired ventricular function are reported. "Early consultation with a cardiologist is recommended". Give steroids rapidly if suspected.' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=cardiac symptom screen with triggered cardiology assessment
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (symptom review) and on any new cardiac symptom
+ServiceRequest.patientInstruction=report chest pain, breathlessness, palpitations, fainting, or leg swelling
+ServiceRequest.performerInstruction=if a checkpoint-inhibitor cardiac AE (myocarditis) is suspected, admit, start high-dose methylprednisolone 1-2 mg/kg immediately, and consult cardiology early. Escalate to MMF or tacrolimus if deteriorating
+applies_when=all_patients_on_therapy
 assistant_invention=symptom list and each-visit screen (the guideline gives no symptoms, tests or surveillance for cardiac AEs)
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=cardiac symptom screen with triggered cardiology assessment, each visit (symptom review) and on any new cardiac symptom
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= cardiac symptom screen with triggered cardiology assessment; ServiceRequest.occurrenceTiming \\= each visit (symptom review) and on any new cardiac symptom; ServiceRequest.patientInstruction \\= report chest pain, breathlessness, palpitations, fainting, or leg swelling; ServiceRequest.performerInstruction \\= if a checkpoint-inhibitor cardiac AE (myocarditis) is suspected, admit, start high-dose methylprednisolone 1-2 mg/kg immediately, and consult cardiology early. Escalate to MMF or tacrolimus if deteriorating
 goal.verb=order
 guideline_status=not_specified_as_a_guideline_monitoring_task
 instrument=patient symptom report; clinician cardiology assessment (the guideline names no test)
@@ -510,10 +525,6 @@ monitoring_frequency_basis=cardiac AEs are rare (<1%) but serious, so event-driv
 monitoring_stance=symptom_triggered_only
 ontology.coding=SNOMED\\:50920009
 ontology.label=Myocarditis (disorder)
-order.code=cardiac symptom screen with triggered cardiology assessment
-order.patient_instruction=report chest pain, breathlessness, palpitations, fainting, or leg swelling
-order.performer_instruction=if a checkpoint-inhibitor cardiac AE (myocarditis) is suspected, admit, start high-dose methylprednisolone 1-2 mg/kg immediately, and consult cardiology early. Escalate to MMF or tacrolimus if deteriorating
-order.timing=each visit (symptom review) and on any new cardiac symptom
 provenance_type=assistant_completed_from_guidelines
 quote.1=iv133\\: "Early consultation with a cardiologist is recommended [V, B]. High-dose corticosteroids ... should be instituted rapidly if checkpoint inhibitor induced cardiac AEs are suspected."
 quote.2=Table 2, iv139\\: "When a myocarditis is suspected, admit the patient and immediately start high-dose (methyl)prednisone"
@@ -528,11 +539,16 @@ end action.
 action  :: 'Monitor_Arthralgia' ;
      caption :: 'Monitor for immune-related arthralgia and myalgia' ;
      description :: 'Monitors immune-related arthralgia, arthritis and myalgia as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). Myalgias and arthralgias in 2%-12%. Severe symptoms "should prompt consultation with a rheumatologist" [V, B]. Fig 13 gives grade-based assessment.' ;
-     metaprops :: 'applies_when=all_patients_on_therapy
+     metaprops :: 'ServiceRequest.code=joint and muscle symptom screen with triggered rheumatological assessment
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=each visit (symptom review) and on joint or muscle symptoms
+ServiceRequest.patientInstruction=report joint pain, swelling or stiffness, or muscle pain or weakness
+ServiceRequest.performerInstruction=take a rheumatological history, examine all joints and skin, and order an autoimmune blood panel. G2\\: consider withholding ICI and refer to rheumatology early. G3 (severe, limits self-care)\\: withhold ICI, start prednisolone 0.5-1 mg/kg, and get rheumatology advice
+applies_when=all_patients_on_therapy
 assistant_invention=each-visit review cadence; patient symptom wording; ontology coding Pain of joint (finding) is the closest single SNOMED CT concept (narrower\\: arthritis and myalgia are not covered by it)
 category=undesired_ade
 cq=CQ3, CQ5, CQ7
-goal.noun_phrase=joint and muscle symptom screen with triggered rheumatological assessment, each visit (symptom review) and on joint or muscle symptoms
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= joint and muscle symptom screen with triggered rheumatological assessment; ServiceRequest.occurrenceTiming \\= each visit (symptom review) and on joint or muscle symptoms; ServiceRequest.patientInstruction \\= report joint pain, swelling or stiffness, or muscle pain or weakness; ServiceRequest.performerInstruction \\= take a rheumatological history, examine all joints and skin, and order an autoimmune blood panel. G2\\: consider withholding ICI and refer to rheumatology early. G3 (severe, limits self-care)\\: withhold ICI, start prednisolone 0.5-1 mg/kg, and get rheumatology advice
 goal.verb=order
 guideline_status=specified_as_a_guideline_monitoring_task
 instrument=patient symptom report; joint examination; autoimmune blood panel; US/MRI of affected joints
@@ -543,10 +559,6 @@ monitoring_frequency_basis=symptom-triggered per Fig 13. Each-visit review is as
 monitoring_stance=symptom_triggered_only
 ontology.coding=SNOMED\\:57676002
 ontology.label=Pain of joint (finding)
-order.code=joint and muscle symptom screen with triggered rheumatological assessment
-order.patient_instruction=report joint pain, swelling or stiffness, or muscle pain or weakness
-order.performer_instruction=take a rheumatological history, examine all joints and skin, and order an autoimmune blood panel. G2\\: consider withholding ICI and refer to rheumatology early. G3 (severe, limits self-care)\\: withhold ICI, start prednisolone 0.5-1 mg/kg, and get rheumatology advice
-order.timing=each visit (symptom review) and on joint or muscle symptoms
 provenance_type=guideline_specified
 quote.1=iv133\\: "Severe symptoms should prompt consultation with a rheumatologist and consideration of the use of high-dose corticosteroids"
 quote.2=Fig 13, iv137\\: "Complete rheumatological history regarding DDx above and examination of all joints and skin ... Autoimmune blood panel (as above)"
@@ -561,11 +573,16 @@ end action.
 action  :: 'Monitor_Autoimmune_Flare' ;
      caption :: 'Monitor pre-existing autoimmune disease for flare during ICI therapy' ;
      description :: 'Monitors worsening of pre-existing autoimmune disease as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). Such patients "are at risk for worsening of their autoimmune disease while on immune checkpoint blockade". The guideline gives no monitoring instruction.' ;
-     metaprops :: 'applies_when=patients with a history of autoimmune disease, or who are being actively treated for an autoimmune disease (iv121)
+     metaprops :: 'ServiceRequest.code=pre-existing autoimmune disease activity review
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline and each visit during ICI therapy
+ServiceRequest.patientInstruction=report any flare or worsening of your known autoimmune condition
+ServiceRequest.performerInstruction=if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm
+applies_when=patients with a history of autoimmune disease, or who are being actively treated for an autoimmune disease (iv121)
 assistant_invention=the entire monitoring action (cadence, instrument, performer step); only the sub-population and risk are sourced; ontology coding Autoimmune disease (disorder) is broader than a flare; SNOMED CT has no concept for an exacerbation of autoimmune disease
 category=undesired_ade
 cq=CQ3, CQ4, CQ5, CQ7
-goal.noun_phrase=pre-existing autoimmune disease activity review, baseline and each visit during ICI therapy
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= pre-existing autoimmune disease activity review; ServiceRequest.occurrenceTiming \\= baseline and each visit during ICI therapy; ServiceRequest.patientInstruction \\= report any flare or worsening of your known autoimmune condition; ServiceRequest.performerInstruction \\= if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm
 goal.verb=order
 guideline_status=not_specified_as_a_guideline_monitoring_task
 instrument=patient symptom report; clinician review of disease activity
@@ -576,10 +593,6 @@ monitoring_frequency_basis=tied to the infusion-visit cadence (MonitoringFrequen
 monitoring_stance=proposed_by_assistant
 ontology.coding=SNOMED\\:85828009
 ontology.label=Autoimmune disease (disorder)
-order.code=pre-existing autoimmune disease activity review
-order.patient_instruction=report any flare or worsening of your known autoimmune condition
-order.performer_instruction=if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm
-order.timing=baseline and each visit during ICI therapy
 provenance_type=assistant_completed_from_guidelines
 quote.1=iv121\\: "Patients with a history of autoimmune disease ... are at risk for worsening of their autoimmune disease while on immune checkpoint blockade"
 source.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Patient selection and baseline assessments iv121
@@ -593,11 +606,16 @@ end action.
 action  :: 'Monitor_Allograft_Rejection' ;
      caption :: 'Monitor allograft function for rejection during anti-PD-1 therapy' ;
      description :: 'Monitors acute solid-organ allograft rejection as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). Several case reports document acute allograft rejection after anti-PD-1. "This very significant risk must be considered in discussing systemic therapy options".' ;
-     metaprops :: 'applies_when=patients with allografted organs receiving anti-PD-1 therapy (iv134). The guideline says single-agent ipilimumab "may be administered without necessarily causing rejection"
+     metaprops :: 'ServiceRequest.code=allograft function review (graft-specific function tests per transplant team)
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=baseline and each visit during anti-PD-1 therapy
+ServiceRequest.patientInstruction=report symptoms of graft dysfunction as instructed by your transplant team
+ServiceRequest.performerInstruction=if graft dysfunction is suspected, contact the transplant team urgently
+applies_when=patients with allografted organs receiving anti-PD-1 therapy (iv134). The guideline says single-agent ipilimumab "may be administered without necessarily causing rejection"
 assistant_invention=the entire monitoring action; only the sub-population and risk are sourced (the guideline\'s own evidence here is case reports it cites)
 category=undesired_ade
 cq=CQ3, CQ4, CQ5, CQ7
-goal.noun_phrase=allograft function review (graft-specific function tests per transplant team), baseline and each visit during anti-PD-1 therapy
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= allograft function review (graft-specific function tests per transplant team); ServiceRequest.occurrenceTiming \\= baseline and each visit during anti-PD-1 therapy; ServiceRequest.patientInstruction \\= report symptoms of graft dysfunction as instructed by your transplant team; ServiceRequest.performerInstruction \\= if graft dysfunction is suspected, contact the transplant team urgently
 goal.verb=order
 guideline_status=not_specified_as_a_guideline_monitoring_task
 instrument=clinician review with graft-specific function tests (assistant-proposed)
@@ -608,10 +626,6 @@ monitoring_frequency_basis=tied to the infusion-visit cadence. The guideline giv
 monitoring_stance=proposed_by_assistant
 ontology.coding=SNOMED\\:213148006
 ontology.label=Transplanted organ rejection (disorder)
-order.code=allograft function review (graft-specific function tests per transplant team)
-order.patient_instruction=report symptoms of graft dysfunction as instructed by your transplant team
-order.performer_instruction=if graft dysfunction is suspected, contact the transplant team urgently
-order.timing=baseline and each visit during anti-PD-1 therapy
 provenance_type=assistant_completed_from_guidelines
 quote.1=iv134\\: "several recent case reports have documented the risk of acute allograft rejection after anti-PD-1 therapy"
 source.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Allograft rejection iv134

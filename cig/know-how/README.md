@@ -24,11 +24,11 @@ Locate guidelines that also include information about the indications for the th
 
 Allow the user to provide the PDF files of clinical guidelines that they located by placing them in the shared guidelines library, where they can be reused across CIG projects.
 
-**Example:** `cig/guidelines/` (e.g. `AGA 2022 Guidelines.pdf`)
+**Example:** `projects/<project_dir>/resources/` (e.g. `ADA 2026 Guidelines.pdf`)
 
 ### 3. Extract therapy recommendations, clinical goals, and monitoring
 
-**Find the THERAPY RECOMMENDATIONS.** In case they are vague, try to complete them using additional sources from the web.
+**Find the THERAPY RECOMMENDATIONS.** They are usually contained in the Recommendations section but can also be found in other parts of the guideline, including in tables and figures. In case they are vague, try to complete them using additional sources from the web.
 
 > **Example:** A recommendation may say: "Pharmacotherapy should be offered, in conjunction with health behaviour changes". But what the health behaviour changes are is not indicated within the recommendation. Examining the same clinical guideline, you can find "Ensuring adequate nutritional and protein intake and emphasizing the importance of physical activity to retain muscle mass". Examining additional guidelines in the collection you can find specific instructions: "hypocaloric diets (500–600 kcal/d deficit); 150 minutes of physical activity per week + twice a week muscle strengthening".
 
@@ -52,11 +52,11 @@ Sometimes the clinical goals refer to **clinical abstractions**, and you would n
 
 > **Example:** via standard questionnaires: management of appetite and/or cravings (Control of Eating Questionnaire, CoEQ); improvement in quality of life (SF-36 and instruments that assess the impact of weight on QoL: IWQOL-Lite). You would still need to recommend a frequency of measuring these. Another example: to determine whether there is muscle loss (sarcopenia), the body composition can be measured using an at-home BIA scale.
 
-**Recommendations without matching monitoring.** If the guidelines contain recommendations that do not have matching monitoring instructions, you should propose them and justify, and explain the sources for the proposal.
+**Recommendations without matching monitoring.** If the guidelines contain recommendations that do not have matching monitoring instructions, you should propose them (including monitoring frequency) and justify, and explain the sources for the proposal.
 
 > **Example:** it isn't clear how to monitor diet and physical exercise, which are recommended therapies alongside GLP-1.
 
-**Side effects and ADEs.** From the clinical guidelines and drug information from package inserts you can determine side effects of the therapy recommendation and adverse drug effects (ADEs). Add monitoring actions for them.
+**Side effects and ADEs.** From the clinical guidelines and drug information from package inserts you can determine side effects of the therapy recommendation and adverse drug effects (ADEs). Add monitoring tasks (monitoring for undesired state) for them.
 
 **Case reports.** You can also examine case reports in the medical literature that report rare undesired drug effects. Summarize them for the user along with monitoring suggestions and their frequency. Explain how to monitor: via laboratory tests? doctor asking the patient about symptoms during a visit?
 
@@ -67,6 +67,8 @@ Sometimes the clinical goals refer to **clinical abstractions**, and you would n
 **Unmentioned benefits and harms.** Check whether the guidelines forgot to mention potential benefits and harms of the therapy recommendations. Suggest to the user MONITORING PLANS for them, and how expensive monitoring is, and how dangerous and how prevalent the harms may be. You can determine these unmentioned harms and benefits by thinking about the mechanism of action of the therapy.
 
 > **Example:** GLP-1 promotes weight loss by a mechanism of action of appetite regulation in the brain. Because this regulation is linked to reward circuits, other rewards could also be down-regulated and patients may experience that they enjoy life less. How can appetite inhibition but also enjoyment-of-life inhibition be assessed? Is it assessed via the quality-of-life questionnaires mentioned in the guidelines, or do additional questionnaires need to be added? How many questions (not too many) and at what frequency?
+
+**Operationalization (this kit):** Unmentioned benefits and harms are opt-in. Do not search for or instantiate them unless the user explicitly includes them in scope. Default benefits and harms come from clinical guidelines and package inserts. Skill/know-how examples are not an action checklist.
 
 ### 4. Formalization — PROforma ontology and Design Patterns
 
@@ -91,4 +93,4 @@ For each therapy goal defined in the previous step, and for each desired and und
 
 > **Example:** order `body weight measurement via BIA scale`.
 >
-> *(The order is recorded as the action's `procedure` plus the `order.*` metaprops: `order.code`, `order.timing`, `order.patient_instruction`, `order.performer_instruction`.)*
+> *(The order is recorded as an HL7 FHIR `ServiceRequest`: the `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction` and `ServiceRequest.performerInstruction` metaprops, repeated in the goal's noun phrase and stated in the action's native `procedure`.)*

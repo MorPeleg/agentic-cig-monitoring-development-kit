@@ -1,20 +1,21 @@
 #!/usr/bin/env node
-// migrate_metaprops.mjs: move a CIG's monitoring actions off the FHIR ServiceRequest
-// contract onto the current one (skills/cig-monitoring/references/MetapropsSyntax.md).
+// migrate_metaprops.mjs: bring a CIG's monitoring actions onto the current task contract
+// (skills/cig-monitoring/references/MetapropsSyntax.md).
 //
 // Usage:
 //   node scripts/migrate_metaprops.mjs <guideline.pf> [--dry-run]
 //
-// For every action with ServiceRequest.* metaprops it
-// - moves code, occurrenceTiming, patientInstruction and performerInstruction to
-//   order.code, order.timing, order.patient_instruction and order.performer_instruction,
-//   and drops ServiceRequest.intent (always "order", the goal verb already says so);
-// - rewrites goal.noun_phrase as the plain order sentence "<order.code>, <order.timing>";
-// - writes the native procedure: "<order.code>, <order.timing>. Patient: ... Clinician: ...";
-// - fills an empty native description with "Monitors <monitored_target>. <literature_basis>."
-// Every other key and value is kept. The old ServiceRequest.supportingInfo.*Codes keys are
-// dropped and listed, so the coding pass can record them as ontology.coding instead.
-// It writes through the proforma CLI (never by hand), then runs `format`.
+// For every monitoring action (goal.verb=order) it
+// - keeps (or restores) the order as the HL7 FHIR ServiceRequest block: a guideline that held
+//   the order in order.code / order.timing / order.patient_instruction /
+//   order.performer_instruction gets ServiceRequest.code / occurrenceTiming /
+//   patientInstruction / performerInstruction back, with ServiceRequest.intent=order;
+// - writes goal.noun_phrase as the ServiceRequest string
+//   "ServiceRequest.intent = order; ServiceRequest.code = ...; ..." (values identical to the keys);
+// - fills an empty native procedure: "<code>, <occurrenceTiming>. Patient: ... Clinician: ...";
+// - fills an empty native description: "Monitors <monitored_target>. <literature_basis>."
+// Every other key and value is kept. It writes through the proforma CLI (never by hand),
+// keeping the file windows-1252 for Composer, then runs `format`.
 
 import { exportGuideline, proforma, setAttribute, setMetaprops } from "./lib/proforma.mjs";
 
@@ -26,6 +27,13 @@ if (!file) {
   process.exit(2);
 }
 
+const FROM_ORDER = {
+  "order.code": "ServiceRequest.code",
+  "order.timing": "ServiceRequest.occurrenceTiming",
+  "order.patient_instruction": "ServiceRequest.patientInstruction",
+  "order.performer_instruction": "ServiceRequest.performerInstruction",
+};
+const SR_FIELDS = ["intent", "code", "occurrenceTiming", "patientInstruction", "performerInstruction"];
 const clause = (s) => String(s || "").trim().replace(/[.;\s]+$/, "");
 const sentence = (s) => {
   const c = clause(s);
@@ -34,54 +42,44 @@ const sentence = (s) => {
 
 const g = exportGuideline(file);
 let changed = 0;
-const droppedCodes = [];
 for (const t of g.tasks) {
   const m = t.metaprops || {};
-  if (!Object.keys(m).some((k) => k.startsWith("ServiceRequest."))) continue;
-  const order = {
-    "order.code": m["ServiceRequest.code"],
-    "order.timing": m["ServiceRequest.occurrenceTiming"],
-    "order.patient_instruction": m["ServiceRequest.patientInstruction"],
-    "order.performer_instruction": m["ServiceRequest.performerInstruction"],
-  };
-  for (const k of Object.keys(order)) if (!order[k]) delete order[k];
+  if ((m["goal.verb"] || "").trim().toLowerCase() !== "order") continue;
   const next = {};
   for (const [k, v] of Object.entries(m)) {
-    if (k.startsWith("ServiceRequest.supportingInfo.")) {
-      droppedCodes.push(`${t.name}: ${k}=${v}`);
-      continue;
-    }
-    if (k.startsWith("ServiceRequest.")) continue;
-    next[k] = v;
+    if (FROM_ORDER[k]) next[FROM_ORDER[k]] = String(v).replace(/;/g, ",");
+    else next[k] = v;
   }
-  Object.assign(next, order);
-  const code = clause(order["order.code"]);
-  const timing = clause(order["order.timing"]);
-  // (a comma, not parentheses: timings often carry their own, e.g. "each visit (monthly x3, then q3mo)")
-  if (code) next["goal.noun_phrase"] = timing ? `${code}, ${timing}` : code;
+  if (!next["ServiceRequest.code"]) continue; // not an order this script understands
+  next["ServiceRequest.intent"] = "order";
+  next["goal.noun_phrase"] = SR_FIELDS.filter((f) => next[`ServiceRequest.${f}`])
+    .map((f) => `ServiceRequest.${f} = ${String(next[`ServiceRequest.${f}`]).trim()}`)
+    .join("; ");
+  const metaChanged = JSON.stringify(Object.entries(next).sort()) !== JSON.stringify(Object.entries(m).sort());
 
-  const procedure = [
-    code && (timing ? `${sentence(code)}, ${timing}.` : `${sentence(code)}.`),
-    order["order.patient_instruction"] && `Patient: ${clause(order["order.patient_instruction"])}.`,
-    order["order.performer_instruction"] && `Clinician: ${clause(order["order.performer_instruction"])}.`,
-  ].filter(Boolean).join(" ");
+  const code = clause(next["ServiceRequest.code"]);
+  const timing = clause(next["ServiceRequest.occurrenceTiming"]);
+  const procedure = (t.procedure || "").trim()
+    ? null
+    : [
+        timing ? `${sentence(code)}, ${timing}.` : `${sentence(code)}.`,
+        next["ServiceRequest.patientInstruction"] && `Patient: ${clause(next["ServiceRequest.patientInstruction"])}.`,
+        next["ServiceRequest.performerInstruction"] && `Clinician: ${clause(next["ServiceRequest.performerInstruction"])}.`,
+      ].filter(Boolean).join(" ");
   const description = (t.description || "").trim()
     ? null
-    : [m.monitored_target && `Monitors ${clause(m.monitored_target)}.`, m.literature_basis && `${sentence(m.literature_basis)}.`].filter(Boolean).join(" ");
+    : [next.monitored_target && `Monitors ${clause(next.monitored_target)}.`, next.literature_basis && `${sentence(next.literature_basis)}.`].filter(Boolean).join(" ");
+  if (!metaChanged && !procedure && !description) continue;
 
   console.log(`${dry ? "would migrate" : "migrating"} ${t.name}`);
-  if (dry) continue;
-  setMetaprops(file, t.name, next);
-  if (procedure && !(t.procedure || "").trim()) setAttribute(file, t.name, "procedure", procedure);
-  if (description) setAttribute(file, t.name, "description", description);
   changed++;
+  if (dry) continue;
+  if (metaChanged) setMetaprops(file, t.name, next);
+  if (procedure) setAttribute(file, t.name, "procedure", procedure);
+  if (description) setAttribute(file, t.name, "description", description);
 }
 if (!dry && changed) {
   const r = proforma(["format", "--file", file]);
   if (r.status !== 0) throw new Error(`format failed: ${(r.stderr || r.stdout).trim()}`);
 }
-console.log(`${dry ? "would migrate" : "migrated"} ${dry ? "" : changed + " "}action(s) in ${file}`);
-if (droppedCodes.length) {
-  console.log("dropped FHIR coding keys (record them as ontology.coding in the coding pass):");
-  for (const d of droppedCodes) console.log(`  ${d}`);
-}
+console.log(`${dry ? "would migrate" : "migrated"} ${changed} action(s) in ${file}`);

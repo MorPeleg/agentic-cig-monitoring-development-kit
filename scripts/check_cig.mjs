@@ -72,9 +72,10 @@ const VOCAB = {
   monitoring_stance: ["recommended", "symptom_triggered_only", "routine_not_recommended", "proposed_by_assistant"],
 };
 const REQUIRED = [
-  "order.code",
-  "order.timing",
-  "order.patient_instruction",
+  "ServiceRequest.intent",
+  "ServiceRequest.code",
+  "ServiceRequest.occurrenceTiming",
+  "ServiceRequest.patientInstruction",
   "category",
   "monitored_target",
   "applies_when",
@@ -90,13 +91,15 @@ const REQUIRED = [
   "trigger",
   "cq",
 ];
+// the HL7 FHIR ServiceRequest block of a monitoring order (keys and goal.noun_phrase)
+const SR_FIELDS = ["intent", "code", "occurrenceTiming", "patientInstruction", "performerInstruction"];
 // Composer's native "Ontology coding" property (metaprop ontology.coding, SCHEME:code) and its
 // preferred term. These are the only keys a coding-only run may add or change.
 const ONTOLOGY_KEYS = /^ontology\.(coding|label)$/;
 const CODING = /^[A-Za-z][A-Za-z0-9_-]*:[A-Za-z0-9][A-Za-z0-9.-]*$/;
 const SNOMED_CODE = /^\d{6,18}$/;
-// the FHIR ServiceRequest block is no longer part of the contract
-const LEGACY_FHIR = /^ServiceRequest\./;
+// keys of an intermediate contract that held the order outside the ServiceRequest block
+const ORDER_KEYS = /^order\./;
 // a quote is a verbatim excerpt in double quotes, normally prefixed by its page or section
 const QUOTED = /"[^"]{3,}"|“[^”]{3,}”/;
 const QUOTE_MAX_WORDS = 40;
@@ -240,8 +243,8 @@ for (const t of tasks) {
   for (const k of Object.keys(t.metaprops)) {
     if (k.startsWith("owl.")) fail("structure", t.name, `migration leftover ${k}: formalize it as PROforma or remove it`);
   }
-  const fhir = Object.keys(t.metaprops).filter((k) => LEGACY_FHIR.test(k));
-  if (fhir.length) fail("structure", t.name, `FHIR keys ${fhir.join(", ")} are no longer part of the contract; migrate with scripts/migrate_metaprops.mjs`);
+  const orderKeys = Object.keys(t.metaprops).filter((k) => ORDER_KEYS.test(k));
+  if (orderKeys.length) fail("structure", t.name, `keys ${orderKeys.join(", ")}: the order lives in the ServiceRequest.* block; convert with scripts/migrate_metaprops.mjs`);
 }
 for (const d of g.data) {
   if (!d.type) fail("structure", d.name, "data item without a type");
@@ -270,7 +273,7 @@ function codingProblems(mp) {
 }
 // An element that cites sources must quote at least one of them verbatim (FAIL); a citation
 // without its own quote is a WARN, since some cited works (e.g. an instrument's validation
-// paper) are not in the source library.
+// paper) are not among the provided sources.
 function quoteProblems(mp) {
   const out = [];
   const keys = Object.keys(mp || {});
@@ -394,32 +397,49 @@ for (const t of monitors) {
   ok("required");
   ok("placeholders");
 
-  // the order: what is done, when, and the patient and clinician instructions
-  if (Object.keys(m).some((k) => LEGACY_FHIR.test(k))) bad("order", "FHIR ServiceRequest.* keys present; the order lives in order.* and the native procedure");
-  const code = (m["order.code"] || "").trim();
-  const timing = (m["order.timing"] || "").trim();
-  if (timing && !CADENCE.test(timing)) bad("order", `order.timing names no cadence or trigger: ${timing}`);
-  const triggered = TRIGGERED.test(`${code} ${timing}`);
-  if (triggered && !m["order.performer_instruction"]) {
-    bad("order", "triggered/urgent step without order.performer_instruction");
-  } else if (!m["order.performer_instruction"] && m.trigger && m.trigger.trim().toLowerCase() !== "none") {
-    warn("metaprops", t.name, `trigger is set ("${m.trigger}") but there is no order.performer_instruction; confirm none is needed`);
+  // the order: the HL7 FHIR ServiceRequest on the Action
+  if (m["ServiceRequest.intent"] && m["ServiceRequest.intent"].trim() !== "order") {
+    bad("serviceRequest", `ServiceRequest.intent must be order (is ${m["ServiceRequest.intent"]})`);
   }
-  ok("order");
+  const code = (m["ServiceRequest.code"] || "").trim();
+  const timing = (m["ServiceRequest.occurrenceTiming"] || "").trim();
+  if (timing && !CADENCE.test(timing)) bad("serviceRequest", `occurrenceTiming names no cadence or trigger: ${timing}`);
+  const triggered = TRIGGERED.test(`${code} ${timing}`);
+  if (triggered && !m["ServiceRequest.performerInstruction"]) {
+    bad("serviceRequest", "triggered/urgent step without ServiceRequest.performerInstruction");
+  } else if (!m["ServiceRequest.performerInstruction"] && m.trigger && m.trigger.trim().toLowerCase() !== "none") {
+    warn("metaprops", t.name, `trigger is set ("${m.trigger}") but there is no ServiceRequest.performerInstruction; confirm none is needed`);
+  }
+  ok("serviceRequest");
 
   // native fields: what Composer shows on the task itself
   if (!(t.caption || "").trim()) bad("native", "no caption");
   if (!(t.description || "").trim()) bad("native", "no description (what is monitored and why it was modelled)");
   const proc = (t.procedure || "").trim();
   if (!proc) bad("native", "no procedure (the order as the instruction Composer shows on the action)");
-  else if (code && !proc.toLowerCase().includes(code.toLowerCase())) bad("native", "procedure does not state order.code");
-  else if (timing && !proc.toLowerCase().includes(timing.toLowerCase())) bad("native", "procedure does not state order.timing");
+  else if (code && !proc.toLowerCase().includes(code.toLowerCase())) bad("native", "procedure does not state ServiceRequest.code");
+  else if (timing && !proc.toLowerCase().includes(timing.toLowerCase())) bad("native", "procedure does not state ServiceRequest.occurrenceTiming");
   ok("native");
 
-  // the goal states the same order
-  const np = (m["goal.noun_phrase"] || "").trim().toLowerCase();
-  if (code && !np.includes(code.toLowerCase())) bad("goalConsistency", "goal.noun_phrase does not state order.code");
-  if (timing && !np.includes(timing.toLowerCase())) bad("goalConsistency", "goal.noun_phrase does not state order.timing");
+  // the ServiceRequest on the Goal, consistent with the Action. goal.noun_phrase joins the
+  // fields with "; ", so a value containing ";" cannot round-trip.
+  for (const f of SR_FIELDS) {
+    if ((m[`ServiceRequest.${f}`] || "").includes(";")) {
+      bad("goalConsistency", `ServiceRequest.${f} contains ";" (the goal.noun_phrase field separator); use commas inside the value`);
+    }
+  }
+  const goalSR = {};
+  for (const part of (m["goal.noun_phrase"] || "").split(/;\s*/)) {
+    const mm = /^ServiceRequest\.([A-Za-z.]+)\s*=\s*([\s\S]*)$/.exec(part.trim());
+    if (mm) goalSR[mm[1]] = mm[2].trim();
+  }
+  for (const f of SR_FIELDS) {
+    const onAction = (m[`ServiceRequest.${f}`] || "").trim();
+    const onGoal = goalSR[f];
+    if (onAction && onGoal === undefined) bad("goalConsistency", `goal.noun_phrase lacks ServiceRequest.${f}`);
+    else if (!onAction && onGoal !== undefined) bad("goalConsistency", `goal.noun_phrase has ServiceRequest.${f} but the metaprops do not`);
+    else if (onAction && onGoal !== onAction) bad("goalConsistency", `ServiceRequest.${f} differs between goal.noun_phrase and metaprops`);
+  }
   ok("goalConsistency");
 
   // citations, each with the verbatim passage it came from
@@ -477,7 +497,7 @@ for (const t of monitors) {
 
   // stance <-> schedule
   if ((m.monitoring_stance || "").trim() === "routine_not_recommended" && ROUTINE.test(timing) && !/symptom|trigger|event/i.test(timing)) {
-    bad("stance", `monitoring_stance=routine_not_recommended but order.timing is a routine schedule (${timing})`);
+    bad("stance", `monitoring_stance=routine_not_recommended but occurrenceTiming is a routine schedule (${timing})`);
   }
   ok("stance");
 
@@ -498,7 +518,7 @@ for (const t of monitors) {
   const m = t.metaprops;
   const keys = [
     (m["goal.noun_phrase"] || "").trim().toLowerCase(),
-    `${(m["order.code"] || "").trim().toLowerCase()}|${(m["order.timing"] || "").trim().toLowerCase()}`,
+    `${(m["ServiceRequest.code"] || "").trim().toLowerCase()}|${(m["ServiceRequest.occurrenceTiming"] || "").trim().toLowerCase()}`,
   ];
   for (const k of keys) {
     if (!k || k === "|") continue;
@@ -618,7 +638,7 @@ else {
 
 if (opts.report) {
   const yes = (v) => (v === false ? "no" : "yes");
-  const cols = ["required", "placeholders", "order", "native", "goalConsistency", "citations", "quotes", "coding", "vocab", "traceability", "appliesWhen", "stance", "caseReport"];
+  const cols = ["required", "placeholders", "serviceRequest", "native", "goalConsistency", "citations", "quotes", "coding", "vocab", "traceability", "appliesWhen", "stance", "caseReport"];
   const L = [];
   L.push(`# CIG monitoring review: ${path.basename(opts.file)}`, "");
   L.push(`**Deterministic gate: ${verdict}** (${fails.length} FAIL, ${warns.length} WARN). Generated by \`scripts/check_cig.mjs\` on ${new Date().toISOString()}.`, "");

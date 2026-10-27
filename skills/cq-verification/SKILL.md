@@ -15,7 +15,7 @@ A PROforma guideline is already concrete: its tasks, plans, data items, candidat
 
 - **MUST** compute every answer from `g` / `h` (the exported guideline).
 - **MUST NOT** hard-code answers, read the proposal or any other file inside a query, or construct a stand-in model.
-- The "given" entity of a CQ is a concrete name from the proposal's §6 task table or data items table (e.g. `Prescribe_GLP1`, `Get_Eligibility_Data`), exactly as spelled in the guideline.
+- The "given" entity of a CQ is a concrete name from the proposal's §6 task table or data items table (e.g. `Prescribe_Drug`, `Get_Eligibility_Data`), exactly as spelled in the guideline.
 
 ## Procedure
 
@@ -25,8 +25,8 @@ Read the CQ list from the approved proposal (§2). For each CQ, decide which par
 
 | CQ | Answered by | Correct answer (for `expect`) |
 |----|-------------|------------------------------|
-| CQ1: Which data items does the eligibility Enquiry collect? | `sources` of `Get_Eligibility_Data` | includes `BMI`, `weight_related_comorbidity`, `contraindications` |
-| CQ7: Which ADEs are monitored, for which patients? | children of `Monitor_Undesired_State`, `applies_when`, `precondition` | ≥4 actions; `Monitor_Hypoglycemia` gated by a precondition |
+| CQ1: Which data items does the eligibility Enquiry collect? | `sources` of `Get_Eligibility_Data` | includes `threshold_measure`, `on_interacting_medication`, `contraindication_present` |
+| CQ7: Which ADEs are monitored, for which patients? | children of `Monitor_Undesired_State`, `applies_when`, `precondition` | every ADE the proposal approves; the sub-population monitor `Monitor_<Harm>` gated by a precondition |
 
 This prevents two common problems: (1) a query that inspects the wrong part of the guideline, and (2) a query that passes on any non-empty answer, including a wrong one.
 
@@ -40,7 +40,7 @@ export default [
     id: "CQ1",                       // the CQ id as spelled in the proposal
     question: "Which data items does the eligibility Enquiry collect?",
     query: (g, h) => h.task("Get_Eligibility_Data").sources.map((s) => s.data),
-    expect: (rows) => ["BMI", "weight_related_comorbidity", "contraindications"].every((d) => rows.includes(d)),
+    expect: (rows) => ["threshold_measure", "on_interacting_medication", "contraindication_present"].every((d) => rows.includes(d)),
   },
   // ...
 ];
@@ -53,8 +53,8 @@ export default [
 The same JSON the `export_json` tool returns. Every field is always present (`null`, `[]` or `false` when unset).
 
 - `metadata` {`name`, `title`, `desc`, `author`, `version`, …}; `metaprops` (guideline level); `root` (the root plan's name).
-- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `ServiceRequest.*`, `monitored_target`, `applies_when`, `source` / `source.N`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure`, …; for plans `components[]` {`name`, `task`, `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`}; and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
-- `data[]`: `name`, `type`, `caption`, `description`, `unit`, `range[]`, `default_value`, `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops`.
+- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, `ServiceRequest.performerInstruction`, `monitored_target`, `applies_when`, `source` / `source.N`, `quote` / `quote.N`, `ontology.coding`, `ontology.label`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure` (the native order / instruction text), …; for plans `components[]` {`name`, `task`, `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`}; and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
+- `data[]`: `name`, `type`, `caption`, `description`, `unit`, `range[]`, `default_value`, `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops` (e.g. `ontology.coding`, `source`, `quote`). Candidate and argument `metaprops` are in the export too.
 
 #### `h`: the helpers `run_cqs.mjs` provides
 
@@ -81,7 +81,9 @@ Task and data item names are matched exactly and case-sensitively. A misspelt na
 - **With `expect(rows)`**, the CQ passes only when `expect` returns true. Use `expect` to assert the **right answer** from the proposal: the named elements are present, the goal verb is the approved one, a conditional ADE is gated, a count is not below what the proposal approved. Prefer `expect` on every CQ whose answer the proposal fixes; a bare non-empty check is acceptable only for open questions (e.g. "which criteria decide eligibility?").
 - The report shows the first three rows: a string as is, an object by its `name`, anything else as JSON. Return `{ name: …, … }` objects for a readable report.
 
-#### Query patterns (from `cig/examples/obesity-glp1-monitoring.pf`)
+#### Query patterns
+
+The names below are placeholders (`Prescribe_Drug`, `Monitor_<Harm>`, `threshold_measure`, …); use the names the approved proposal fixes. `cig/examples/ici-irae-monitoring.cqs.mjs` is a complete, runnable query file for the structural example.
 
 **Membership of a plan.** Which ADEs are monitored?
 
@@ -90,33 +92,33 @@ Task and data item names are matched exactly and case-sensitively. A misspelt na
   id: "CQ7",
   question: "Which adverse drug effects are monitored?",
   query: (g, h) => h.children("Monitor_Undesired_State").filter((t) => t.kind === "action").map((t) => t.name),
-  expect: (rows) => ["Monitor_GI_ADE", "Monitor_Pancreatitis", "Monitor_Hypoglycemia"].every((n) => rows.includes(n)),
+  expect: (rows) => ["Monitor_Harm_A", "Monitor_Harm_B"].every((n) => rows.includes(n)),   // the approved ADE monitors
 }
 ```
 
 Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
 
-**Goal of a task.** What State Achievement goal does resistance exercise have?
+**Goal of a task.** What State Achievement goal does a protective therapy recommendation have?
 
 ```js
 {
   id: "CQ3",
-  question: "What goal does the resistance-exercise recommendation pursue?",
+  question: "What goal does the protective-measure recommendation pursue?",
   query: (g, h) => {
-    const goal = h.goal(h.task("Prescribe_Resistance_Exercise"));
+    const goal = h.goal(h.task("Prescribe_Protective_Measure"));
     return [{ name: `${goal.verb} ${goal.noun_phrase}`, ...goal }];
   },
-  expect: (rows) => rows[0]?.verb === "avoid" && /lean-mass/.test(rows[0].noun_phrase),
+  expect: (rows) => rows[0]?.verb === "avoid" && /<key word of the harm>/.test(rows[0].noun_phrase),
 }
 ```
 
-**Monitors tracing to a therapy action.** Which monitors serve the GLP-1 prescription, in each category?
+**Monitors tracing to a therapy action.** Which monitors serve the drug prescription, in each category?
 
 ```js
 {
   id: "CQ4",
-  question: "Which monitoring actions trace to the GLP-1 prescription?",
-  query: (g, h) => h.monitorsOf("Prescribe_GLP1").map((m) => ({ name: m.name, category: h.meta(m, "category") })),
+  question: "Which monitoring actions trace to the drug prescription?",
+  query: (g, h) => h.monitorsOf("Prescribe_Drug").map((m) => ({ name: m.name, category: h.meta(m, "category") })),
   expect: (rows) => ["action_completion", "desired_outcome", "undesired_ade"].every((c) => rows.some((r) => r.category === c)),
 }
 ```
@@ -129,7 +131,7 @@ Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
   question: "Which data items does the eligibility Enquiry collect?",
   query: (g, h) =>
     h.task("Get_Eligibility_Data").sources.map((s) => ({ name: s.data, type: h.data(s.data)?.type, unit: h.data(s.data)?.unit })),
-  expect: (rows) => rows.some((r) => r.name === "BMI" && r.type === "real"),
+  expect: (rows) => rows.some((r) => r.name === "threshold_measure" && r.type === "real"),
 }
 ```
 
@@ -146,12 +148,33 @@ Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
       data: (t.precondition.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).map((n) => h.data(n)).filter(Boolean),
     })),
   expect: (rows) =>
-    rows.some((r) => r.name === "Monitor_Hypoglycemia" &&
-      r.data.some((d) => d.name === "on_insulin_or_secretagogue" && d.asked_by.includes("Get_Eligibility_Data"))),
+    rows.some((r) => r.name === "Monitor_<Harm>" &&
+      r.data.some((d) => d.name === "on_interacting_medication" && d.asked_by.includes("Get_Eligibility_Data"))),
 }
 ```
 
-Sequencing questions use `h.after`: `h.after("Obesity_GLP1_Plan", "Eligibility_Decision")` returns `["Obesity_Therapy"]`. Decision criteria are in `h.task("Eligibility_Decision").candidates[].arguments[].condition`. The full worked set is `cig/examples/obesity-glp1-monitoring.cqs.mjs`.
+**The order and its evidence.** How, when and on what source is a labeled ADE monitored?
+
+```js
+{
+  id: "CQ9",
+  question: "What is ordered for <harm>, on what schedule, and which passage supports it?",
+  query: (g, h) => {
+    const t = h.task("Monitor_<Harm>");
+    return [{
+      name: t.name,
+      code: h.meta(t, "ServiceRequest.code"),
+      timing: h.meta(t, "ServiceRequest.occurrenceTiming"),
+      clinician: h.meta(t, "ServiceRequest.performerInstruction"),
+      quotes: h.meta(t, "quote", true),
+      coding: h.meta(t, "ontology.coding"),
+    }];
+  },
+  expect: (rows) => /<the triggered test>/.test(rows[0]?.code) && rows[0].clinician && rows[0].quotes.length > 0,
+}
+```
+
+Sequencing questions use `h.after`: `h.after("Condition_Therapy_Plan", "Eligibility_Decision")` returns `["Therapy_Plan"]` in the design pattern of `skills/cig-monitoring/references/TopLevelPlan.md`. Decision criteria are in `h.task("Eligibility_Decision").candidates[].arguments[].condition`.
 
 ### Phase 2: Run
 
@@ -193,11 +216,11 @@ A query that returns literals, reads the proposal, or filters a list you typed p
 
 ### Non-empty is not correct
 
-`h.monitorsOf("Prescribe_GLP1")` returns rows as long as *one* monitor names the task. If the CQ asks for all three categories, or for a specific gated action, say so in `expect`.
+`h.monitorsOf("Prescribe_Drug")` returns rows as long as *one* monitor names the task. If the CQ asks for all three categories, or for a specific gated action, say so in `expect`.
 
 ### Repeatable and escaped metaprops
 
-Repeatable keys are numbered (`source.1`, `source.2`); read them with `h.meta(t, "source", true)`. Values come back unescaped (`=` and `:`, not `\=` / `\:`), so match plain text.
+Repeatable keys are numbered (`source.1`, `source.2`, and their `quote.1`, `quote.2`); read them with `h.meta(t, "source", true)` / `h.meta(t, "quote", true)`. Values come back unescaped (`=` and `:`, not `\=` / `\:`), so match plain text (`ontology.coding` reads `SNOMED:197456007`). The order lives in the HL7 FHIR `ServiceRequest.*` keys, repeated in `goal.noun_phrase` (as `ServiceRequest.<field> = <value>` parts joined by `; `) and stated in the native `procedure`; query the keys, not the noun phrase. There are no `order.*` keys (the gate fails them).
 
 ### Component name versus task name
 

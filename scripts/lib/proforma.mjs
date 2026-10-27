@@ -94,3 +94,47 @@ export function metaValues(metaprops, key) {
     .sort(([a], [b]) => (parseInt(a.split(".").pop(), 10) || 0) - (parseInt(b.split(".").pop(), 10) || 0))
     .map(([, v]) => v);
 }
+
+/** A value as a PROforma single-quoted text atom. */
+export function pfText(s) {
+  return "'" + String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
+}
+
+// Composer (Java 8 on Windows) reads a .pf file as windows-1252, and the CLI keeps that
+// encoding only while every character fits; one character outside it turns the whole file
+// into UTF-8, which Composer then misreads. So:
+// - plain text attributes get the usual typographic characters outside windows-1252 spelled in ASCII;
+// - metaprops values get every non-ASCII character as a \uXXXX escape, as Composer's own
+//   Java-properties writer does (the tools decode it back).
+const CP1252_EXTRA = new Set([..."€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ"]);
+export const inCp1252 = (ch) => ch.codePointAt(0) < 0x80 || (ch.codePointAt(0) >= 0xa0 && ch.codePointAt(0) <= 0xff) || CP1252_EXTRA.has(ch);
+const ASCII_FOR = { "≥": ">=", "≤": "<=", "≠": "!=", "→": "->", "←": "<-", "≈": "~", "−": "-", "‑": "-", " ": " ", " ": " ", " ": " " };
+export function cp1252Text(s, where = "text") {
+  return [...String(s)].map((ch) => {
+    if (inCp1252(ch) && ch !== " ") return ch;
+    if (ASCII_FOR[ch] !== undefined) return ASCII_FOR[ch];
+    throw new Error(`${where}: character ${JSON.stringify(ch)} (U+${ch.codePointAt(0).toString(16).toUpperCase()}) does not fit Composer's windows-1252 encoding; spell it in ASCII`);
+  }).join("");
+}
+// (the pattern has no u flag, so it matches UTF-16 units: an astral character becomes its
+// surrogate pair, as java.util.Properties writes it)
+export function escapeMetapropValue(s) {
+  return String(s).replace(/[^\x00-\x7f]/g, (ch) => "\\u" + ch.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0"));
+}
+
+/** Set one attribute (caption, description, procedure, ...) to a text value through the CLI. */
+export function setAttribute(file, selector, attribute, value) {
+  const text = attribute === "metaprops" ? String(value) : cp1252Text(value, `${selector} ${attribute}`);
+  const r = proforma(["set", "--file", file, "--selector", selector, "--attribute", attribute, "--value", pfText(text)]);
+  if (r.status !== 0) throw new Error(`proforma set ${selector} ${attribute}: ${(r.stderr || r.stdout).trim()}`);
+}
+
+/** Replace the whole metaprops map of an element ({key: value}); keys keep the given order until `format` sorts them. */
+export function setMetaprops(file, selector, map) {
+  const lines = Object.entries(map).map(([k, v]) => {
+    const value = String(v).replace(/\r?\n/g, " ").trim();
+    if (!value) throw new Error(`${selector}: empty metaprops value for ${k}`);
+    return `${k}=${escapeMetapropValue(value)}`;
+  });
+  setAttribute(file, selector, "metaprops", lines.join("\n") + "\n");
+}

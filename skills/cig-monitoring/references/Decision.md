@@ -77,10 +77,14 @@ end decision.
 - The Decision component runs after the Enquiry: `add_task(..., after: ["Get_Eligibility_Data"])` → `schedule_constraint :: completed('Get_Eligibility_Data')` (see `TopLevelPlan.md`).
 - The Therapy Plan is gated on the result by its native Precondition: `precondition :: result_of(Eligibility_Decision) = Eligible` (`result_set(D) includes C` for a `multiple` decision).
 
+## Test-ordering Decisions (Monitor Undesired ADEs)
+
+When an ADE monitor recommends two or more tests, its Enquiry is followed by a Decision `Tests_Ordering_Recommendations_<ADE>` (`ADEMonitoringEnquiry.md`): `choice_mode :: multiple`, metaprops `role=test_ordering` and `ordered_for=Monitor_<ADE>`, a precondition that is true when at least one of the Enquiry's findings is positive, and one candidate per test, named after the test, with its **LOINC** coding (`ontology.coding=LOINC:<code>` + `ontology.label`, from `loinc_search`) and an argument `for,true()` (a real condition only when the source restricts the test). Every listed test is recommended and the clinician selects which to order. The proposal lists these Decisions in a ```` ```cig-test-decisions ```` block.
+
 ## Structural example
 
 In `cig/examples/ici-irae-monitoring.pf`, `Pretreatment_Decision` has two candidates, each with a caption, a description and one `for` argument whose condition is an expression over the Enquiry's boolean data items, whose description states that the rule is assistant-proposed, and whose metaprops quote the passages it rests on. Use it to see how a Decision is populated; its clinical rule is not a template. Never emit a Decision whose candidates have no arguments or criteria.
 
 ## Related patterns
 
-- `Enquiry.md` (produces the data the criteria reference), `TopLevelPlan.md`, `TaskProperties.md`.
+- `Enquiry.md` (produces the data the criteria reference), `ADEMonitoringEnquiry.md` (test-ordering Decisions), `TopLevelPlan.md`, `TaskProperties.md`.

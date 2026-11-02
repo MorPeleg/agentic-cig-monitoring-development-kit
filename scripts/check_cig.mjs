@@ -8,9 +8,11 @@
 // Runs `proforma lint` and `proforma export`, then checks the rules in
 // skills/cig-monitoring-review/SKILL.md that need no clinical judgment:
 // structure and scope, the monitoring metaprops contract
-// (skills/cig-monitoring/references/MetapropsSyntax.md), executable
-// preconditions, the approved action set, baseline regressions and the
-// coding-patch freeze. Exit code 0 = PASS, 1 = FAIL, 2 = usage/input error.
+// (skills/cig-monitoring/references/MetapropsSyntax.md) on every monitoring
+// task (Actions and ADE Enquiries), the ADE Enquiry pattern and its test steps
+// (skills/cig-monitoring/references/ADEMonitoringEnquiry.md), executable
+// preconditions, the approved action set (cig-actions, cig-test-decisions),
+// baseline regressions and the coding-patch freeze. Exit code 0 = PASS, 1 = FAIL, 2 = usage/input error.
 // The judgment phases (case-report harm, source fidelity, label coverage) are
 // added to the report by the reviewer.
 
@@ -98,6 +100,12 @@ const SR_FIELDS = ["intent", "code", "occurrenceTiming", "patientInstruction", "
 const ONTOLOGY_KEYS = /^ontology\.(coding|label)$/;
 const CODING = /^[A-Za-z][A-Za-z0-9_-]*:[A-Za-z0-9][A-Za-z0-9.-]*$/;
 const SNOMED_CODE = /^\d{6,18}$/;
+const LOINC_CODE = /^\d{1,7}-\d$/;
+// roles of the ADE Enquiry pattern (ADEMonitoringEnquiry.md); these tasks have their own rules
+const ROLE_DISPLAY = "ade_display";
+const ROLE_TEST_ORDER = "test_order";
+const ROLE_TEST_DECISION = "test_ordering";
+const ADE_PLAN = "Monitor_Undesired_State";
 // keys of an intermediate contract that held the order outside the ServiceRequest block
 const ORDER_KEYS = /^order\./;
 // a quote is a verbatim excerpt in double quotes, normally prefixed by its page or section
@@ -152,7 +160,14 @@ function readProposal(file) {
     new RegExp("^\\s*(?:[-*]\\s+)?\\**" + key + "\\**\\s*:\\s*\\**\\s*\x60?([A-Za-z][\\w-]*)", "im").exec(text)?.[1]?.toLowerCase() || null;
   const status = header("status");
   const mode = header("mode");
-  return { file, status, mode, actions: block("cig-actions"), excluded: block("cig-excluded") || [] };
+  return {
+    file,
+    status,
+    mode,
+    actions: block("cig-actions"),
+    testDecisions: block("cig-test-decisions"),
+    excluded: block("cig-excluded") || [],
+  };
 }
 
 // ------------------------------------------------------------- checks
@@ -166,7 +181,17 @@ const byName = new Map(tasks.map((t) => [t.name, t]));
 const actions = tasks.filter((t) => t.kind === "action");
 const verb = (t) => (t.metaprops["goal.verb"] || "").trim().toLowerCase();
 const GOAL_VERBS = ["diagnose", "treat", "prevent_primary", "prevent_secondary", "prevent", "avoid", "start", "stop", "order", "achieve"];
-const monitors = actions.filter((t) => verb(t) === "order");
+const role = (t) => (t.metaprops?.role || "").trim().toLowerCase();
+const hasServiceRequest = (t) => Object.keys(t.metaprops || {}).some((k) => k.startsWith("ServiceRequest."));
+// Monitoring tasks: Actions with an Action Enactment goal, plus the ADE Enquiries that keep the
+// monitor contract (goal.verb=order and a ServiceRequest block). The ADE display Action and the
+// test-order Actions also carry goal.verb=order but follow their own rules (ADE pattern below).
+const displayActions = actions.filter((t) => role(t) === ROLE_DISPLAY);
+const testOrders = actions.filter((t) => role(t) === ROLE_TEST_ORDER);
+const testDecisions = tasks.filter((t) => t.kind === "decision" && role(t) === ROLE_TEST_DECISION);
+const monitorActions = actions.filter((t) => verb(t) === "order" && ![ROLE_DISPLAY, ROLE_TEST_ORDER].includes(role(t)));
+const monitorEnquiries = tasks.filter((t) => t.kind === "enquiry" && verb(t) === "order" && hasServiceRequest(t));
+const monitors = [...monitorActions, ...monitorEnquiries];
 const therapy = actions.filter((t) => ["achieve", "avoid"].includes(verb(t)));
 // what a monitor may trace to: therapy actions, and plans that hold therapy actions but no monitors
 const below = (plan, seen = new Set()) =>
@@ -237,7 +262,7 @@ for (const t of tasks) {
   else if (t.kind === "action" && verb(t) && !["order", "achieve", "avoid"].includes(verb(t))) {
     warn("structure", t.name, `Action goal.verb ${verb(t)} is neither a monitoring (order) nor a therapy (achieve/avoid) goal; it is not graded`);
   }
-  if (t.kind === "action" && verb(t) && !(t.metaprops["goal.noun_phrase"] || "").trim()) {
+  if ((t.kind === "action" || monitorEnquiries.includes(t)) && verb(t) && !(t.metaprops["goal.noun_phrase"] || "").trim()) {
     fail("structure", t.name, "goal.verb without goal.noun_phrase");
   }
   for (const k of Object.keys(t.metaprops)) {
@@ -263,12 +288,24 @@ const codedElements = [
     ])
   ),
 ];
+const RXNORM_CODE = /^\d{1,10}$/;
+function rxnormProblems(mp) {
+  const v = (mp?.["rxnorm.coding"] || "").trim();
+  if (!v) return mp?.["rxnorm.label"] ? ["rxnorm.label without rxnorm.coding"] : [];
+  const m = v.match(/^RXNORM:(.*)$/i);
+  if (!m || !RXNORM_CODE.test(m[1])) return [`rxnorm.coding must be RXNORM:<rxcui> (digits), is "${v}"`];
+  if (!(mp?.["rxnorm.label"] || "").trim()) return ["rxnorm.coding without rxnorm.label"];
+  return [];
+}
 function codingProblems(mp) {
+  const rx = rxnormProblems(mp);
+  if (rx.length) return rx;
   const v = (mp?.["ontology.coding"] || "").trim();
   if (!v) return mp?.["ontology.label"] ? ["ontology.label without ontology.coding"] : [];
   if (!CODING.test(v)) return [`ontology.coding must be SCHEME:code (e.g. SNOMED:197456007), is "${v}"`];
   const [scheme, code] = v.split(":");
   if (/^SNOMED(CT)?$/i.test(scheme) && !SNOMED_CODE.test(code)) return [`ontology.coding ${v} is not a SNOMED CT concept id (6-18 digits)`];
+  if (/^LOINC$/i.test(scheme) && !LOINC_CODE.test(code)) return [`ontology.coding ${v} is not a LOINC code (LOINC:<1-7 digits>-<check digit>)`];
   return [];
 }
 // An element that cites sources must quote at least one of them verbatim (FAIL); a citation
@@ -371,11 +408,11 @@ for (const t of therapy) {
   if (!t.metaprops["ontology.coding"]) warn("therapy", t.name, "no ontology.coding (SNOMED CT concept for the procedure or substance)");
 }
 
-// monitoring actions: the metaprops contract
+// monitoring tasks (Actions and ADE Enquiries): the metaprops contract
 const rows = [];
 for (const t of monitors) {
   const m = t.metaprops;
-  const row = { action: t.name, category: m.category || "", checks: {}, verdict: "PASS" };
+  const row = { action: t.name, kind: t.kind, category: m.category || "", checks: {}, verdict: "PASS" };
   const bad = (check, message) => {
     row.checks[check] = false;
     fail("metaprops", t.name, message);
@@ -412,13 +449,21 @@ for (const t of monitors) {
   }
   ok("serviceRequest");
 
-  // native fields: what Composer shows on the task itself
+  // native fields: what Composer shows on the task itself. An Enquiry has no procedure, so its
+  // description carries the order instead (ADEMonitoringEnquiry.md).
   if (!(t.caption || "").trim()) bad("native", "no caption");
   if (!(t.description || "").trim()) bad("native", "no description (what is monitored and why it was modelled)");
-  const proc = (t.procedure || "").trim();
-  if (!proc) bad("native", "no procedure (the order as the instruction Composer shows on the action)");
-  else if (code && !proc.toLowerCase().includes(code.toLowerCase())) bad("native", "procedure does not state ServiceRequest.code");
-  else if (timing && !proc.toLowerCase().includes(timing.toLowerCase())) bad("native", "procedure does not state ServiceRequest.occurrenceTiming");
+  if (t.kind === "enquiry") {
+    const desc = (t.description || "").trim().toLowerCase();
+    const why = "(an Enquiry has no procedure: its description carries the order)";
+    if (desc && code && !desc.includes(code.toLowerCase())) bad("native", `description does not state ServiceRequest.code ${why}`);
+    else if (desc && timing && !desc.includes(timing.toLowerCase())) bad("native", `description does not state ServiceRequest.occurrenceTiming ${why}`);
+  } else {
+    const proc = (t.procedure || "").trim();
+    if (!proc) bad("native", "no procedure (the order as the instruction Composer shows on the action)");
+    else if (code && !proc.toLowerCase().includes(code.toLowerCase())) bad("native", "procedure does not state ServiceRequest.code");
+    else if (timing && !proc.toLowerCase().includes(timing.toLowerCase())) bad("native", "procedure does not state ServiceRequest.occurrenceTiming");
+  }
   ok("native");
 
   // the ServiceRequest on the Goal, consistent with the Action. goal.noun_phrase joins the
@@ -522,20 +567,159 @@ for (const t of monitors) {
   ];
   for (const k of keys) {
     if (!k || k === "|") continue;
-    if (seenOrder.has(k)) fail("structure", t.name, `duplicates ${seenOrder.get(k)} (same order); one action per monitored item`);
+    if (seenOrder.has(k)) fail("structure", t.name, `duplicates ${seenOrder.get(k)} (same order); one monitoring task per monitored item`);
     else seenOrder.set(k, t.name);
   }
 }
 
-// approved action set
+// ADE monitoring as Enquiries with test ordering (ADEMonitoringEnquiry.md)
+// The ADE plan is Monitor_Undesired_State; a guideline without it (e.g. an ADE-only build whose
+// root has another name) is checked wherever it uses the pattern (an ADE Enquiry or the display).
+const componentsOf = (p) => (p?.components || []).map((c) => ({ ...c, t: byName.get(c.task) })).filter((c) => c.t);
+const componentIn = (taskName) => {
+  for (const p of tasks.filter((x) => x.kind === "plan")) {
+    const c = (p.components || []).find((cc) => cc.task === taskName);
+    if (c) return { plan: p, component: c };
+  }
+  return null;
+};
+const adePlans = byName.get(ADE_PLAN)?.kind === "plan"
+  ? [byName.get(ADE_PLAN)]
+  : tasks.filter((p) => p.kind === "plan" && componentsOf(p).some((c) => monitorEnquiries.includes(c.t) || displayActions.includes(c.t)));
+const adeEnquiries = new Set();
+const tokens = (s) =>
+  new Set(
+    String(s || "")
+      .replace(/\([^)]*\)/g, " ")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 4 && !["monitor", "monitoring", "with", "from", "drug", "induced", "related", "disorder", "finding"].includes(w))
+      .map((w) => w.slice(0, 5))
+  );
+const LIST_ITEM = /^\s*(?:\d+[.)]|[*+-])\s+(.+?)\s*$/;
+for (const p of adePlans) {
+  const comps = componentsOf(p);
+  const enq = comps.filter((c) => monitorEnquiries.includes(c.t));
+  const actMon = comps.filter((c) => monitorActions.includes(c.t));
+  enq.forEach((c) => adeEnquiries.add(c.t.name));
+  for (const c of actMon) {
+    fail("ade", c.t.name, `ADE monitor in ${p.name} is an Action (category=${c.t.metaprops.category || "unset"}); model it as an Enquiry of the same name whose data items are the symptoms and exam findings, followed by its test step (ADEMonitoringEnquiry.md)`);
+  }
+  for (const c of enq) {
+    if ((c.t.metaprops.category || "").trim() !== "undesired_ade") warn("ade", c.t.name, `monitoring Enquiry in ${p.name} has category=${c.t.metaprops.category || "unset"}, expected undesired_ade`);
+  }
+  for (const c of comps.filter((cc) => cc.t.kind === "decision" && !testDecisions.includes(cc.t))) {
+    fail("ade", c.t.name, `Decision in ${p.name} without role=${ROLE_TEST_DECISION}; a test-ordering Decision needs that role (and ordered_for) to be checked as a test step`);
+  }
+  for (const c of comps.filter((cc) => cc.t.kind === "action" && /^Order_/.test(cc.t.name) && !testOrders.includes(cc.t))) {
+    fail("ade", c.t.name, `Order_ Action in ${p.name} without role=${ROLE_TEST_ORDER}; a test order needs that role (and ordered_for)`);
+  }
+  const adeMonitors = [...enq, ...actMon];
+  if (!adeMonitors.length) continue;
+  const disp = comps.filter((c) => displayActions.includes(c.t));
+  if (!disp.length) {
+    fail("ade", p.name, `holds ADE monitors but no Display_Potential_ADEs Action (role=${ROLE_DISPLAY}) listing them as its first component`);
+    continue;
+  }
+  if (disp.length > 1) fail("ade", p.name, `more than one ADE display Action (${disp.map((c) => c.t.name).join(", ")}); keep one Display_Potential_ADEs`);
+  const d = disp[0];
+  if (d.t.name !== "Display_Potential_ADEs") warn("ade", d.t.name, "the ADE display Action is canonically named Display_Potential_ADEs");
+  if (d.after.length) fail("ade", d.t.name, `must be the first component of ${p.name}, but runs after ${d.after.join(", ")}`);
+  for (const c of enq) {
+    if (!c.after.includes(d.t.name)) fail("ade", c.t.name, `ADE Enquiry is not scheduled after ${d.t.name} (add_task(after: ["${d.t.name}"]))`);
+  }
+  const items = (d.t.caption || "").split(/\r?\n/).map((l) => LIST_ITEM.exec(l)?.[1]).filter(Boolean);
+  if (items.length !== adeMonitors.length) {
+    fail("ade", d.t.name, `caption lists ${items.length} ADE(s) but ${p.name} holds ${adeMonitors.length} ADE monitor(s); one Markdown list item per ADE Enquiry, one per line`);
+  }
+  const monTokens = adeMonitors.map((c) => ({ name: c.t.name, tok: new Set([...tokens(c.t.name), ...tokens(c.t.caption), ...tokens(c.t.metaprops["ontology.label"])]) }));
+  const overlaps = (a, b) => [...a].some((x) => b.has(x));
+  for (const it of items) {
+    if (!monTokens.some((m) => overlaps(tokens(it), m.tok))) warn("ade", d.t.name, `list item "${it}" does not obviously name any ADE Enquiry of ${p.name}; check the list against the Enquiries`);
+  }
+  for (const m of monTokens) {
+    if (items.length && !items.some((it) => overlaps(tokens(it), m.tok))) warn("ade", d.t.name, `no list item obviously names ${m.name}; check the list against the Enquiries`);
+  }
+}
+// the display Action: its own goal; it needs no ServiceRequest block and no source
+for (const t of displayActions) {
+  if (verb(t) !== "order") fail("ade", t.name, `ADE display Action needs goal.verb=order (is ${verb(t) || "unset"})`);
+  if (!(t.caption || "").trim()) fail("ade", t.name, "ADE display Action without a caption (the Markdown list of the ADEs)");
+  if (!adePlans.some((p) => componentsOf(p).some((c) => c.t === t))) warn("ade", t.name, `ADE display Action outside ${ADE_PLAN}`);
+}
+// findings an ADE Enquiry asks for are coded in SNOMED CT
+for (const t of monitorEnquiries) if ((t.metaprops.category || "").trim() === "undesired_ade") adeEnquiries.add(t.name);
+const findingsOf = (enqName) => (byName.get(enqName)?.sources || []).map((s) => s.data);
+for (const e of adeEnquiries) {
+  for (const dn of findingsOf(e)) {
+    const d = g.data.find((x) => x.name === dn);
+    const v = (d?.metaprops?.["ontology.coding"] || "").trim();
+    if (!v) fail("ade", dn, `data item asked by the ADE Enquiry ${e} has no ontology.coding (SNOMED:<id> + ontology.label, via snomed_search)`);
+    else if (!/^SNOMED(CT)?:/i.test(v)) fail("ade", dn, `data item asked by the ADE Enquiry ${e} is coded ${v}; findings are coded in SNOMED CT (SNOMED:<id>)`);
+  }
+}
+// test steps: Order_<Test> Actions and Tests_Ordering_Recommendations_<ADE> Decisions
+const stepsFor = new Map();
+for (const t of [...testOrders, ...testDecisions]) {
+  const kindName = t.kind === "action" ? "test-order Action" : "test-ordering Decision";
+  const target = (t.metaprops.ordered_for || "").trim();
+  if (!target) fail("ade", t.name, `${kindName} without ordered_for (the ADE Enquiry it follows)`);
+  else if (!monitorEnquiries.some((e) => e.name === target)) fail("ade", t.name, `ordered_for=${target} names no ADE Enquiry of this guideline`);
+  else {
+    stepsFor.set(target, [...(stepsFor.get(target) || []), t.name]);
+    const where = componentIn(t.name);
+    const enqWhere = componentIn(target);
+    if (!where || !enqWhere || where.plan !== enqWhere.plan) fail("ade", t.name, `${kindName} is not in the same plan as ${target}`);
+    else if (!where.component.after.includes(target)) fail("ade", t.name, `${kindName} is not scheduled after ${target} (add_task(after: ["${target}"]))`);
+    const pre = (t.precondition || "").trim();
+    const asked = new Set(findingsOf(target));
+    const reads = (pre.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter((n) => asked.has(n));
+    if (!pre) fail("ade", t.name, `${kindName} without a precondition (it runs only when at least one finding of ${target} is positive)`);
+    else if (!reads.length) fail("ade", t.name, `precondition "${pre}" reads no data item that ${target} asks for`);
+  }
+  if (t.kind === "action") {
+    if (verb(t) !== "order") fail("ade", t.name, `test-order Action needs goal.verb=order (is ${verb(t) || "unset"})`);
+    if (!(t.caption || "").trim()) fail("ade", t.name, "test-order Action without a caption");
+    if (!(t.description || "").trim()) fail("ade", t.name, "test-order Action without a description (why the test is ordered and for which ADE)");
+    if (!(t.procedure || "").trim()) fail("ade", t.name, "test-order Action without a procedure (Order <test> when <finding condition>)");
+    if (!/^Order_/.test(t.name)) warn("ade", t.name, "a test-order Action is canonically named Order_<Test>");
+    const v = (t.metaprops["ontology.coding"] || "").trim();
+    if (!v) fail("ade", t.name, "test-order Action without a LOINC ontology.coding (LOINC:<code> + ontology.label, via loinc_search)");
+    else if (!/^LOINC:/i.test(v)) fail("ade", t.name, `test-order Action is coded ${v}; tests are coded in LOINC (LOINC:<code>)`);
+  } else {
+    if ((t.choice_mode || "").trim().toLowerCase() !== "multiple") fail("ade", t.name, `test-ordering Decision needs choice_mode multiple (is ${t.choice_mode || "single"})`);
+    if (!/^Tests_Ordering_Recommendations_/.test(t.name)) warn("ade", t.name, "a test-ordering Decision is canonically named Tests_Ordering_Recommendations_<ADE>");
+    if (t.candidates.length === 1) warn("ade", t.name, "test-ordering Decision with a single candidate; one test is an Order_<Test> Action");
+    for (const c of t.candidates) {
+      const v = (c.metaprops?.["ontology.coding"] || "").trim();
+      if (!v) fail("ade", `${t.name}/${c.name}`, "test candidate without a LOINC ontology.coding (LOINC:<code> + ontology.label, via loinc_search)");
+      else if (!/^LOINC:/i.test(v)) fail("ade", `${t.name}/${c.name}`, `test candidate is coded ${v}; tests are coded in LOINC (LOINC:<code>)`);
+    }
+  }
+}
+for (const [e, steps] of stepsFor) {
+  if (steps.length > 1) fail("ade", e, `has ${steps.length} test steps (${steps.join(", ")}); at most one per ADE (an Order_ Action for one test, a Decision for two or more)`);
+}
+
+// approved action set: every Action and every monitoring Enquiry (cig-actions), and the test
+// Decisions (cig-test-decisions)
 if (proposal) {
   if (proposal.status !== "approved") fail("proposal", proposal.file, `proposal status is ${proposal.status || "missing"}, not approved`);
   if (!proposal.actions) fail("proposal", proposal.file, "proposal has no ```cig-actions block (the canonical action set)");
   else {
-    const built = new Set(actions.map((t) => t.name));
+    const built = new Set([...actions, ...monitorEnquiries].map((t) => t.name));
     const want = new Set(proposal.actions);
-    for (const n of want) if (!built.has(n)) fail("proposal", n, "approved action missing from the guideline");
-    for (const n of built) if (!want.has(n)) fail("proposal", n, "action not in the approved proposal (extra or residue)");
+    for (const n of want) if (!built.has(n)) fail("proposal", n, "approved action or monitoring Enquiry missing from the guideline");
+    for (const n of built) if (!want.has(n)) fail("proposal", n, `${byName.get(n)?.kind === "enquiry" ? "monitoring Enquiry" : "action"} not in the approved proposal's cig-actions (extra or residue)`);
+  }
+  if (proposal.testDecisions) {
+    const built = new Set(testDecisions.map((t) => t.name));
+    const want = new Set(proposal.testDecisions);
+    for (const n of want) if (!built.has(n)) fail("proposal", n, "approved test-ordering Decision missing from the guideline");
+    for (const n of built) if (!want.has(n)) fail("proposal", n, "test-ordering Decision not in the approved proposal's cig-test-decisions (extra or residue)");
+  } else if (testDecisions.length) {
+    fail("proposal", proposal.file, `the guideline has test-ordering Decisions (${testDecisions.map((t) => t.name).join(", ")}) but the proposal has no \`\`\`cig-test-decisions block listing them`);
   }
   if (opts.codingPatch && proposal.mode && proposal.mode !== "coding-patch") {
     warn("proposal", proposal.file, `--coding-patch given but proposal mode is ${proposal.mode}`);
@@ -560,6 +744,8 @@ if (base) {
       gg.tasks.flatMap((t) => t.candidates.flatMap((c) => c.arguments.map((a, i) => `${t.name}/${c.name}/${a.name || i + 1}`)))
     ),
   });
+  // tasks are matched by name, whatever their kind: a baseline monitoring Action that became an
+  // ADE Enquiry of the same name (ADEMonitoringEnquiry.md) is retained, not dropped
   const now = names(g);
   const before = names(base);
   const excluded = new Set(proposal?.excluded || []);
@@ -618,7 +804,10 @@ const result = {
   counts: {
     tasks: tasks.length,
     actions: actions.length,
-    monitoring_actions: monitors.length,
+    monitoring_tasks: monitors.length,
+    monitoring_actions: monitorActions.length,
+    monitoring_enquiries: monitorEnquiries.length,
+    test_steps: testOrders.length + testDecisions.length,
     therapy_actions: therapy.length,
     data_items: g.data.length,
     fails: fails.length,
@@ -632,7 +821,8 @@ if (opts.json) console.log(JSON.stringify(result, null, 2));
 else {
   console.log(`${verdict}: ${opts.file}`);
   const c = result.counts;
-  console.log(`  ${c.monitoring_actions} monitoring + ${c.therapy_actions} therapy actions, ${c.data_items} data items; ${c.fails} FAIL, ${c.warnings} WARN`);
+  const enq = c.monitoring_enquiries ? ` (${c.monitoring_actions} actions, ${c.monitoring_enquiries} ADE enquiries; ${c.test_steps} test steps)` : "";
+  console.log(`  ${c.monitoring_tasks} monitoring${enq} + ${c.therapy_actions} therapy actions, ${c.data_items} data items; ${c.fails} FAIL, ${c.warnings} WARN`);
   for (const f of findings) console.log(`  ${f.level} [${f.area}] ${f.where}: ${f.message}`);
 }
 
@@ -643,10 +833,10 @@ if (opts.report) {
   L.push(`# CIG monitoring review: ${path.basename(opts.file)}`, "");
   L.push(`**Deterministic gate: ${verdict}** (${fails.length} FAIL, ${warns.length} WARN). Generated by \`scripts/check_cig.mjs\` on ${new Date().toISOString()}.`, "");
   L.push(`Guideline: \`${opts.file}\`${proposal ? `; proposal: \`${proposal.file}\` (status ${proposal.status})` : ""}${base ? `; baseline: \`${opts.baseline}\`${opts.codingPatch ? " (coding-patch freeze)" : ""}` : ""}.`, "");
-  L.push("## Monitoring actions", "");
-  L.push(`| Action | category | ${cols.join(" | ")} | verdict |`);
+  L.push("## Monitoring tasks", "");
+  L.push(`| Task | category | ${cols.join(" | ")} | verdict |`);
   L.push(`|---|---|${cols.map(() => "---").join("|")}|---|`);
-  for (const r of rows) L.push(`| ${r.action} | ${r.category} | ${cols.map((k) => yes(r.checks[k])).join(" | ")} | ${r.verdict} |`);
+  for (const r of rows) L.push(`| ${r.action}${r.kind === "enquiry" ? " (enquiry)" : ""} | ${r.category} | ${cols.map((k) => yes(r.checks[k])).join(" | ")} | ${r.verdict} |`);
   L.push("");
   const section = (title, areas) => {
     const fs_ = findings.filter((f) => areas.includes(f.area));
@@ -659,10 +849,11 @@ if (opts.report) {
   };
   section("Structure, scope and lint", ["lint", "structure", "annotation", "therapy"]);
   section("Metaprops value quality", ["metaprops"]);
+  section("ADE Enquiries and test steps", ["ade"]);
   section("Approved action set and baseline", ["proposal", "baseline"]);
   if (opts.codingPatch) section("Coding-only freeze", ["codingPatch"]);
   L.push("## Judgment phases (reviewer)", "");
-  L.push("To be completed by the reviewer (see `skills/cig-monitoring-review/SKILL.md`): case-report harm judgment, source fidelity (applicability, negative recommendations, label monitoring instructions), label coverage, and whether each `monitored_target` names both what is monitored and the goal it traces to.", "");
+  L.push("To be completed by the reviewer (see `skills/cig-monitoring-review/SKILL.md`): case-report harm judgment, source fidelity (applicability, negative recommendations, label monitoring instructions), label coverage, whether each `monitored_target` names both what is monitored and the goal it traces to, whether each ADE Enquiry's data items are faithful to its metaprops, and whether each test step orders the right tests with the right LOINC codes.", "");
   L.push("## Fix list", "");
   if (!fails.length) L.push("Nothing to fix from the deterministic gate.");
   else for (const f of fails) L.push(`- [ ] \`${f.where}\`: ${f.message}`);

@@ -57,6 +57,13 @@ try {
 
 const byName = new Map(g.tasks.map((t) => [t.name, t]));
 const verbOf = (t) => (t?.metaprops?.["goal.verb"] || "").trim().toLowerCase();
+const roleOf = (t) => (t?.metaprops?.role || "").trim().toLowerCase();
+// monitoring tasks, as in check_cig.mjs: Actions with goal.verb=order (except the ADE display and
+// test-order Actions) and the ADE Enquiries (goal.verb=order with a ServiceRequest block)
+const isMonitor = (t) =>
+  verbOf(t) === "order" &&
+  ((t.kind === "action" && !["ade_display", "test_order"].includes(roleOf(t))) ||
+    (t.kind === "enquiry" && Object.keys(t.metaprops || {}).some((k) => k.startsWith("ServiceRequest."))));
 const h = {
   /** Tasks, optionally of one kind (plan, action, enquiry, decision, task). */
   tasks: (kind) => g.tasks.filter((t) => !kind || t.kind === kind),
@@ -65,7 +72,36 @@ const h = {
   /** A metaprops value; repeatable keys (source) come back as an array with meta(t, "source", true). */
   meta: (t, key, all = false) => (all ? metaValues(t?.metaprops, key) : t?.metaprops?.[key] ?? null),
   goal: (t) => ({ verb: t?.metaprops?.["goal.verb"] ?? null, noun_phrase: t?.metaprops?.["goal.noun_phrase"] ?? null }),
-  monitoringActions: () => g.tasks.filter((t) => t.kind === "action" && verbOf(t) === "order"),
+  /** Monitoring tasks: monitor Actions and ADE Enquiries (not the ADE display or test-order Actions). */
+  monitoringTasks: () => g.tasks.filter(isMonitor),
+  /** Alias of monitoringTasks (kept for older query files). */
+  monitoringActions: () => g.tasks.filter(isMonitor),
+  /** ADE Enquiries: monitoring tasks that are Enquiries. */
+  monitorEnquiries: () => g.tasks.filter((t) => t.kind === "enquiry" && isMonitor(t)),
+  /** The ADE display Action(s) (role=ade_display), with the list items of the caption. */
+  adeDisplay: () =>
+    g.tasks
+      .filter((t) => t.kind === "action" && roleOf(t) === "ade_display")
+      .map((t) => ({ ...t, items: (t.caption || "").split(/\r?\n/).map((l) => /^\s*(?:\d+[.)]|[*+-])\s+(.+?)\s*$/.exec(l)?.[1]).filter(Boolean) })),
+  /** The data items an Enquiry asks for (its sources), as data item objects. */
+  findingsOf: (enquiry) => (byName.get(enquiry)?.sources ?? []).map((s) => g.data.find((d) => d.name === s.data)).filter(Boolean),
+  /** Test steps (Order_<Test> Actions, Tests_Ordering_Recommendations_<ADE> Decisions), optionally for one ADE Enquiry:
+   *  {name, kind, ordered_for, precondition, tests: [{name, coding, label}]} */
+  testSteps: (enquiry) =>
+    g.tasks
+      .filter((t) => (t.kind === "action" && roleOf(t) === "test_order") || (t.kind === "decision" && roleOf(t) === "test_ordering"))
+      .filter((t) => !enquiry || (t.metaprops.ordered_for || "").trim() === enquiry)
+      .map((t) => ({
+        name: t.name,
+        kind: t.kind,
+        ordered_for: (t.metaprops.ordered_for || "").trim() || null,
+        precondition: t.precondition,
+        choice_mode: t.choice_mode ?? null,
+        tests:
+          t.kind === "action"
+            ? [{ name: t.name, coding: t.metaprops["ontology.coding"] ?? null, label: t.metaprops["ontology.label"] ?? null }]
+            : t.candidates.map((c) => ({ name: c.name, coding: c.metaprops?.["ontology.coding"] ?? null, label: c.metaprops?.["ontology.label"] ?? null })),
+      })),
   therapyActions: () => g.tasks.filter((t) => t.kind === "action" && ["achieve", "avoid"].includes(verbOf(t))),
   /** Tasks run by the components of a plan (one level). */
   children: (plan) => (byName.get(plan)?.components ?? []).map((c) => byName.get(c.task)).filter(Boolean),
@@ -86,9 +122,9 @@ const h = {
   },
   /** Components of a plan that wait for `name` (direct successors). */
   after: (plan, name) => (byName.get(plan)?.components ?? []).filter((c) => c.after.includes(name)).map((c) => c.task),
-  /** Monitoring actions whose monitored_target names the given task. */
+  /** Monitoring tasks whose monitored_target names the given task. */
   monitorsOf: (taskName) =>
-    h.monitoringActions().filter((t) => new RegExp(`(^|[^A-Za-z0-9_])${taskName}([^A-Za-z0-9_]|$)`).test(t.metaprops.monitored_target || "")),
+    h.monitoringTasks().filter((t) => new RegExp(`(^|[^A-Za-z0-9_])${taskName}([^A-Za-z0-9_]|$)`).test(t.metaprops.monitored_target || "")),
 };
 
 // ---------------------------------------------------------------- run

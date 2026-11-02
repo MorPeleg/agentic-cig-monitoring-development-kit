@@ -2,12 +2,14 @@
 
 **Intent:** The goal of a **monitoring** `action`. It expresses that some measurement/order should be *enacted*, with `goal.verb=order` plus a `goal.noun_phrase` that states the order as an HL7 FHIR `ServiceRequest`. This is how the Monitoring Plan operationalizes monitoring of action completion and of desired/undesired states.
 
+**ADE monitors are Enquiries.** In Monitor Undesired ADEs (`Monitor_Undesired_State`) each monitor is an `enquiry` that keeps this goal and the full contract below, collects the symptoms and exam findings as data items, and is followed by a test step that orders the tests; the plan starts with a `Display_Potential_ADEs` Action. See `ADEMonitoringEnquiry.md`. Everything in this file applies to those Enquiries too, except that an Enquiry has no `procedure`: its `description` carries the order. Monitors in Monitor Actions and Monitor Desired Outcome States stay Actions.
+
 ## PROforma elements
 
-- Task: `action` (created with `add_task` in a Monitoring sub-plan; see `ActionComponent.md`)
+- Task: `action` (created with `add_task` in a Monitoring sub-plan; see `ActionComponent.md`), or `enquiry` for an ADE monitor (`ADEMonitoringEnquiry.md`)
 - Native task properties (`TaskProperties.md`): `caption` (one line), `description` (what is monitored and why it was modelled), `procedure` (the order as the instruction Composer shows), **`precondition`** (when the source scopes it to a sub-population), and the **Ontology coding** (the disorder, finding or measurement watched). Use Wait condition, Event trigger or the component's repeat properties only when the guideline needs them.
 - Goal: metaprops keys `goal.verb` and `goal.noun_phrase` on the action (no separate Goal object; one goal per task)
-- `goal.verb` = **`order`** for Action Enactment Goals (the verb list also allows `start`/`stop`; prefer `order` for monitoring orders). `check_cig.mjs` treats every action with `goal.verb=order` as a monitoring action.
+- `goal.verb` = **`order`** for Action Enactment Goals (the verb list also allows `start`/`stop`; prefer `order` for monitoring orders). `check_cig.mjs` treats every action with `goal.verb=order` as a monitoring action (except the ADE display Action, `role=ade_display`, and the test-order Actions, `role=test_order`, which have their own rules), and every Enquiry with `goal.verb=order` and a `ServiceRequest` block as a monitoring Enquiry.
 
 ## The order: HL7 FHIR ServiceRequest (required fields)
 
@@ -23,24 +25,24 @@ Encode the order so the *what / when / how* are always explicit. **Always includ
 
 1. the `ServiceRequest.*` keys (queryable alongside the provenance);
 2. `goal.noun_phrase` = `ServiceRequest.intent = order; ServiceRequest.code = …; ServiceRequest.occurrenceTiming = …; ServiceRequest.patientInstruction = …` plus `; ServiceRequest.performerInstruction = …` when present, with values identical to the keys (so no `;` inside a `ServiceRequest` value; use commas);
-3. the native `procedure` = `<code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.` (the last sentence only when there is a performer instruction).
+3. the native `procedure` = `<code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.` (the last sentence only when there is a performer instruction). For an ADE Enquiry, which has no procedure, the `description` carries it: `Monitors <monitored_target>. <literature_basis>. Order: <code>, <occurrenceTiming>. Patient: … Clinician: ….`
 
-The gate checks that every `ServiceRequest` field agrees between the keys and `goal.noun_phrase`, and that `procedure` states the code and the occurrenceTiming. The intermediate `order.*` keys are not part of the contract (the gate fails them); convert an older guideline with `node scripts/migrate_metaprops.mjs <guideline.pf>`.
+The gate checks that every `ServiceRequest` field agrees between the keys and `goal.noun_phrase`, and that `procedure` (an Enquiry's `description`) states the code and the occurrenceTiming. The intermediate `order.*` keys are not part of the contract (the gate fails them); convert an older guideline with `node scripts/migrate_metaprops.mjs <guideline.pf>`.
 
 ## Tool calls
 
 Every call also takes `file` (the project's `guideline/<name>.pf`). Names are illustrative; the proposal's §6 fixes the real ones.
 
 ```
-add_task(plan: "Monitor_Undesired_State", kind: "action", name: "Monitor_<Harm>",
-         caption: "Monitor for <harm>")
-set_attribute(selector: "Monitor_<Harm>", attribute: "description", value: "Monitors <monitored_target>. <literature_basis>.")
-set_attribute(selector: "Monitor_<Harm>", attribute: "procedure", value: "<Code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.")
-set_attribute(selector: "Monitor_<Harm>", attribute: "precondition", value: "on_interacting_medication = true")   # only for a sub-population
-set_attribute(selector: "Monitor_<Harm>", attribute: "metaprops", value: "<all lines, plain>")
+add_task(plan: "Monitor_Desired_State", kind: "action", name: "Monitor_<Outcome>",
+         caption: "Monitor <outcome>")
+set_attribute(selector: "Monitor_<Outcome>", attribute: "description", value: "Monitors <monitored_target>. <literature_basis>.")
+set_attribute(selector: "Monitor_<Outcome>", attribute: "procedure", value: "<Code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.")
+set_attribute(selector: "Monitor_<Outcome>", attribute: "precondition", value: "on_interacting_medication = true")   # only for a sub-population
+set_attribute(selector: "Monitor_<Outcome>", attribute: "metaprops", value: "<all lines, plain>")
 ```
 
-The worked block at the end of this file shows the full value.
+An ADE monitor in `Monitor_Undesired_State` is created as `add_task(kind: "enquiry", after: ["Display_Potential_ADEs"])` with the same caption, precondition and metaprops, the order in its `description`, its finding data items and its test step (`ADEMonitoringEnquiry.md`, "Tool calls"). The worked block at the end of this file shows the full metaprops value.
 
 ## Metaprops on the action (provenance + operationalization)
 
@@ -84,13 +86,13 @@ When case reports *are* in scope and you cite one as evidence of a harm:
 
 A name like `Monitor_<Harm>` does **not** say *how* to monitor. For each ADE you must specify, in the `ServiceRequest.*` keys (and so in `goal.noun_phrase` and `procedure`) and the other metaprops:
 
-1. **What to ask/observe** — map the syndrome to observable manifestations (e.g. acute pancreatitis → severe persistent abdominal pain radiating to the back) → `ServiceRequest.patientInstruction`.
-2. **Which instrument/exam** — patient symptom report, named lab test, validated questionnaire, or clinician exam → `instrument` (+ `ServiceRequest.performerInstruction` for labs).
+1. **What to ask/observe** — map the syndrome to observable manifestations (e.g. acute pancreatitis → severe persistent abdominal pain radiating to the back) → `ServiceRequest.patientInstruction`, and, in the ADE Enquiry pattern, one coded data item per symptom or exam finding (`ADEMonitoringEnquiry.md`).
+2. **Which instrument/exam** — patient symptom report, named lab test, validated questionnaire, or clinician exam → `instrument` (+ `ServiceRequest.performerInstruction` for labs, and the ADE Enquiry's test step for each lab or imaging test).
 3. **When** — frequency with justification → `ServiceRequest.occurrenceTiming` + `monitoring_frequency_basis`.
 4. **What triggers urgent/same-day assessment** → `trigger`.
 5. **Source vs. invention** — cite and quote a source for each choice where possible; mark anything you designed as `assistant_invention`.
 
-**Worked block (labeled ADE — acute pancreatitis from a package insert)**, the generic value from `MetapropsSyntax.md` as it lands in the `.pf` (`\\:` is the escape `format` writes, read back as `:`). It illustrates the contract; it is not a monitor every CIG needs.
+**Worked block (labeled ADE — acute pancreatitis from a package insert)**, the generic value from `MetapropsSyntax.md` as it lands in the `.pf` (`\\:` is the escape `format` writes, read back as `:`). It illustrates the contract; it is not a monitor every CIG needs. It is shown as an Action, as in the guidelines that predate the ADE Enquiry pattern; under that pattern the same metaprops sit on an `enquiry  :: 'Monitor_Pancreatitis'` whose description ends with the order (there is no `procedure`), which asks for a data item such as `severe_abdominal_pain` (boolean, SNOMED CT coded) and is followed by `Order_Serum_Lipase` (LOINC coded, `precondition :: severe_abdominal_pain = true`).
 
 ```
 action  :: 'Monitor_Pancreatitis' ;
@@ -128,10 +130,10 @@ end action.
 
 ## Guidance
 
-- Create one monitoring action **per item to monitor** identified in Step 3, placed in the matching Monitoring sub-plan:
-  - completion of a therapy recommendation → **Monitor Actions**
-  - a desired state / `achieve` goal → **Monitor Desired Outcome States**
-  - an undesired state / `avoid` goal / labeled ADE / (opt-in) case-report risk / (opt-in) mechanism-of-action harm → **Monitor Undesired ADEs**
+- Create one monitoring task **per item to monitor** identified in Step 3, placed in the matching Monitoring sub-plan:
+  - completion of a therapy recommendation → an Action in **Monitor Actions**
+  - a desired state / `achieve` goal → an Action in **Monitor Desired Outcome States**
+  - an undesired state / `avoid` goal / labeled ADE / (opt-in) case-report risk / (opt-in) mechanism-of-action harm → an ADE Enquiry with its test step in **Monitor Undesired ADEs** (`ADEMonitoringEnquiry.md`)
 - Always include a **frequency** (`ServiceRequest.occurrenceTiming`). Use the guideline's frequency if present; otherwise propose one and record the justification in `monitoring_frequency_basis`.
 - Capture the **measurement method** in `ServiceRequest.code` / `ServiceRequest.patientInstruction` / `ServiceRequest.performerInstruction` and in `instrument` (lab test, validated questionnaire, home device, or clinician interview).
 - **Every monitoring action gets the native properties and the full metaprops** (keys above): caption, description, procedure, a precondition where it applies, the Ontology coding; the goal, the `ServiceRequest.*` block, and provenance/operationalization with quoted sources. Keep `goal.noun_phrase` identical to the `ServiceRequest.*` values and `procedure` consistent with them.
@@ -140,8 +142,8 @@ end action.
 
 ## Structural example
 
-Every monitoring action in `cig/examples/ici-irae-monitoring.pf` passes `check_cig.mjs` and shows this pattern in a complete guideline: the `ServiceRequest.*` block on both the keys and `goal.noun_phrase`, the native procedure and description, numbered `source.N` + `quote.N`, SNOMED CT coding, and two sub-population monitors gated by a precondition. Use it to check the shape; which monitors to model comes from the user's guidelines and the approved proposal, not from the example.
+Every monitoring action in `cig/examples/ici-irae-monitoring.pf` meets the metaprops contract in a complete guideline: the `ServiceRequest.*` block on both the keys and `goal.noun_phrase`, the native procedure and description, numbered `source.N` + `quote.N`, SNOMED CT coding, and two sub-population monitors gated by a precondition. It predates the ADE Enquiry pattern (its irAE monitors are Actions), so the gate now FAILs it on the `ade` rules only. Use it to check the shape of the contract; which monitors to model comes from the user's guidelines and the approved proposal, not from the example.
 
 ## Related patterns
 
-- `MetapropsSyntax.md` (the canonical task contract), `TaskProperties.md`, `MonitoringPlan.md`, `MonitoringFrequency.md`, `ActionComponent.md`, `StateAchievementGoal.md`.
+- `ADEMonitoringEnquiry.md` (ADE monitors as Enquiries with test ordering), `MetapropsSyntax.md` (the canonical task contract), `TaskProperties.md`, `MonitoringPlan.md`, `MonitoringFrequency.md`, `ActionComponent.md`, `StateAchievementGoal.md`.

@@ -28,8 +28,11 @@ skills:
         Action Enactment goals with verb order, the order an HL7 FHIR
         ServiceRequest in the metaprops and goal.noun_phrase, stated in the
         native procedure), native Composer task properties (precondition,
-        ontology coding, ...), verbatim source quotes and SNOMED CT ontology
-        coding (snomed_search). Use when
+        ontology coding, ...), verbatim source quotes, SNOMED CT ontology
+        coding (snomed_search) and LOINC coding of ordered tests
+        (loinc_search). ADE monitors are Enquiries over coded symptom and
+        exam data items, followed by a test-order Action or test-ordering
+        Decision. Use when
         turning a guideline into a CIG or building a therapy + monitoring
         plan.
       requires:
@@ -41,6 +44,8 @@ skills:
         - '@proforma.pf_check_expression'
         - '@proforma.pf_to_mermaid'
         - snomed_search
+        - loinc_search
+        - rxnorm_search
   - id: cig-formalization
     type: local
     def:
@@ -51,8 +56,10 @@ skills:
         Default is a fresh-file full re-emit (snapshot the previous guideline,
         then create_guideline; canonical names; fixed per-action bundle of
         native fields (caption, description, procedure, precondition) and
-        metaprops (ServiceRequest.*, goal, provenance, source.N + quote.N); executable
-        preconditions; a SNOMED CT coding pass with snomed_search).
+        metaprops (ServiceRequest.*, goal, provenance, source.N + quote.N); ADE
+        monitors as Enquiries with SNOMED CT coded findings and a LOINC coded
+        test step; executable preconditions; a coding pass with snomed_search
+        and loinc_search).
         Coding-only requests use coding-patch mode: do not rebuild; add or
         change only ontology.coding and ontology.label. Keep the metadata desc
         qualitative with no hand-written counts, and self-apply the
@@ -81,6 +88,8 @@ skills:
         - '@proforma.pf_lint'
         - '@proforma.pf_to_mermaid'
         - snomed_search
+        - loinc_search
+        - rxnorm_search
   - id: proforma-editor
     type: local
     def:
@@ -142,15 +151,19 @@ skills:
         metaprops contract, the ServiceRequest order agreeing across its
         keys, goal.noun_phrase and procedure, source quotes, ontology coding, executable
         preconditions, the approved action set, baseline regressions, the
-        coding-only freeze), then the reviewer's judgment phases (case-report
-        harm and scope, source and quote fidelity, label coverage) in the same
-        report. Rejects placeholders like source=s.
+        coding-only freeze, the ADE Enquiry pattern and its LOINC coded test
+        steps), then the reviewer's judgment phases (case-report harm and
+        scope, source and quote fidelity, label coverage, ADE findings and
+        tests) in the same report. Rejects placeholders like source=s.
       requires:
         - '@proforma.pf_export_json'
         - '@proforma.pf_get_component'
         - '@proforma.pf_outline'
         - '@proforma.pf_lint'
         - '@proforma.pf_search'
+        - snomed_search
+        - loinc_search
+        - rxnorm_search
   # PROforma authoring skill and the HTML guideline viewer. Minitour/proforma is
   # private for now: run `capa auth github.com` once with an account that can read it.
   # Pinned to main: the interactive viewer is not in a release tag yet (v0.2.0
@@ -193,7 +206,11 @@ agents:
         guidelines in projects/<project_dir>/resources/ (or files the user
         names in chat) as the only primary sources (do not search other
         projects or the web for the primary guideline unless the user asks;
-        completing vague recommendations from other sources stays allowed);
+        completing vague recommendations from other sources stays allowed;
+        when the user has not provided the package inserts of the drugs in
+        scope, fetch each with node scripts/fetch_package_insert.mjs into
+        projects/<project_dir>/resources/ and check it is the adult label of
+        the right product);
         extract therapy
         recommendations, clinical goals, ADEs and monitoring (proposing
         monitoring frequencies with justification when the guidelines omit
@@ -214,8 +231,9 @@ agents:
         wherever they apply. Model each therapy intervention as an Action with a
         State Achievement goal (metaprops goal.verb achieve/avoid +
         goal.noun_phrase), a caption, description, procedure (dose,
-        titration) and source.N + quote.N. Model each monitoring item as an
-        Action with an Action Enactment goal (goal.verb=order); the order is
+        titration) and source.N + quote.N. Model each monitoring item as a
+        monitoring task (an Action, or an Enquiry for an ADE) with an Action
+        Enactment goal (goal.verb=order); the order is
         an HL7 FHIR ServiceRequest held in the metaprops
         ServiceRequest.intent=order, ServiceRequest.code,
         ServiceRequest.occurrenceTiming, ServiceRequest.patientInstruction and
@@ -237,13 +255,28 @@ agents:
         the task it traces to, applies_when, provenance_type, source_kind,
         knowledge_origin, guideline_status, monitoring_stance,
         literature_basis, assistant_invention, instrument,
-        monitoring_frequency_basis, trigger, cq). Code monitoring actions,
-        therapy actions and data items with Composer's Ontology coding
-        (ontology.coding=SNOMED:<id> + ontology.label) found with
-        snomed_search. A population-scoped action carries an executable
-        precondition over an Enquiry data item.
-        Case-report sources are opt-in. The proposal fixes canonical names and
-        lists every Action in a ```cig-actions block. Step 6 is a
+        monitoring_frequency_basis, trigger, cq). In Monitor_Undesired_State
+        follow skills/cig-monitoring/references/ADEMonitoringEnquiry.md: a
+        first Action Display_Potential_ADEs (role=ade_display) whose caption is
+        a Markdown list of the ADEs; each ADE monitor is an Enquiry of the same
+        name with the same metaprops contract (its description carries the
+        order, since an Enquiry has no procedure) whose data items are the
+        symptoms and bedside exam findings; after it, gated on at least one
+        positive finding, one test step: an Order_<Test> Action
+        (role=test_order) for one test or a
+        Tests_Ordering_Recommendations_<ADE> Decision (role=test_ordering,
+        choice_mode multiple, one candidate per test) for two or more.
+        Monitor_Actions and Monitor_Desired_State monitors stay Actions. Code
+        monitoring tasks, therapy actions and data items with Composer's
+        Ontology coding (ontology.coding=SNOMED:<id> + ontology.label) found
+        with snomed_search, and every ordered test (Order_ Action, test
+        candidate) with ontology.coding=LOINC:<LOINC_NUM> + ontology.label
+        found with loinc_search. A population-scoped task carries an
+        executable precondition over an Enquiry data item.
+        Case-report sources are opt-in. The proposal fixes canonical names,
+        lists every Action and every monitoring Enquiry in a ```cig-actions
+        block and every test-ordering Decision in a ```cig-test-decisions
+        block. Step 6 is a
         DETERMINISTIC emit: delegate it to the cig-formalizer subagent, which
         treats the approved proposal as the single source of truth. Full
         re-emits snapshot the previous guideline to guideline/baseline/ and
@@ -309,6 +342,8 @@ subagents:
       - pf_lint
       - pf_to_mermaid
       - snomed_search
+      - loinc_search
+      - rxnorm_search
     instructions: |
       You are the cig-formalizer. You run Step 6 (Formalization) of a CIG
       monitoring build and nothing else. FOLLOW THE `cig-formalization` SKILL
@@ -355,11 +390,23 @@ subagents:
       order.* keys; no placeholder values; a precondition wherever the
       proposal scopes a task to a sub-population; conditions are executable
       expressions checked with check_expression.
-      Finish with the coding pass: look up each monitoring action's monitored
+      In Monitor_Undesired_State emit the ADE Enquiry pattern
+      (`skills/cig-monitoring/references/ADEMonitoringEnquiry.md`): the
+      Display_Potential_ADEs Action first (its caption a Markdown list, one
+      ADE per line), each ADE monitor as an Enquiry with the monitor
+      metaprops and the order in its description, its symptom and exam data
+      items, and its test step (Order_<Test> Action or
+      Tests_Ordering_Recommendations_<ADE> Decision) after it, gated on a
+      positive finding. The built Action + monitoring-Enquiry set equals
+      `cig-actions` and the test Decisions equal `cig-test-decisions`.
+      Finish with the coding pass: look up each monitoring task's monitored
       condition or measurement, each therapy action's procedure or substance
       and each data item's observable or finding with snomed_search, and set
       ontology.coding=SNOMED:<id> and ontology.label exactly as returned
-      (candidates/arguments only when a real concept fits). Before returning,
+      (candidates/arguments only when a real concept fits); code each ordered
+      test (Order_ Action, test-ordering candidate) with loinc_search as
+      ontology.coding=LOINC:<LOINC_NUM> and ontology.label=<LONG_COMMON_NAME>
+      exactly as returned. Before returning,
       run `node scripts/check_cig.mjs <guideline> --proposal <proposal>` and
       report each determinism item (action set == cig-actions; one goal and
       one metaprops per Action; single root plan; lint 0 errors; metadata title
@@ -380,6 +427,9 @@ subagents:
       - pf_outline
       - pf_lint
       - pf_search
+      - snomed_search
+      - loinc_search
+      - rxnorm_search
     instructions: |
       You are the cig-monitoring-reviewer. Run the cig-monitoring-review skill
       as a TRUE BLOCKING GATE, independent of whoever built the guideline.
@@ -398,15 +448,17 @@ subagents:
         ZERO FAILs.
       - The following are HARD blocking FAILs, not WARNs, notes, or "optional"
         recommendations:
-          * the built action set differs from the approved proposal's
-            cig-actions block (extras, residue from a prior session, or
-            missing actions);
+          * the built Action + monitoring-Enquiry set differs from the
+            approved proposal's cig-actions block, or the test-ordering
+            Decisions differ from its cig-test-decisions block (extras,
+            residue from a prior session, or missing tasks);
           * duplicate concepts (two tasks for the same ADE), an unreachable
             task, or more than one root plan;
           * lint errors;
           * an Action without a goal, an Enquiry without data items, a
             Decision or candidate without criteria, an empty plan;
-          * any monitoring Action without a caption, description or procedure,
+          * any monitoring task without a caption, description or procedure
+            (an ADE Enquiry: a description that states the order),
             missing ServiceRequest.intent=order, ServiceRequest.code,
             ServiceRequest.occurrenceTiming or ServiceRequest.patientInstruction
             (or ServiceRequest.performerInstruction when a triggered/urgent
@@ -423,6 +475,12 @@ subagents:
             stance↔schedule conflict;
           * a case-report Action that is not explicitly in the approved
             proposal's scope;
+          * in Monitor_Undesired_State: an ADE monitor left as an Action, a
+            missing or miscounted Display_Potential_ADEs list, an ADE
+            Enquiry whose data items are not the symptoms and findings its
+            metaprops name or lack SNOMED CT coding, a test step that orders
+            the wrong tests, lacks LOINC coding (or carries a wrong code), or
+            is not gated on the Enquiry's findings;
           * CODING-ONLY DRIFT: on a coding-patch run, any change to task names,
             captions, descriptions, procedures, Decision candidates,
             goal.noun_phrase, ServiceRequest.* values, or source/quote strings (only
@@ -688,6 +746,54 @@ tools:
     def:
       server: '@proforma'
       tool: format
+  # LOINC term lookup for the coding pass of test steps (Order_<Test> Actions and the
+  # candidates of Tests_Ordering_Recommendations_<ADE> Decisions; metaprop
+  # ontology.coding=LOINC:<LOINC_NUM>). NLM Clinical Tables API, no key needed.
+  - id: loinc_search
+    type: command
+    description: >-
+      Search LOINC terms (laboratory tests and clinical observations) through
+      the NLM Clinical Tables API. Returns [total, codes, null, rows], each row
+      [LOINC_NUM, LONG_COMMON_NAME, COMPONENT, SYSTEM, SCALE_TYP], e.g.
+      ["718-7", "Hemoglobin [Mass/volume] in Blood", ...]. Use to choose the
+      ontology.coding of a test step: record LOINC:<LOINC_NUM> and
+      ontology.label=<LONG_COMMON_NAME> exactly as returned. Ranking is by
+      text match, so search the specific test and specimen (e.g. "hematocrit
+      blood automated count", "magnesium serum") or a known code ("4544-3").
+    def:
+      run:
+        cmd: curl -s -G "https://clinicaltables.nlm.nih.gov/api/loinc_items/v3/search" --data-urlencode "terms={query}" -d "df=LOINC_NUM,LONG_COMMON_NAME,COMPONENT,SYSTEM,SCALE_TYP" -d "maxList=15"
+        args:
+          - name: query
+            type: string
+            description: >-
+              Search text (e.g. "hemoglobin blood", "serum magnesium",
+              "platelet count") or a LOINC code ("718-7"). Spaces are
+              URL-encoded automatically.
+            required: true
+  # RxNorm lookup for the drug of a therapy action (metaprops rxnorm.coding=RXNORM:<rxcui>
+  # + rxnorm.label, ingredient level). NLM RxNav API, no key needed.
+  - id: rxnorm_search
+    type: command
+    description: >-
+      Search RxNorm drug concepts through the NLM RxNav approximate-match API
+      (RxNorm source only). Returns candidates with rxcui, name and score,
+      e.g. {"rxcui": "32968", "name": "clopidogrel"}. Use for the drug a
+      therapy action prescribes: search the ingredient name and record
+      rxnorm.coding=RXNORM:<rxcui> and rxnorm.label=<name> of the ingredient
+      (lower-case ingredient name, as RxNorm returns it). Check the term type
+      with https://rxnav.nlm.nih.gov/REST/rxcui/<rxcui>/properties.json if
+      unsure (IN = ingredient).
+    def:
+      run:
+        cmd: curl -s -G "https://rxnav.nlm.nih.gov/REST/approximateTerm.json" --data-urlencode "term={query}" -d "maxEntries=10" -d "option=1"
+        args:
+          - name: query
+            type: string
+            description: >-
+              Drug ingredient name (e.g. "clopidogrel", "pantoprazole").
+              Spaces are URL-encoded automatically.
+            required: true
   # SNOMED CT term lookup for the coding pass (Composer's native ontology coding,
   # metaprop ontology.coding=SNOMED:<id>). Same OLS4 search as the ontology kit's
   # ols_search, but ontologyId=snomed is fixed in the query so only SNOMED CT

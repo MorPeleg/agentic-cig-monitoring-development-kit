@@ -81,10 +81,14 @@ ontology.label=<preferred term>
 end data.
 ```
 
+## ADE Enquiries (Monitor Undesired ADEs)
+
+Enquiries have a second use: each ADE monitor in `Monitor_Undesired_State` is an Enquiry (`Monitor_<ADE>`) that keeps the monitor's goal and metaprops contract and asks for the symptoms and bedside exam findings of that ADE, one data item each (`boolean` for a symptom or sign, `real`/`integer` with a `unit` for a measured value; caption phrased as the question; **SNOMED CT coding required**). A finding several ADEs ask about is one data item, sourced by each of those Enquiries. Its test step reads these items in its precondition. The full pattern is `ADEMonitoringEnquiry.md`.
+
 ## Structural example
 
 In `cig/examples/ici-irae-monitoring.pf`, the Enquiry `Get_Baseline_Data` asks for four typed data items (three `boolean` risk flags and one `text` item with a `range`). Each carries a caption phrased as the question, a description saying which Decision argument or precondition reads it, its SNOMED CT coding, and the `source` + `quote` it came from; the baseline values no condition reads are listed in the Enquiry's description. Use it to see how an Enquiry is populated; its clinical items are not a template. Prefer wiring every item the Decision or a precondition uses as a typed data item over listing it only in the description.
 
 ## Related patterns
 
-- `Decision.md` (consumes these data items), `TopLevelPlan.md`, `MonitoringPlan.md`, `TaskProperties.md` (all native data-item properties), `MetapropsSyntax.md` (population-scoped preconditions).
+- `Decision.md` (consumes these data items), `ADEMonitoringEnquiry.md` (ADE monitors as Enquiries), `TopLevelPlan.md`, `MonitoringPlan.md`, `TaskProperties.md` (all native data-item properties), `MetapropsSyntax.md` (population-scoped preconditions).

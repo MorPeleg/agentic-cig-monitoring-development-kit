@@ -6,8 +6,9 @@ description: >-
   (`projects/<project_dir>/guideline/<name>.pf`) via the proforma-editor tools.
   Default is a fresh-file full re-emit (snapshot to guideline/baseline/, delete,
   create_guideline, rebuild with native task properties, the HL7 FHIR
-  ServiceRequest metaprops, quoted sources, then a SNOMED CT coding pass with
-  snomed_search). Coding-only
+  ServiceRequest metaprops, quoted sources, ADE monitors as Enquiries with
+  their findings and test steps, then a coding pass: SNOMED CT with
+  snomed_search, LOINC for ordered tests with loinc_search). Coding-only
   requests (add SNOMED CT codes) use coding-patch mode: do not delete the .pf;
   add or change only ontology.coding and ontology.label. Use this skill —
   alongside proforma-editor — whenever an approved
@@ -40,9 +41,11 @@ literally and the emit becomes reproducible.
 
 The **approved** `projects/<project_dir>/plans/PROPOSAL-*.md` (`status: approved`)
 is authoritative. Read it in full before emitting, and treat its
-**§6 task table** and its ```` ```cig-actions ```` block as the verbatim,
-canonical name list — you emit exactly those tasks with exactly those names, no
-more, no fewer, never renamed. The proposal also fixes, per task: kind, parent
+**§6 task table**, its ```` ```cig-actions ```` block (every Action and every
+monitoring Enquiry) and its ```` ```cig-test-decisions ```` block (every
+test-ordering Decision) as the verbatim, canonical name list — you emit
+exactly those tasks with exactly those names, no more, no fewer, never
+renamed. The proposal also fixes, per task: kind, parent
 plan, `after` siblings, the goal `verb`, the precondition (whether there is one,
 and over which data item), the `applies_when` sub-population, and the
 `monitoring_stance`. §5 (data items table) fixes every Enquiry data item: name,
@@ -86,6 +89,9 @@ during emission.
   Precondition and the Ontology coding are the ones most often missed.
 - **Goal side + opt-in case-report source rule + labeled-ADE skeleton:**
   `skills/cig-monitoring/references/ActionEnactmentGoal.md`.
+- **ADE monitoring in `Monitor_Undesired_State` (display Action, ADE Enquiries,
+  finding data items, test steps, with their tool calls):**
+  `skills/cig-monitoring/references/ADEMonitoringEnquiry.md`.
 - **Structural patterns (only when the approved scope includes them):**
   `references/TopLevelPlan.md`, `MonitoringPlan.md`, `ActionComponent.md`,
   `StateAchievementGoal.md`, `Enquiry.md`, `Decision.md` (all under
@@ -95,6 +101,14 @@ during emission.
 - **SNOMED CT lookup:** the `snomed_search` tool (EBI OLS4, restricted to
   SNOMED CT). It returns `shortForm` `SNOMED_<id>` and the preferred label;
   record `SNOMED:<id>` and the label exactly as returned.
+- **LOINC lookup (ordered tests):** the `loinc_search` tool (NLM Clinical
+  Tables). Each row starts with `LOINC_NUM` and `LONG_COMMON_NAME`; record
+  `LOINC:<LOINC_NUM>` and that name exactly as returned. Use the proposal's
+  §7 code when it fixes one.
+- **RxNorm lookup (prescribed drugs):** the `rxnorm_search` tool (NLM RxNav).
+  For a therapy action that prescribes one drug, record the ingredient as
+  `rxnorm.coding=RXNORM:<rxcui>` + `rxnorm.label=<name>` exactly as returned,
+  in addition to its SNOMED CT `ontology.coding`. Drug-class actions get none.
 - **Older guidelines:** `node scripts/migrate_metaprops.mjs <guideline.pf>`
   brings a `.pf` onto the current contract: it converts the intermediate
   `order.code` / `order.timing` / `order.patient_instruction` /
@@ -124,7 +138,7 @@ Coding-patch rules (MUST / MUST NOT):
 1. **Do not delete the `.pf`.** Snapshot it to `guideline/baseline/<name>-<YYYYMMDD-HHmmss>.pf` first, then patch the existing file in place.
 2. **Do not add, remove, or rename tasks, components, candidates, arguments, sources or data items.** The Action name set, plan structure, scheduling, Decision candidates and Enquiry data items MUST stay identical to the snapshot.
 3. **Do not change captions, descriptions, procedures, preconditions, `goal.noun_phrase`, the `ServiceRequest.*` keys, `source.N` / `quote.N`, `literature_basis`, `applies_when`, Decision arguments, or the metadata.** Those strings are frozen from the prior approved emit.
-4. **Only add or replace `ontology.coding` and `ontology.label`** on existing monitoring actions, therapy actions and data items (candidates and arguments only when a real concept fits), with the code and label `snomed_search` returns (value format in `MetapropsSyntax.md`, "Ontology coding"). Every other key keeps its exact value. Key order does not matter (the tools sort keys on save).
+4. **Only add or replace `ontology.coding` and `ontology.label`** on existing monitoring tasks, therapy actions and data items (candidates and arguments only when a real concept fits), with the code and label `snomed_search` returns, and on test steps (`Order_<Test>` actions, test-ordering candidates) with the LOINC code and name `loinc_search` returns (value format in `MetapropsSyntax.md`, "Ontology coding"). Every other key keeps its exact value. Key order does not matter (the tools sort keys on save).
 5. **Patch a metaprops map by read → add → write back whole**, in one `set_attribute` per element:
    - read the current map with `export_json` (the element's `metaprops` object, already unescaped) — or `get_component(selector: "Monitor_X", format: "json")`, which returns the raw properties text;
    - add the two coding keys to that map;
@@ -159,9 +173,10 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
 
 1. **Fresh file (full re-emit only).** Snapshot, delete, `create_guideline`, build.
    MUST NOT append to/merge a prior run's artifact. MUST NOT do this for a coding-only request.
-2. **Exact action set.** The emitted `action` set MUST EQUAL the proposal's
-   ```` ```cig-actions ```` block exactly — no extras, no prior-session residue,
-   none missing.
+2. **Exact action set.** The emitted set of `action`s plus monitoring
+   `enquiry`s MUST EQUAL the proposal's ```` ```cig-actions ```` block exactly,
+   and the test-ordering `decision`s its ```` ```cig-test-decisions ```` block —
+   no extras, no prior-session residue, none missing.
 3. **Canonical names, no renames.** Emit the §6 names verbatim, in the exact
    case written there — exactly one task per ADE / label section. MUST NOT
    invent a second name for an ADE already named. Names are unique
@@ -187,7 +202,8 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
    and therapy action has a `caption` and a `description` (monitoring:
    `Monitors <monitored_target>. <literature_basis>.`; therapy: the
    recommendation and why it was modelled); every monitoring action has its
-   `procedure`, and every therapy action has one when the proposal gives
+   `procedure` (an ADE Enquiry has none: its `description` ends with the
+   order), and every therapy action has one when the proposal gives
    something concrete to do (dose, titration). Every task the proposal scopes
    to a sub-population has its **Precondition**, and every action and
    concept-bearing data item gets its **Ontology coding** in the coding pass.
@@ -213,6 +229,14 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
     a PROforma expression that `check_expression` types as `truth_value` with
     every name resolving to the intended data item or decision (not to "text
     literal" by accident). A sentence is not a precondition.
+12. **ADE monitors are Enquiries** (`ADEMonitoringEnquiry.md`). In
+    `Monitor_Undesired_State`: `Display_Potential_ADEs` first; every ADE monitor
+    an `enquiry` (never an `action`) after it, with the monitor metaprops and
+    the order in its `description`; its finding data items (SNOMED CT coded);
+    and at most one test step after it, gated on the findings: an
+    `Order_<Test>` action (LOINC coded) or a
+    `Tests_Ordering_Recommendations_<ADE>` decision (`choice_mode multiple`,
+    one LOINC-coded candidate per test, each with an argument).
 
 ## The deterministic recipe
 
@@ -299,19 +323,28 @@ omitted from the listings for brevity. Through capa the tool ids are
    `goal.noun_phrase` (State Achievement Goal, both polarities as the proposal
    fixes them — see `references/StateAchievementGoal.md`) and at least one
    `source.N` + `quote.N`.
-10. **For each monitoring action in the §6 table (and only those), emit the fixed bundle**
+10. **For each monitoring task in the §6 table (and only those), emit the fixed bundle**
     (next section). Iterate the table top to bottom; do not add or skip rows.
-11. **Coding pass.** For each monitoring action (the disorder, finding or
+    In `Monitor_Undesired_State`, emit `Display_Potential_ADEs` first, then
+    each ADE as the *ADE bundle* (below): the Enquiry, its data items and its
+    test step.
+11. **Coding pass.** For each monitoring task (the disorder, finding or
     measurement it watches), each therapy action (the procedure or substance
     it delivers) and each data item that names a clinical concept (the
-    observable or finding it records), run `snomed_search` with the concept's
-    plain name, pick the closest single concept, and write it back into the
-    element's metaprops map (read → add → write whole) as
-    `ontology.coding=SNOMED:<id>` + `ontology.label=<label as returned>`. Use
-    the proposal's §7 Terminology Reuse choice when it fixes one. Code
-    candidates and arguments only when a real concept fits; leave structural
-    options such as `Eligible` / `Not_Eligible` uncoded. Record a narrower or
-    broader choice in `assistant_invention` (monitors) or the description.
+    observable or finding it records; **required** on every finding of an ADE
+    Enquiry), run `snomed_search` with the concept's plain name, pick the
+    closest single concept, and write it back into the element's metaprops
+    map (read → add → write whole) as `ontology.coding=SNOMED:<id>` +
+    `ontology.label=<label as returned>`. For each ordered test (an
+    `Order_<Test>` action, each candidate of a test-ordering decision) run
+    `loinc_search` and write `ontology.coding=LOINC:<LOINC_NUM>` +
+    `ontology.label=<LONG_COMMON_NAME>` (**required**). For each therapy
+    action that prescribes a single drug, run `rxnorm_search` and add
+    `rxnorm.coding=RXNORM:<rxcui>` + `rxnorm.label` (the ingredient). Use the proposal's §7
+    Terminology Reuse choice when it fixes one. Code other candidates and
+    arguments only when a real concept fits; leave structural options such
+    as `Eligible` / `Not_Eligible` uncoded. Record a narrower or broader
+    choice in `assistant_invention` (monitors) or the description.
 12. **Finish:** `format`, `lint` (0 errors; read every warning and fix the ones
     the proposal does not explain; run once with `include_info: true` and
     confirm every PF-X060 "treated as text literal" is an intended literal, not
@@ -326,7 +359,9 @@ For each monitoring action `Monitor_X` listed in §6, emit exactly these calls.
 The values below are the population-scoped monitor `Monitor_Autoimmune_Flare`
 from the structural example `cig/examples/ici-irae-monitoring.pf`; they show
 the shape of the bundle, not a monitor to add. Your values come from the
-approved proposal.
+approved proposal. That example predates the ADE Enquiry pattern: in
+`Monitor_Undesired_State` the same metaprops go on an Enquiry (see *The ADE
+bundle* below).
 
 ```
 # 1) Task + its component in the right monitoring sub-plan; precondition ONLY if population-scoped
@@ -446,12 +481,57 @@ Rules for the bundle:
   precondition (when scoped) and quoted source — see
   `references/StateAchievementGoal.md`.
 - `ontology.coding` / `ontology.label` are added in the coding pass (step 11),
-  not guessed: always from a `snomed_search` result.
+  not guessed: always from a `snomed_search` result (a `loinc_search` result
+  for an ordered test).
+
+## The ADE bundle (Monitor_Undesired_State)
+
+Follow `skills/cig-monitoring/references/ADEMonitoringEnquiry.md` ("Tool
+calls") literally; the proposal's §6 fixes each name, data item and test.
+
+1. Once per plan, first: `add_task(plan: "Monitor_Undesired_State", kind:
+   "action", name: "Display_Potential_ADEs", caption: "<Markdown list>")`, one
+   numbered item per ADE Enquiry in plan order, each line ending with two
+   spaces; then its `description` and metaprops (`role=ade_display`,
+   `goal.verb=order`, `goal.noun_phrase=display of the potential adverse drug
+   effects monitored for this therapy`).
+2. Per ADE: `add_task(kind: "enquiry", name: "Monitor_<ADE>", caption,
+   precondition (only when scoped), after: ["Display_Potential_ADEs"])`; its
+   `description` = `Monitors <monitored_target>. <literature_basis>. Order:
+   <code>, <occurrenceTiming>. Patient: <...>. Clinician: <...>.` (an Enquiry
+   has no `procedure`); its metaprops = the full monitor contract above, in
+   one call.
+3. Its findings: `add_data_item` (lower-case name, real type, unit for a
+   measured value, caption phrased as the question), `set_attribute`
+   description and metaprops (SNOMED CT coding from the coding pass, `source`
+   + `quote` when the proposal gives one), `add_source(task: "Monitor_<ADE>")`.
+   A finding shared by two ADEs is one data item sourced by both Enquiries.
+4. Its test step, `after: ["Monitor_<ADE>"]`, with the precondition the
+   proposal fixes (a disjunction over the Enquiry's findings, checked with
+   `check_expression`):
+   - one test: `add_task(kind: "action", name: "Order_<Test>")`, `caption`,
+     `description`, `procedure`, metaprops `role=test_order`,
+     `ordered_for=Monitor_<ADE>`, `goal.verb=order`, `goal.noun_phrase=<test>`
+     and the LOINC coding;
+   - two or more: `add_task(kind: "decision", name:
+     "Tests_Ordering_Recommendations_<ADE>")`, `set_attribute(attribute:
+     "choice_mode", value: "multiple")`, metaprops `role=test_ordering`,
+     `ordered_for=Monitor_<ADE>`; per test `add_candidate` (caption), its
+     LOINC metaprops (`<decision>/candidate:<Test>`) and
+     `add_argument(support: "for", condition: "true()", name:
+     "Arg_Order_<Test>")` unless the proposal gives a restricting condition.
+
+**Multi-line captions.** The display caption is the one value with line
+breaks: pass real newlines in the `caption` value (in JSON, `\n`). On Windows
+call the proforma binary directly (MCP tools, or `scripts/lib/proforma.mjs`),
+never through `npx`: the `npx.cmd` wrapper drops everything after the first
+newline of an argument.
 
 ## Structural backbone (only when the approved scope includes it)
 
 For an **ADE-only** build the root is a single plan (`create_guideline` with
-the monitoring plan's name) holding the action bundles — nothing else, unless a
+the monitoring plan's name) holding `Display_Potential_ADEs` and the ADE
+bundles — nothing else, unless a
 population-scoped action requires the baseline Enquiry that §6 lists for it
 (then the Enquiry is created first and the §6 `after` column sequences the
 actions after it). In an ADE-only build the therapy actions are out of
@@ -478,7 +558,8 @@ use `\n` between metaprops lines in the JSON): the tool quotes the PROforma
 atom and applies the properties escapes itself. Do not pre-escape `=`, `:` or
 `'`, and do not wrap the value in quotes; the double quotes of a `quote.N` are
 plain characters inside the value (escape them only as JSON requires). Keep
-each value on one line (no line break inside a value). Never put a backslash in
+each value on one line (no line break inside a value; the only multi-line
+value is the `Display_Potential_ADEs` caption, see *The ADE bundle*). Never put a backslash in
 a value — the properties format treats it as an escape and drops it. Never put
 a `;` inside a `ServiceRequest.*` value (it is the `goal.noun_phrase` field
 separator; use commas). Avoid a
@@ -514,16 +595,25 @@ re-emit if any fails:
 
 - [ ] `lint` reports **0 errors**; no PF-G004 (orphan task definition);
       `format(check: true)` reports the file already formatted.
-- [ ] The `action` set in `export_json` (`tasks` with `kind == "action"`)
-      **equals** the proposal's `cig-actions` block (no residue, none missing),
+- [ ] The `action` set plus the monitoring `enquiry`s in `export_json`
+      **equals** the proposal's `cig-actions` block, and the test-ordering
+      `decision`s its `cig-test-decisions` block (no residue, none missing),
       with names spelled exactly as in §6.
+- [ ] `Monitor_Undesired_State` starts with `Display_Potential_ADEs`, whose
+      caption lists one item per ADE Enquiry; every ADE monitor is an
+      `enquiry` after it, whose description states the order and whose
+      findings carry SNOMED CT coding; every `Order_<Test>` action and every
+      test-ordering candidate carries `LOINC:<code>` + `ontology.label`; each
+      test step runs after its Enquiry with a precondition over its findings,
+      and each test-ordering decision has `choice_mode multiple`.
 - [ ] **Single** root plan (`export_json.root`) for the requested
       sub-structure; every task has `reachable: true`; the `outline` tree
       matches the §6 parent plans and `after` constraints.
 - [ ] Each Action and Plan has **one** metaprops with `goal.verb` and
       `goal.noun_phrase` (monitoring: `order`; therapy: `achieve`/`avoid`; root:
       as the proposal fixes it).
-- [ ] Each monitoring action has a `caption`, `description` and `procedure`;
+- [ ] Each monitoring action has a `caption`, `description` and `procedure`
+      (each ADE Enquiry a `caption` and a `description` that states the order);
       its metaprops have `ServiceRequest.intent=order`, `ServiceRequest.code`,
       `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`
       (plus `ServiceRequest.performerInstruction` for any triggered/urgent
@@ -536,9 +626,10 @@ re-emit if any fails:
       least one source.
 - [ ] Every monitoring and therapy action pairs its `source` / `source.1..n`
       with `quote` / `quote.1..n` holding a verbatim passage in double quotes.
-- [ ] Every `ontology.coding` is `SNOMED:<id>` with an `ontology.label`, both
-      as returned by `snomed_search`; monitoring actions, therapy actions and
-      concept-bearing data items are coded.
+- [ ] Every `ontology.coding` is `SNOMED:<id>` (an ordered test:
+      `LOINC:<code>`) with an `ontology.label`, both as returned by
+      `snomed_search` / `loinc_search`; monitoring tasks, therapy actions,
+      concept-bearing data items and ordered tests are coded.
 - [ ] Every action whose `applies_when` is a sub-population carries a
       `precondition` that `check_expression` types as `truth_value`, over a data
       item asked by an Enquiry (`data[].asked_by` non-empty); no precondition on

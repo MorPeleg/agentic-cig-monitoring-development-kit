@@ -1,6 +1,6 @@
 # Reference: task contract (native fields + metaprops), canonical
 
-This is the **single, authoritative contract** for what a monitoring or therapy `action` in a PROforma CIG (`.pf`) carries. The `cig-monitoring` and `cig-formalization` skills, `scripts/check_cig.mjs`, and the `cig-monitoring-review` reviewer all use **this** contract. If you change it, change it here first.
+This is the **single, authoritative contract** for what a monitoring task (an `action`, or in Monitor Undesired ADEs an ADE `enquiry`, see `ADEMonitoringEnquiry.md`) or a therapy `action` in a PROforma CIG (`.pf`) carries. The `cig-monitoring` and `cig-formalization` skills, `scripts/check_cig.mjs`, and the `cig-monitoring-review` reviewer all use **this** contract. If you change it, change it here first.
 
 > Why this exists: in an earlier iteration the agent wrote placeholder metaprops (`source=s; instrument=i; provenance_type=p`) and a presence-only check still passed. This contract makes values explicit and checkable, so placeholders fail review.
 
@@ -8,14 +8,16 @@ This is the **single, authoritative contract** for what a monitoring or therapy 
 
 Deontics Composer shows a task's **native properties** in its property sheet (see `TaskProperties.md`): caption, description, procedure, precondition and the other conditions, and the **Ontology coding**. Use them for what they are for. Keep `metaprops` for the goal, the HL7 FHIR `ServiceRequest` order and provenance, which have no native property. Write every value with the proforma tools (`set_attribute`), never by hand.
 
-| Content | Native property / key | Monitoring action | Therapy action |
+| Content | Native property / key | Monitoring task | Therapy action |
 |---|---|---|---|
 | One-line label | `caption` | required | required |
-| What is monitored and why it was modelled | `description` | required | required |
-| The instruction to carry out | `procedure` | required: the order (below) | recommended: dose, titration, how to deliver |
+| What is monitored and why it was modelled | `description` | required (an ADE Enquiry: ends with the order, below) | required |
+| The instruction to carry out | `procedure` | required on an Action: the order (below); an Enquiry has none | recommended: dose, titration, how to deliver |
 | Population gate | `precondition` | when `applies_when` is a sub-population | when the source scopes it |
 | Clinical concept | **Ontology coding**: metaprop `ontology.coding=SNOMED:<id>` + `ontology.label` | coding pass (WARN until set) | coding pass (WARN until set) |
 | Why it exists, verbatim | `source.N` + `quote.N` metaprops | at least one quote required | at least one quote required |
+
+The tasks around an ADE Enquiry (the `Display_Potential_ADEs` Action, the finding data items, the `Order_<Test>` Action and the `Tests_Ordering_Recommendations_<ADE>` Decision) have their own, smaller contract: see "ADE Enquiry pattern" below and `ADEMonitoringEnquiry.md`.
 
 ## Grammar (Java properties)
 
@@ -42,7 +44,7 @@ A monitoring action's goal is to have something done: an Action Enactment goal, 
    - `ServiceRequest.patientInstruction`: what the patient reports, does or measures.
    - `ServiceRequest.performerInstruction`: what the clinician or lab does. **Required when there is a triggered test or an urgent step**, otherwise omit it.
 2. **`goal.noun_phrase`**: the same order as one string, `ServiceRequest.intent = order; ServiceRequest.code = …; ServiceRequest.occurrenceTiming = …; ServiceRequest.patientInstruction = …`, plus `; ServiceRequest.performerInstruction = …` when present. The values must be identical to the keys.
-3. **Native `procedure`**: the instruction Composer shows on the action, `<code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.` Include the last sentence only when there is a performer instruction, and capitalize the first letter.
+3. **Native `procedure`**: the instruction Composer shows on the action, `<code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.` Include the last sentence only when there is a performer instruction, and capitalize the first letter. An ADE Enquiry has no procedure: its `description` ends with the same order, `Order: <code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.`
 
 ## Required metaprops on a monitoring action
 
@@ -72,7 +74,17 @@ A monitoring action's goal is to have something done: an Action Enactment goal, 
 19. `cq`: the competency-question id(s) this action supports.
 20. `ontology.coding` / `ontology.label`: Composer's Ontology coding (below), added by the coding pass.
 
-The native `description` of a monitoring action states what is monitored and why it was modelled: `Monitors <monitored_target>. <literature_basis>.`
+The native `description` of a monitoring action states what is monitored and why it was modelled: `Monitors <monitored_target>. <literature_basis>.` An ADE Enquiry appends the order: `Monitors <monitored_target>. <literature_basis>. Order: <code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.`
+
+## ADE Enquiry pattern (Monitor Undesired ADEs)
+
+The full pattern is `ADEMonitoringEnquiry.md`; the contract of each element:
+
+- **ADE Enquiry** (`Monitor_<ADE>`, `enquiry`): every required key above, unchanged, plus at least one data item source.
+- **Finding data item** (a source of an ADE Enquiry): a `caption` (the question as asked), a real type (`boolean`, or `real`/`integer` with a `unit`), and **required** Ontology coding `ontology.coding=SNOMED:<id>` + `ontology.label`; `source` + `quote` recommended.
+- **`Display_Potential_ADEs`** (`action`): `role=ade_display`, `goal.verb=order`, `goal.noun_phrase=display of the potential adverse drug effects monitored for this therapy`; a multi-line Markdown `caption` with one list item per ADE Enquiry. No `ServiceRequest.*` block and no source.
+- **`Order_<Test>`** (`action`): `role=test_order`, `ordered_for=Monitor_<ADE>`, `goal.verb=order`, `goal.noun_phrase=<test name>`, **required** `ontology.coding=LOINC:<LOINC_NUM>` + `ontology.label=<LONG_COMMON_NAME>`; `caption`, `description`, `procedure`; a `precondition` over the Enquiry's findings; optional `source.N` + `quote.N`.
+- **`Tests_Ordering_Recommendations_<ADE>`** (`decision`, `choice_mode :: multiple`): `role=test_ordering`, `ordered_for=Monitor_<ADE>`; a `precondition` over the Enquiry's findings; one candidate per test with **required** `ontology.coding=LOINC:<LOINC_NUM>` + `ontology.label` and at least one argument (`for,true()` unless the source restricts the test).
 
 ## Therapy actions
 
@@ -91,15 +103,18 @@ A therapy action carries:
 
 ## Ontology coding
 
-Composer stores its native "Ontology coding" property as the metaprop **`ontology.coding`**, written `SCHEME:code`. This kit uses SNOMED CT: `ontology.coding=SNOMED:197456007`. Composer's metaprops editor hides the key and shows the term as a property of its own. Add **`ontology.label`** with the concept's preferred term (e.g. `Acute pancreatitis (disorder)`).
+Composer stores its native "Ontology coding" property as the metaprop **`ontology.coding`**, written `SCHEME:code`. This kit uses SNOMED CT for clinical concepts (`ontology.coding=SNOMED:197456007`) and LOINC for ordered tests (`ontology.coding=LOINC:718-7`). Composer's metaprops editor hides the key and shows the term as a property of its own. Add **`ontology.label`** with the concept's preferred term (e.g. `Acute pancreatitis (disorder)`, `Hemoglobin [Mass/volume] in Blood`).
 
 - **Finding codes:** use the **`snomed_search`** tool (EBI OLS4, restricted to SNOMED CT by `ontologyId=snomed`). The result's `shortForm` is `SNOMED_<id>` and its IRI `http://snomed.info/id/<id>`. Record `SNOMED:<id>` and the label exactly as returned.
+- **Test codes:** use the **`loinc_search`** tool (NLM Clinical Tables). Each result row starts with `LOINC_NUM` and `LONG_COMMON_NAME`; record `LOINC:<LOINC_NUM>` and `ontology.label=<LONG_COMMON_NAME>` exactly as returned. Search the test and its specimen (e.g. `magnesium serum`), and prefer the quantitative test the label names over a panel.
+- **Drug codes (RxNorm):** a therapy action that prescribes a specific drug also carries **`rxnorm.coding=RXNORM:<rxcui>`** + **`rxnorm.label`** for the drug ingredient, found with the **`rxnorm_search`** tool (NLM RxNav) and recorded exactly as returned (e.g. `rxnorm.coding=RXNORM:32968`, `rxnorm.label=clopidogrel`). This is in addition to the SNOMED CT `ontology.coding`, which remains Composer's native Ontology coding. A drug-class action (e.g. any DOAC, NSAIDs to avoid) has no single ingredient and carries no RxNorm code.
 - **What to code:** what the element is about:
-  - the disorder, finding or measurement a monitor watches;
-  - the procedure or substance a therapy action delivers;
-  - the observable or finding a data item records.
+  - the disorder, finding or measurement a monitor watches (SNOMED CT);
+  - the procedure or substance a therapy action delivers (SNOMED CT);
+  - the observable or finding a data item records (SNOMED CT; required on the findings of an ADE Enquiry);
+  - the test an `Order_<Test>` Action or a test-ordering candidate orders (LOINC; required).
 - **One concept per element:** pick the closest single concept. Record a narrower or broader choice in `assistant_invention` (monitors) or the description.
-- **Gate:** it fails a malformed coding (not `SCHEME:code`, or a SNOMED id that is not 6–18 digits). It warns when a monitoring or therapy action has none.
+- **Gate:** it fails a malformed coding (not `SCHEME:code`, a SNOMED id that is not 6–18 digits, a LOINC code that is not `<1–7 digits>-<check digit>`, or an `rxnorm.coding` that is not `RXNORM:<digits>` with an `rxnorm.label`), a finding of an ADE Enquiry without SNOMED CT coding, and a test step without LOINC coding. It warns when a monitoring or therapy action has none.
 
 ## Source quotes
 
@@ -128,7 +143,7 @@ quote.1=p.21, Rec 2.29a: "arrange for follow-up with individuals at least monthl
 
 ## Value constraints (what the gate enforces — anti-placeholder)
 
-A monitoring action FAILS review if any of these hold:
+A monitoring task (Action or ADE Enquiry) FAILS review if any of these hold:
 
 - **Missing or placeholder values:** a required key is missing, empty, a single character, or an obvious placeholder (`o`, `p`, `s`, `i`, `t`, `tbd`, `xxx`, `...`).
 - **The order:**
@@ -136,7 +151,7 @@ A monitoring action FAILS review if any of these hold:
   - `ServiceRequest.occurrenceTiming` does not name a cadence or trigger. It must contain a time unit or trigger word, such as `daily/weekly/monthly/q3mo/baseline/visit/escalation/symptom`.
   - A triggered or urgent step has no `ServiceRequest.performerInstruction`.
   - A `ServiceRequest.*` value differs between `goal.noun_phrase` and its own key, is present on one side only, or contains `;`.
-- **Native properties:** `caption`, `description` or `procedure` is empty, or `procedure` does not state `ServiceRequest.code` and `ServiceRequest.occurrenceTiming`.
+- **Native properties:** `caption`, `description` or (on an Action) `procedure` is empty, or `procedure` (on an ADE Enquiry, `description`) does not state `ServiceRequest.code` and `ServiceRequest.occurrenceTiming`.
 - **Citations and quotes:**
   - A `source` value contains no citation token (no PMID/PMC/DOI, and no named guideline, label or instrument).
   - The action cites sources but quotes none.
@@ -213,6 +228,7 @@ A **coding-only patch** reads this map, adds or changes only `ontology.coding` a
 ## Related
 
 - `TaskProperties.md`: Composer's native task, candidate and data-item properties.
+- `ADEMonitoringEnquiry.md`: ADE monitors as Enquiries with coded findings and LOINC-coded test steps.
 - `ActionEnactmentGoal.md`: the goal side, plus the opt-in case-report source-quality rule.
 - `MonitoringPlan.md`: where the actions live.
 - `cig/examples/ici-irae-monitoring.pf`: a complete instantiation (structure only; its clinical content is immune checkpoint inhibitor toxicity).

@@ -122,6 +122,16 @@ The proposal's §6 task table lists, for each ADE: the Enquiry, its data items (
 - Every `Order_<Test>` Action (`role=test_order`) and every candidate of a `Tests_Ordering_Recommendations_<ADE>` Decision (`role=test_ordering`) carries a **LOINC** ontology coding (`LOINC:<digits>-<check digit>`); the step runs after its Enquiry (`ordered_for`) and has a precondition that reads that Enquiry's data items; every candidate has at least one argument; the Decision's `choice_mode` is `multiple`.
 - The built Action + monitoring-Enquiry set equals `cig-actions`; the test Decisions equal `cig-test-decisions`.
 
+## Structural example
+
+In `cig/examples/ccd-antithrombotic-monitoring.pf`, `Monitor_Undesired_State` starts with `Display_Potential_ADEs` (a numbered Markdown list of the 17 ADEs), followed by 17 ADE Enquiries in parallel. They show each kind of test step:
+
+- **No test step:** `Monitor_Antiplatelet_Hypersensitivity` collects four boolean findings (hives, facial or throat swelling, wheezing, widespread rash) and orders nothing, because its sources name no test.
+- **One test:** `Monitor_Ticagrelor_Bradyarrhythmia` collects `syncope`, `dizziness` and `pulse_rate` (`integer`), and `Order_ECG` (LOINC 12-lead EKG panel) runs after it with the precondition `syncope = true or dizziness = true or pulse_rate < 50`.
+- **Two or more tests:** `Monitor_TTP` is followed by `Tests_Ordering_Recommendations_TTP`, a `multiple` Decision with four LOINC-coded candidates (platelet count, schistocytes on the blood smear, LDH, serum creatinine), each with the argument `for,true()`.
+
+Shared findings are one data item: `fever` is asked by `Monitor_TTP`, `Monitor_PPI_CDAD` and `Monitor_PPI_Interstitial_Nephritis`. A measured exam value is a typed item with a unit (`systolic_bp`, `real`, mmHg, read by the bleeding test step's precondition). Every ADE Enquiry keeps the full monitor contract and its own drug-gating precondition (`MonitoringPlan.md`). Use it to see the shape; which ADEs and tests to model comes from the user's labels and the approved proposal.
+
 ## Related
 
 - `MonitoringPlan.md` (where the sub-plan sits), `Enquiry.md` (data items), `Decision.md` (candidates and arguments), `MetapropsSyntax.md` (the monitor contract the Enquiry keeps), `TaskProperties.md`.

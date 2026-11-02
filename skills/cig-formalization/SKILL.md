@@ -72,8 +72,8 @@ during emission.
   `projects/<project_dir>/guideline/baseline/<name>-<YYYYMMDD-HHmmss>.pf`.
   `projects/` is gitignored, so the snapshot is the only record of the previous
   emit — take it before touching an existing guideline.
-- **Structural example (not a clinical template):** `cig/examples/ici-irae-monitoring.pf`
-  (lint clean, passes the gate) and its diagram `ici-irae-monitoring.mmd`. Use it
+- **Structural example (not a clinical template):** `cig/examples/ccd-antithrombotic-monitoring.pf`
+  (lint clean, passes the gate) and its diagram `ccd-antithrombotic-monitoring.mmd`. Use it
   to check the shape of an emitted file; never copy its tasks, data items or
   clinical content. What you emit comes only from the approved proposal.
 - **Canonical task contract (native fields, the `ServiceRequest` order, required
@@ -356,92 +356,98 @@ omitted from the listings for brevity. Through capa the tool ids are
 ## The fixed per-action bundle
 
 For each monitoring action `Monitor_X` listed in §6, emit exactly these calls.
-The values below are the population-scoped monitor `Monitor_Autoimmune_Flare`
-from the structural example `cig/examples/ici-irae-monitoring.pf`; they show
-the shape of the bundle, not a monitor to add. Your values come from the
-approved proposal. That example predates the ADE Enquiry pattern: in
-`Monitor_Undesired_State` the same metaprops go on an Enquiry (see *The ADE
-bundle* below).
+The values below are the desired-outcome monitor `Monitor_Ischemic_Events`
+from the structural example `cig/examples/ccd-antithrombotic-monitoring.pf`;
+they show the shape of the bundle, not a monitor to add. Your values come from
+the approved proposal. In `Monitor_Undesired_State` the same metaprops go on
+an Enquiry instead (see *The ADE bundle* below).
 
 ```
 # 1) Task + its component in the right monitoring sub-plan; precondition ONLY if population-scoped
-add_task(plan: "Monitor_Undesired_State", kind: "action", name: "Monitor_Autoimmune_Flare",
-         caption: "Monitor pre-existing autoimmune disease for flare during ICI therapy",
-         precondition: "pre_existing_autoimmune_disease = true")
+#    (this monitor applies to all patients on therapy, so it has none; in the same example
+#    Monitor_PPI_Hypomagnesemia is population-scoped and its precondition reads on_digoxin_or_diuretic)
+add_task(plan: "Monitor_Desired_State", kind: "action", name: "Monitor_Ischemic_Events",
+         caption: "Monitor for ischemic events (angina, MI, stroke or TIA, stent thrombosis)")
 
 # 2) Native properties: what is monitored and why, and the order as Composer's instruction
-set_attribute(selector: "Monitor_Autoimmune_Flare", attribute: "description", value:
-"Monitors worsening of pre-existing autoimmune disease as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). Such patients \"are at risk for worsening of their autoimmune disease while on immune checkpoint blockade\". The guideline gives no monitoring instruction.")
-set_attribute(selector: "Monitor_Autoimmune_Flare", attribute: "procedure", value:
-"Pre-existing autoimmune disease activity review, baseline and each visit during ICI therapy. Patient: report any flare or worsening of your known autoimmune condition. Clinician: if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm.")
+set_attribute(selector: "Monitor_Ischemic_Events", attribute: "description", value:
+"Monitors MACE and atherosclerotic events (achieve goals of Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC). Every antithrombotic in §4.3.1 is recommended to reduce MACE or atherosclerotic events, so the desired outcome is the absence of ischemic events, and the vorapaxar and prasugrel labels require stopping the drug if a stroke, TIA or ICH occurs.")
+set_attribute(selector: "Monitor_Ischemic_Events", attribute: "procedure", value:
+"Ischemic event review (angina or equivalent symptoms, myocardial infarction, stroke or TIA, stent thrombosis, unplanned revascularization), each follow-up visit, at 1, 3, 6 and 12 months after starting or changing the regimen, then every 6 to 12 months, with same-day assessment of new symptoms. Patient: call emergency services for chest pain or pressure at rest, sudden weakness or numbness, trouble speaking or loss of vision, and report any change in your usual angina at each visit. Clinician: assess suspected ACS or stroke urgently with ECG, troponin or neuroimaging, discontinue vorapaxar or prasugrel if a stroke, TIA or ICH occurs on it, and reassess the antithrombotic regimen after any ischemic event.")
 
 # 3) Exactly one metaprops: the whole contract in one call (replaces any existing metaprops)
-set_attribute(selector: "Monitor_Autoimmune_Flare", attribute: "metaprops", value:
+set_attribute(selector: "Monitor_Ischemic_Events", attribute: "metaprops", value:
 "goal.verb=order
-goal.noun_phrase=ServiceRequest.intent = order; ServiceRequest.code = pre-existing autoimmune disease activity review; ServiceRequest.occurrenceTiming = baseline and each visit during ICI therapy; ServiceRequest.patientInstruction = report any flare or worsening of your known autoimmune condition; ServiceRequest.performerInstruction = if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm
+goal.noun_phrase=ServiceRequest.intent = order; ServiceRequest.code = ischemic event review (angina or equivalent symptoms, myocardial infarction, stroke or TIA, stent thrombosis, unplanned revascularization); ServiceRequest.occurrenceTiming = each follow-up visit, at 1, 3, 6 and 12 months after starting or changing the regimen, then every 6 to 12 months, with same-day assessment of new symptoms; ServiceRequest.patientInstruction = call emergency services for chest pain or pressure at rest, sudden weakness or numbness, trouble speaking or loss of vision, and report any change in your usual angina at each visit; ServiceRequest.performerInstruction = assess suspected ACS or stroke urgently with ECG, troponin or neuroimaging, discontinue vorapaxar or prasugrel if a stroke, TIA or ICH occurs on it, and reassess the antithrombotic regimen after any ischemic event
 ServiceRequest.intent=order
-ServiceRequest.code=pre-existing autoimmune disease activity review
-ServiceRequest.occurrenceTiming=baseline and each visit during ICI therapy
-ServiceRequest.patientInstruction=report any flare or worsening of your known autoimmune condition
-ServiceRequest.performerInstruction=if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm
-category=undesired_ade
-monitored_target=worsening of pre-existing autoimmune disease as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI)
-applies_when=patients with a history of autoimmune disease, or who are being actively treated for an autoimmune disease (iv121)
+ServiceRequest.code=ischemic event review (angina or equivalent symptoms, myocardial infarction, stroke or TIA, stent thrombosis, unplanned revascularization)
+ServiceRequest.occurrenceTiming=each follow-up visit, at 1, 3, 6 and 12 months after starting or changing the regimen, then every 6 to 12 months, with same-day assessment of new symptoms
+ServiceRequest.patientInstruction=call emergency services for chest pain or pressure at rest, sudden weakness or numbness, trouble speaking or loss of vision, and report any change in your usual angina at each visit
+ServiceRequest.performerInstruction=assess suspected ACS or stroke urgently with ECG, troponin or neuroimaging, discontinue vorapaxar or prasugrel if a stroke, TIA or ICH occurs on it, and reassess the antithrombotic regimen after any ischemic event
+category=desired_outcome
+monitored_target=MACE and atherosclerotic events (achieve goals of Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC)
+applies_when=all_patients_on_therapy
 provenance_type=assistant_completed_from_guidelines
-source_kind=clinical_guideline
-source.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Patient selection and baseline assessments iv121
-quote.1=iv121: \"Patients with a history of autoimmune disease ... are at risk for worsening of their autoimmune disease while on immune checkpoint blockade\"
-knowledge_origin=ESMO 2017 guideline + assistant operationalization
+source_kind=clinical_guideline_plus_package_insert
+source.1=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), §4.3.1 Rec 1 (p.e50)
+quote.1=p.e50, Rec 1: \"low-dose aspirin 81 mg (75-100 mg) is recommended to reduce atherosclerotic events\"
+source.2=ZONTIVITY (vorapaxar) US Prescribing Information 2022, §4.1
+quote.2=§4.1: \"Discontinue ZONTIVITY in patients who experience a stroke, TIA, or ICH\"
+source.3=EFFIENT (prasugrel) US Prescribing Information 2022, §4.2
+quote.3=§4.2: \"Patients who experience a stroke or TIA while on Effient generally should have therapy discontinued\"
+knowledge_origin=the therapy goals of the guideline, and the vorapaxar and prasugrel label stop rules
 guideline_status=not_specified_as_a_guideline_monitoring_task
 monitoring_stance=proposed_by_assistant
-literature_basis=such patients \"are at risk for worsening of their autoimmune disease while on immune checkpoint blockade\". The guideline gives no monitoring instruction
-assistant_invention=the entire monitoring action (cadence, instrument, performer step); only the sub-population and risk are sourced
-instrument=patient symptom report; clinician review of disease activity
-monitoring_frequency_basis=tied to the infusion-visit cadence (MonitoringFrequency rule 1). The guideline gives no cadence
-trigger=worsening of the pre-existing autoimmune disease
-cq=CQ3, CQ4, CQ5, CQ7")
+literature_basis=every antithrombotic in §4.3.1 is recommended to reduce MACE or atherosclerotic events, so the desired outcome is the absence of ischemic events, and the vorapaxar and prasugrel labels require stopping the drug if a stroke, TIA or ICH occurs
+assistant_invention=the event review at each visit, the visit cadence, and ECG, troponin or neuroimaging as triggered tests; the SNOMED CT concept Cardiovascular event (event) is broader than the monitored MI, covering stroke as well
+instrument=clinician interview with ECG, troponin or neuroimaging on suspected events
+monitoring_frequency_basis=proposed, at the Figure 9 transition points then routine CCD follow-up; the guideline gives no cadence in §4.3.1
+trigger=new or worsening chest pain, or stroke or TIA symptoms
+cq=CQ4, CQ5, CQ8")
 
-# 4) Coding pass (step 11): snomed_search(query: "autoimmune disease") -> SNOMED_85828009,
+# 4) Coding pass (step 11): snomed_search(query: "cardiovascular event") -> SNOMED_405617006,
 #    then read the map, add the two keys, write it back whole
-#    ontology.coding=SNOMED:85828009
-#    ontology.label=Autoimmune disease (disorder)
+#    ontology.coding=SNOMED:405617006
+#    ontology.label=Cardiovascular event (event)
 ```
 
 The resulting `.pf` text (after `format`; keys sorted, `=` and `:` inside
 values escaped by the properties writer, shown as `\\=` / `\\:` inside the
-quoted PROforma atom; the tools and `export_json` read them back as `=` / `:`).
+quoted PROforma atom, and non-ASCII characters such as `§` written as
+`\\u00A7`; the tools and `export_json` read them back unescaped).
 The metaprops lines are abbreviated here; the file holds every line written in
 step 3 plus the two coding keys:
 
 ```
-action  :: 'Monitor_Autoimmune_Flare' ;
-     caption :: 'Monitor pre-existing autoimmune disease for flare during ICI therapy' ;
-     description :: 'Monitors worsening of pre-existing autoimmune disease as an immune-related adverse event of immune checkpoint inhibitor therapy, tracing to the ICI therapy action (Administer_ICI). ...' ;
-     metaprops :: 'ServiceRequest.code=pre-existing autoimmune disease activity review
+action  :: 'Monitor_Ischemic_Events' ;
+     caption :: 'Monitor for ischemic events (angina, MI, stroke or TIA, stent thrombosis)' ;
+     description :: 'Monitors MACE and atherosclerotic events (achieve goals of Prescribe_Aspirin, ...). ...' ;
+     metaprops :: 'ServiceRequest.code=ischemic event review (angina or equivalent symptoms, myocardial infarction, stroke or TIA, stent thrombosis, unplanned revascularization)
 ServiceRequest.intent=order
-ServiceRequest.occurrenceTiming=baseline and each visit during ICI therapy
-ServiceRequest.patientInstruction=report any flare or worsening of your known autoimmune condition
-ServiceRequest.performerInstruction=if the pre-existing autoimmune disease worsens, assess severity and involve the specialist managing that disease, manage organ-specific features per the relevant irAE algorithm
-applies_when=patients with a history of autoimmune disease, or who are being actively treated for an autoimmune disease (iv121)
+ServiceRequest.occurrenceTiming=each follow-up visit, at 1, 3, 6 and 12 months after starting or changing the regimen, then every 6 to 12 months, with same-day assessment of new symptoms
+ServiceRequest.patientInstruction=call emergency services for chest pain or pressure at rest, sudden weakness or numbness, trouble speaking or loss of vision, and report any change in your usual angina at each visit
+ServiceRequest.performerInstruction=assess suspected ACS or stroke urgently with ECG, troponin or neuroimaging, discontinue vorapaxar or prasugrel if a stroke, TIA or ICH occurs on it, and reassess the antithrombotic regimen after any ischemic event
+applies_when=all_patients_on_therapy
 ...
-goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= pre-existing autoimmune disease activity review; ServiceRequest.occurrenceTiming \\= baseline and each visit during ICI therapy; ...
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= ischemic event review (angina or equivalent symptoms, myocardial infarction, stroke or TIA, stent thrombosis, unplanned revascularization); ...
 goal.verb=order
 ...
-ontology.coding=SNOMED\\:85828009
-ontology.label=Autoimmune disease (disorder)
+ontology.coding=SNOMED\\:405617006
+ontology.label=Cardiovascular event (event)
 ...
-quote.1=iv121\\: "Patients with a history of autoimmune disease ... are at risk for worsening of their autoimmune disease while on immune checkpoint blockade"
-source.1=ESMO 2017 Haanen et al., Ann Oncol 28(Suppl 4) iv119, Patient selection and baseline assessments iv121
+quote.1=p.e50, Rec 1\\: "low-dose aspirin 81 mg (75-100 mg) is recommended to reduce atherosclerotic events"
+quote.2=\\u00A74.1\\: "Discontinue ZONTIVITY in patients who experience a stroke, TIA, or ICH"
+...
+source.1=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 1 (p.e50)
 ...
 ' ;
-     precondition ::pre_existing_autoimmune_disease = true;
-     procedure :: 'Pre-existing autoimmune disease activity review, baseline and each visit during ICI therapy. Patient: ... Clinician: ...' ;
+     procedure :: 'Ischemic event review (angina or equivalent symptoms, myocardial infarction, stroke or TIA, stent thrombosis, unplanned revascularization), each follow-up visit, ... Patient: ... Clinician: ...' ;
 end action.
 ```
-plus, in `Monitor_Undesired_State`, the component the same `add_task` call wrote:
+plus, in `Monitor_Desired_State`, the component the same `add_task` call wrote:
 ```
-     component :: 'Monitor_Autoimmune_Flare' ;
-          task_definition :: 'Monitor_Autoimmune_Flare' ;
+     component :: 'Monitor_Ischemic_Events' ;
+          task_definition :: 'Monitor_Ischemic_Events' ;
           ltwh :: ...;
 ```
 
@@ -475,6 +481,12 @@ Rules for the bundle:
   `= false`. Universal-but-event-triggered actions (e.g. AKI triggered by
   dehydration) do **not** get a precondition — the trigger lives in
   `ServiceRequest.occurrenceTiming`/`trigger`, per the proposal.
+- **Drug-gated monitors** are the one other case with a precondition. A monitor
+  that traces only to therapy actions with their own precondition (e.g. a
+  drug chosen by a Decision) keeps `applies_when=all_patients_on_therapy`
+  (all patients on *that* drug). It carries the precondition the proposal
+  gives, normally the traced drugs' own `result_of(...)` gate. The gate
+  reports this as an expected WARN, not a FAIL (see the CCD example).
 - Therapy interventions (full-CIG scope) carry a **State Achievement Goal**
   (`goal.verb=achieve`/`avoid`) instead of the `order` goal, no
   `ServiceRequest.*` keys, and their own caption, description, procedure,
@@ -541,9 +553,11 @@ resolve that name in the file and reports it as a WARN for the reviewer, who
 checks it against the proposal. Never add a therapy stub to satisfy the gate.
 
 For a **full Top-Level Plan**, follow `references/TopLevelPlan.md` (the
-structural example `cig/examples/ici-irae-monitoring.pf` has this shape):
+structural example `cig/examples/ccd-antithrombotic-monitoring.pf` has this shape):
 a root plan with four components — Enquiry, Decision (after the Enquiry),
-Therapy sub-plan (after the Decision, `precondition :: result_of(<decision>) = Eligible`),
+Therapy sub-plan (after the Decision, `precondition :: result_of(<decision>) = Eligible`,
+or, when the Decision chooses among several regimens, a shared contraindication
+with each therapy action gated by `result_of` its regimen; see `references/TherapyPlan.md`),
 Monitoring sub-plan (after the Therapy plan) — sequenced with `after` on
 `add_task` (PROforma has no "next" link; the constraint sits on the later
 component). Parallel monitoring sub-plans share the Monitoring plan with no

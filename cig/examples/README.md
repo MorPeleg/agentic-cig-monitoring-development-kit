@@ -1,6 +1,6 @@
 # Worked PROforma CIG
 
-The kit has one worked example, `ici-irae-monitoring`. It is a lint-clean PROforma guideline that passes the Step 7 gates (`scripts/check_cig.mjs` with 0 FAIL, and every CQ in `scripts/run_cqs.mjs`). It comes as:
+The kit has one worked example, `ccd-antithrombotic-monitoring`. It is a lint-clean PROforma guideline that passes the Step 7 gates (`scripts/check_cig.mjs` with 0 FAIL, and every CQ in `scripts/run_cqs.mjs`) against its latest approved proposal. It comes as:
 
 | File | What it is |
 |---|---|
@@ -8,30 +8,57 @@ The kit has one worked example, `ici-irae-monitoring`. It is a lint-clean PROfor
 | `<name>.html` | a self-contained viewer, built with the proforma skill's `scripts/build_report.mjs` (one file, nothing fetched). It has a task tree, a plan canvas (pan, zoom, double-click a plan to open it), a properties panel, and data, decision, lint and source views |
 | `<name>.mmd` | Mermaid diagram of the plan structure |
 | `<name>.cqs.mjs` | competency-question queries |
+| `<name>-build/` | the build record: extraction, proposals and gate reports |
 
-**Use it as a structural example only.** It shows the plan layout, how the Enquiry's data items and the Decision's candidates and arguments are populated, and the task contract in `skills/cig-monitoring/references/MetapropsSyntax.md`: Composer's native task properties first (caption, description, procedure, precondition, Ontology coding; see `skills/cig-monitoring/references/TaskProperties.md`), the monitoring order as an HL7 FHIR `ServiceRequest` (the `ServiceRequest.*` metaprops, repeated in `goal.noun_phrase` and stated in the native `procedure`), a verbatim `quote.N` with every `source.N`, and SNOMED CT Ontology coding (`ontology.coding`, found with the `snomed_search` tool).
+**Use it as a structural example only.** It shows the full top-level plan, how an Enquiry's data items and a Decision's candidates and arguments are populated, the ADE Enquiry pattern (`skills/cig-monitoring/references/ADEMonitoringEnquiry.md`), and the task contract in `skills/cig-monitoring/references/MetapropsSyntax.md`: Composer's native task properties first (caption, description, procedure, precondition, Ontology coding; see `skills/cig-monitoring/references/TaskProperties.md`), the monitoring order as an HL7 FHIR `ServiceRequest` (the `ServiceRequest.*` metaprops, repeated in `goal.noun_phrase` and stated in the native `procedure`, or in the description of an ADE Enquiry), a verbatim `quote.N` with every `source.N`, and terminology coding (SNOMED CT with `snomed_search`, LOINC with `loinc_search`, RxNorm with `rxnorm_search`).
 
-Its clinical content (immune checkpoint inhibitor toxicity, ADE-focused) is **not** a template for which monitors a new CIG should model, and its task names are not names to reuse: those come from the user's own guidelines (in `projects/<project_dir>/resources/`) and the approved proposal. The design patterns to follow are in `skills/cig-monitoring/references/`. A better example is planned.
+Its clinical content (antiplatelet and oral anticoagulant therapy in chronic coronary disease) is **not** a template for which monitors a new CIG should model, and its task names are not names to reuse: those come from the user's own guidelines (in `projects/<project_dir>/resources/`) and the approved proposal. The design patterns to follow are in `skills/cig-monitoring/references/`.
 
-## `ici-irae-monitoring`: a full kit session on a new guideline
+To re-run the gates on it:
 
-Monitoring of immune checkpoint inhibitor therapy for immune-related adverse events. Source: ESMO Clinical Practice Guidelines, *Management of toxicities from immunotherapy* (Haanen et al., Ann Oncol 2017;28 Suppl 4:iv119–iv142, doi:10.1093/annonc/mdx225). The source PDF is not included.
+```bash
+node scripts/check_cig.mjs cig/examples/ccd-antithrombotic-monitoring.pf --proposal cig/examples/ccd-antithrombotic-monitoring-build/PROPOSAL-20261030-191149.md
+node scripts/run_cqs.mjs cig/examples/ccd-antithrombotic-monitoring.pf cig/examples/ccd-antithrombotic-monitoring.cqs.mjs --proposal cig/examples/ccd-antithrombotic-monitoring-build/PROPOSAL-20261030-191149.md
+```
 
-It was built end to end by the kit's own workflow and subagents (`capa install -p claude-code`, then Steps 0–7). `ici-irae-monitoring-build/` keeps the record, and is the kit's real example of a Step 4 proposal (in a project, `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md`), an extraction and a review record. The record is historical and is not updated: the `projects/...` paths inside those files refer to the original project directory, and the files describe the build as it was then, before the native-field contract (procedure, description, source quotes, Ontology coding). The `.pf` has since been migrated with `scripts/migrate_metaprops.mjs` and completed.
+## `ccd-antithrombotic-monitoring`: antithrombotic therapy in chronic coronary disease
 
-1. `EXTRACTION-20261025.md`: Steps 2–3. Every organ-system section is accounted for, with citations, data items, draft conditions and open questions.
-2. `PROPOSAL-20261025-101500.md`: the first approved proposal, now superseded.
-3. `reviews/cig-monitoring-review-20261025-1200.md`: the first Step 7 gate.
-   - The deterministic script passed, but the reviewer FAILed `Monitor_PreInfusion_Surveillance`.
-   - The cause: it required thyroid tests before every infusion, contradicting the guideline's regimen-specific schedule (iv124, Fig 5) and `Monitor_Thyroid`.
-4. `PROPOSAL-20261025-131500.md`: revision 2.
-   - It fixes that FAIL and folds in the reviewer's WARNs.
-   - The user re-approved it, and the guideline was rebuilt from a fresh file after a baseline snapshot.
-5. `reviews/cig-monitoring-review-20261025-1400.md` and `cq-verification-20261025-1400.md`: the full re-run. PASS, with 7/7 CQs.
+Antiplatelet and oral anticoagulant therapy for adults with chronic coronary disease (CCD), with monitoring of regimen completion, ischemic events and adverse drug effects. Sources:
 
-Known, non-blocking limitations (WARNs from the final review, left for a future revision):
-- the pre-infusion `monitoring_frequency_basis` omits Fig 5's "(in case of 2-weekly schedule)" qualifier;
-- the hypophysitis performer instruction omits the endocrinology referral of the moderate tier and the vague-symptom tier of Fig 6;
-- the nephritis performer instruction omits the G2 ">1.5–3×ULN" alternative and a separate G4 tier.
+- **Guideline:** 2023 AHA/ACC/ACCP/ASPC/NLA/PCNA Guideline for the Management of Patients With Chronic Coronary Disease (Virani et al., Circulation 2023;148:e9–e119, doi:10.1161/CIR.0000000000001168), **§4.3.1 only** (pp. e50–e55): Recs 1–16, the Synopsis, Figure 9 and the supportive text.
+- **Package inserts:** the 11 FDA labels of the drugs §4.3.1 names: aspirin (OTC low-dose and DURLAZA), clopidogrel, ticagrelor, prasugrel, vorapaxar, rivaroxaban, apixaban, edoxaban, dabigatran and pantoprazole. Every Boxed Warning, contraindication and Warnings and Precautions section is accounted for in the extraction.
+- Case reports and mechanism-of-action harms were not opted in.
 
-Two parts of the design were proposed by the assistant rather than taken from the guideline: the pre-treatment decision rule and the two population-scoped monitors. ESMO names those risk groups but gives no executable criterion or monitoring instruction for them. Both are marked as such in the metaprops and descriptions.
+The source documents are not included.
+
+### What it demonstrates
+
+- **The full top-level plan.** Root plan `ccd_antithrombotic_monitoring` (`goal.verb=treat`): the Enquiry `Get_Antithrombotic_Data`, the Decision `Antithrombotic_Regimen_Decision`, the therapy plan `Antithrombotic_Therapy` and `Monitoring_Plan`, in sequence (`skills/cig-monitoring/references/TopLevelPlan.md`).
+- **A populated Enquiry.** 14 typed baseline data items (e.g. `requires_oral_anticoagulation`, `pci_within_12_months`, `prior_ich`, `age_years`), each with a question caption, a description of what reads it, its SNOMED CT coding and a quoted source (`Enquiry.md`).
+- **A multi-candidate Decision.** Nine regimen candidates along the Figure 9 pathways, with `for`, `against` and `excluding` arguments over the data items. Each argument's caption carries the recommendation's class and level of evidence (e.g. Rec 7 [3: No benefit] as an `against` argument, Rec 8 [3: Harm] as an `excluding` one), and its metaprops carry the source and quote (`Decision.md`).
+- **A nested Decision in the therapy plan.** `P2Y12_Agent_Decision` picks the P2Y12 inhibitor only for the regimens that contain one. The therapy plan is gated by `active_pathological_bleeding = false`; each `Prescribe_*` action has an `achieve` or `avoid` goal, a dose and duration procedure, a precondition over `result_of` the decision that chose it, and SNOMED CT and RxNorm codes. A "should not be used" recommendation (chronic NSAIDs) is the advice action `Advise_Avoid_Chronic_NSAIDs` with an `avoid` goal (`TherapyPlan.md`, `StateAchievementGoal.md`).
+- **All three monitoring sub-plans.** `Monitor_Actions` (4 action-completion monitors), `Monitor_Desired_State` (`Monitor_Ischemic_Events`) and `Monitor_Undesired_State` (`MonitoringPlan.md`).
+- **Drug-gated and sub-population monitors.** A monitor of one drug's harm keeps `applies_when=all_patients_on_therapy` and is gated by a `result_of` precondition on the regimens containing the drug. `Monitor_PPI_Hypomagnesemia` (reads `on_digoxin_or_diuretic`) and `Monitor_PPI_Bone_Fracture` (reads `previous_mi`) are narrowed to a sub-population over Enquiry data items.
+- **The ADE Enquiry pattern.** `Display_Potential_ADEs` lists the 17 ADEs; each ADE monitor is an Enquiry collecting SNOMED CT coded symptoms and bedside findings, followed when a test is named by an `Order_<Test>` Action or a `Tests_Ordering_Recommendations_<ADE>` Decision with LOINC coded tests, gated on a positive finding (`ADEMonitoringEnquiry.md`).
+
+### How it was built
+
+It was built end to end by the kit's own workflow and subagents (Steps 1–7). `ccd-antithrombotic-monitoring-build/` keeps the record, and is the kit's real example of an extraction, a Step 4 proposal (in a project, `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md`), an iteration proposal and a review record. The record is historical and is not updated: the `projects/ccd-antiplatelet-monitoring/...` paths inside those files refer to the original project directory, where the guideline was `guideline/ccd_antithrombotic_monitoring.pf`.
+
+1. `EXTRACTION-20261029.md`: Steps 2–3. Every recommendation of §4.3.1 and every label section is accounted for, with citations, verbatim quotes (each checked word for word against the source files), data items, draft conditions and open questions.
+2. `PROPOSAL-20261029-165226.md`: the first approved proposal (the full top-level plan, CQ1–CQ9), approved with the defaults for its ten open questions. It carries two revisions made after Step 7 reviews:
+   - **Revision 2:** the first review passed the deterministic gate but failed six judgment checks (Figure 9 quotes, the ticagrelor dose, a gap in the P2Y12 agent rule, the gating of two monitors). Each fix restored the approved rule or the source; the guideline was rebuilt from a fresh file after a baseline snapshot.
+   - **Revision 3:** the re-review failed one judgment check (perioperative interruption must not apply to aspirin monotherapy). After the fix the full gate passed with 9/9 CQs.
+3. `PROPOSAL-20261030-191149.md`: the ADE-Enquiry iteration, after Mor Peleg's new know-how of 30 October 2026. The 17 ADE monitors changed from Actions to Enquiries with coded findings and test steps, `Display_Potential_ADEs` was added, the drug actions gained RxNorm codes, and CQ10 was added. Its Step 0 carry-forward check retains every baseline element. Its own Revision 2 fixed three judgment FAILs from the first review of the iteration (the hypotension gate of the bleeding tests, the CYP2C19 genotype gate, a finding's SNOMED CT code).
+4. `reviews/`: the gate reports of the final full re-run: `check_cig.mjs` with 0 FAIL, the judgment phases with 0 FAIL, and 10/10 CQs.
+
+Known, non-blocking points (left for a future revision):
+- `check_cig.mjs` WARNs on each drug-gated monitor (a precondition on an action that applies to all patients on therapy). The convention was approved in the first proposal's Revision 3: `all_patients_on_therapy` means everyone on the drug, and the precondition selects the regimens containing it.
+- Some SNOMED CT codes are the nearest concept rather than an exact one (e.g. `Prescribe_DOAC` is coded as anticoagulant therapy); they were accepted at approval and are listed in the proposals' §7. `on_digoxin_or_diuretic` is uncoded.
+- A reviewer advisory (long DAPT after ACS under the `DAPT` candidate does not trigger the fracture monitor, which fires only for extended DAPT) was not adopted and is noted for the next iteration.
+
+Several parts of the design were proposed by the assistant rather than taken from the sources, and each is marked as such in the metaprops, captions and descriptions: the P2Y12 agent rule, the monitoring cadences (§4.3.1 gives none), one class-level DOAC action, and pantoprazole during DOAC plus antiplatelet therapy (off-label).
+
+## Retired example
+
+The kit's earlier example, `ici-irae-monitoring` (immune checkpoint inhibitor toxicity, from the ESMO 2017 toxicity guideline), was retired. It predates the ADE Enquiry pattern: its ADE monitors were Actions with symptoms and tests as metaprops text, so the current gate FAILed it on the `ade` rules. It remains in the git history.

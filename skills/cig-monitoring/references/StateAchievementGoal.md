@@ -54,7 +54,7 @@ end action.
 
 ## Structural example
 
-In `cig/examples/ici-irae-monitoring.pf`, the therapy plan has one `achieve` goal (the drug action) and two `avoid` goals (patient education and specialist review, each avoiding a harm the guideline names), each with a quoted source and its SNOMED CT coding.
+In `cig/examples/ccd-antithrombotic-monitoring.pf`, the root plan carries the `treat` goal, and the therapy plan has seven `achieve` goals (one per antithrombotic drug action, e.g. `Prescribe_Aspirin`: "reduction of atherosclerotic events and MACE") and two `avoid` goals: `Advise_Avoid_Chronic_NSAIDs` ("increased cardiovascular and bleeding complications from chronic NSAID use", from a Class 3: Harm recommendation) and `Prescribe_PPI` ("gastrointestinal bleeding during DAPT or antiplatelet plus anticoagulant therapy"). Each has quoted sources and its SNOMED CT coding. `Monitor_Ischemic_Events` traces to the `achieve` goals and `Monitor_NSAID_Avoidance` to the NSAID `avoid` goal.
 
 ## Related patterns
 

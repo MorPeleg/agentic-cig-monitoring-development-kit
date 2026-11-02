@@ -142,7 +142,7 @@ end action.
 
 ## Structural example
 
-Every monitoring action in `cig/examples/ici-irae-monitoring.pf` meets the metaprops contract in a complete guideline: the `ServiceRequest.*` block on both the keys and `goal.noun_phrase`, the native procedure and description, numbered `source.N` + `quote.N`, SNOMED CT coding, and two sub-population monitors gated by a precondition. It predates the ADE Enquiry pattern (its irAE monitors are Actions), so the gate now FAILs it on the `ade` rules only. Use it to check the shape of the contract; which monitors to model comes from the user's guidelines and the approved proposal, not from the example.
+Every monitor in `cig/examples/ccd-antithrombotic-monitoring.pf` meets the metaprops contract in a complete guideline: the `ServiceRequest.*` block on both the keys and `goal.noun_phrase`, the native procedure (or, on an ADE Enquiry, the order stated in the description) and description, numbered `source.N` + `quote.N`, SNOMED CT coding, and the provenance keys that separate label-specified monitoring (`monitoring_stance=recommended`, e.g. `Monitor_PPI_Hypomagnesemia`) from assistant-proposed monitoring (`monitoring_stance=proposed_by_assistant`, e.g. `Monitor_Antithrombotic_Adherence`, whose visit cadence is an `assistant_invention`). `Monitor_Ischemic_Events` shows an Action Enactment goal monitoring a desired state, tracing to the `achieve` goals of the drug actions. Use it to check the shape of the contract; which monitors to model comes from the user's guidelines and the approved proposal, not from the example.
 
 ## Related patterns
 

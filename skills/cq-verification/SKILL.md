@@ -88,7 +88,7 @@ Task and data item names are matched exactly and case-sensitively. A misspelt na
 
 #### Query patterns
 
-The names below are placeholders (`Prescribe_Drug`, `Monitor_<Harm>`, `threshold_measure`, …); use the names the approved proposal fixes. `cig/examples/ici-irae-monitoring.cqs.mjs` is a complete, runnable query file for the structural example.
+The names below are placeholders (`Prescribe_Drug`, `Monitor_<Harm>`, `threshold_measure`, …); use the names the approved proposal fixes. `cig/examples/ccd-antithrombotic-monitoring.cqs.mjs` is a complete, runnable query file for the structural example.
 
 **Membership of a plan.** Which ADEs are monitored? (ADE monitors are Enquiries; `skills/cig-monitoring/references/ADEMonitoringEnquiry.md`.)
 

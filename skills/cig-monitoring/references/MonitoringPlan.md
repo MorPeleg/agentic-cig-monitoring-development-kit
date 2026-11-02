@@ -73,7 +73,22 @@ Each monitoring task in **Monitor Undesired ADEs** must be **operationalized**, 
 
 ## Structural example
 
-In `cig/examples/ici-irae-monitoring.pf`, `Monitoring_Plan` holds two parallel sub-plans, `Monitor_Actions` and `Monitor_Undesired_State`; its scope (a toxicity guideline) has no desired-outcome monitors, so that sub-plan is omitted rather than left empty. Two of its ADE monitors are scoped to a sub-population by a precondition over Enquiry data items. It predates the ADE Enquiry pattern: its ADE monitors are still Actions (with symptoms and tests as metaprops text), so `check_cig.mjs` now FAILs it on the `ade` rules alone. Use it to see the shape of the plan and of the monitor contract; for Monitor Undesired ADEs follow `ADEMonitoringEnquiry.md`. Which monitors to model comes from the user's guidelines and the approved proposal.
+In `cig/examples/ccd-antithrombotic-monitoring.pf`, `Monitoring_Plan` holds all three parallel sub-plans:
+
+```
+plan Monitoring_Plan
+  plan Monitor_Actions            4 Actions: Monitor_Antithrombotic_Adherence, Monitor_Regimen_Duration,
+                                  Monitor_NSAID_Avoidance, Monitor_PPI_Continued_Need
+  plan Monitor_Desired_State      1 Action: Monitor_Ischemic_Events (the absence of ischemic events, the achieve goal of every drug action)
+  plan Monitor_Undesired_State    Display_Potential_ADEs, then 17 ADE Enquiries with their test steps (ADEMonitoringEnquiry.md)
+```
+
+It shows the two kinds of scoped monitor:
+
+- **Drug-gated monitors.** A monitor that watches one drug (e.g. `Monitor_Ticagrelor_Dyspnea`) keeps `applies_when=all_patients_on_therapy`, since it applies to everyone on that drug, and runs only for the regimens that contain the drug through a precondition over the Decision results: `result_of(P2Y12_Agent_Decision) = Ticagrelor`. The gate WARNs on this combination; the example's approved proposal records the convention.
+- **Sub-population monitors.** `Monitor_PPI_Hypomagnesemia` narrows `applies_when` to the patients the label names (prolonged pantoprazole, or pantoprazole with digoxin or a diuretic), and its precondition reads the Enquiry data item `on_digoxin_or_diuretic` alongside the regimen results. `Monitor_PPI_Bone_Fracture` does the same with `previous_mi` (long-term pantoprazole during extended DAPT after MI).
+
+Use it to see the shape of the plan and of the monitor contract. Which monitors to model comes from the user's guidelines and the approved proposal.
 
 ## Related patterns
 

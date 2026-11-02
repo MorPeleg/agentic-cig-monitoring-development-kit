@@ -197,4 +197,4 @@ If anything FAILs, return to Step 6: hand the fix list to the formalizer, which 
 - `skills/cig-monitoring/references/MetapropsSyntax.md` (the contract this enforces)
 - `skills/cig-monitoring/references/ActionEnactmentGoal.md` (goal side and the opt-in case-report rule)
 - `skills/cq-verification/SKILL.md` (the parallel CQ gate)
-- `cig/examples/ici-irae-monitoring.pf` (a structural example that predates the ADE Enquiry pattern: it meets the monitor contract and FAILs the deterministic half only on the `ade` rules, its irAE monitors being Actions; its clinical content is not a template for which monitors a CIG needs)
+- `cig/examples/ccd-antithrombotic-monitoring.pf` (a structural example that passes this gate, ADE Enquiry pattern included; `cig/examples/ccd-antithrombotic-monitoring-build/reviews/` holds its gate reports, judgment phases included. Its clinical content is not a template for which monitors a CIG needs)

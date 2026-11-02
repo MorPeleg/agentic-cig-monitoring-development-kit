@@ -231,5 +231,5 @@ A **coding-only patch** reads this map, adds or changes only `ontology.coding` a
 - `ADEMonitoringEnquiry.md`: ADE monitors as Enquiries with coded findings and LOINC-coded test steps.
 - `ActionEnactmentGoal.md`: the goal side, plus the opt-in case-report source-quality rule.
 - `MonitoringPlan.md`: where the actions live.
-- `cig/examples/ici-irae-monitoring.pf`: a complete instantiation (structure only; its clinical content is immune checkpoint inhibitor toxicity).
+- `cig/examples/ccd-antithrombotic-monitoring.pf`: a complete instantiation, including ADE Enquiries, LOINC-coded test steps and RxNorm-coded therapy actions (structure only; its clinical content is antithrombotic therapy in chronic coronary disease).
 - `scripts/migrate_metaprops.mjs`: brings an older guideline onto this contract.

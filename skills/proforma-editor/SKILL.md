@@ -8,7 +8,7 @@ description: Read, edit, validate and diagram PROforma 1.9 guideline files (.pf,
 Use this skill whenever you need to **inspect or modify a PROforma guideline
 file (`.pf`)** in this kit — the CIG at
 `projects/<project_dir>/guideline/<name>.pf`, the structural example
-`cig/examples/ici-irae-monitoring.pf`, or a scratch copy. The tools are
+`cig/examples/ccd-antithrombotic-monitoring.pf`, or a scratch copy. The tools are
 provided by the **proforma** MCP server (npm `proforma-mcp`, pinned
 `proforma-mcp@0.2.0`) and operate on the file on disk, which is the source of
 truth.

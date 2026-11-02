@@ -84,7 +84,17 @@ The root goal keys may also be repeated on the file-level `metaprops` line.
 
 ## Structural example
 
-`cig/examples/ici-irae-monitoring.pf` has this shape: a root plan (`goal.verb=treat`) with a baseline Enquiry, a pre-treatment Decision after it, a therapy plan after the Decision and gated by its result, and a monitoring plan after the therapy plan. Use it to see the layout; its clinical content and task names are not a template.
+`cig/examples/ccd-antithrombotic-monitoring.pf` (antiplatelet and oral anticoagulant therapy in chronic coronary disease, 2023 AHA/ACC CCD guideline §4.3.1) has this shape. Its root plan `ccd_antithrombotic_monitoring` carries `goal.verb=treat` and four components in sequence:
+
+```
+plan ccd_antithrombotic_monitoring                 goal.verb=treat
+  enquiry  Get_Antithrombotic_Data                 14 typed baseline data items
+  decision Antithrombotic_Regimen_Decision         after Get_Antithrombotic_Data; 9 regimen candidates
+  plan     Antithrombotic_Therapy                  after the Decision; precondition active_pathological_bleeding = false
+  plan     Monitoring_Plan                         after Antithrombotic_Therapy; Monitor_Actions, Monitor_Desired_State, Monitor_Undesired_State in parallel
+```
+
+Two points differ from the generic calls above, and both are legitimate variants. The Decision chooses among several regimens rather than answering eligible / not eligible, so the therapy plan's precondition is not a `result_of` test: it is the one contraindication every candidate shares (active pathological bleeding), and each drug action inside the plan is gated by `result_of` the regimen it belongs to (`TherapyPlan.md`). Use the example to see the layout; its clinical content and task names are not a template.
 
 ## Related patterns
 

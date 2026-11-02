@@ -83,7 +83,13 @@ When an ADE monitor recommends two or more tests, its Enquiry is followed by a D
 
 ## Structural example
 
-In `cig/examples/ici-irae-monitoring.pf`, `Pretreatment_Decision` has two candidates, each with a caption, a description and one `for` argument whose condition is an expression over the Enquiry's boolean data items, whose description states that the rule is assistant-proposed, and whose metaprops quote the passages it rests on. Use it to see how a Decision is populated; its clinical rule is not a template. Never emit a Decision whose candidates have no arguments or criteria.
+In `cig/examples/ccd-antithrombotic-monitoring.pf`, `Antithrombotic_Regimen_Decision` chooses among nine regimen candidates (e.g. `Aspirin_Monotherapy`, `DAPT`, `Aspirin_plus_Vorapaxar`, `DOAC_Monotherapy`), each with a caption, a description and one or more arguments over the Enquiry's typed data items. Each argument's caption cites the recommendation with its class and level of evidence, and its metaprops carry the `source` + `quote` it rests on. It shows all three argument kinds:
+
+- `for`: `Arg_Aspirin_SAPT`, "Rec 1 [1, A]", `requires_oral_anticoagulation = false and pci_within_12_months = false and acs_within_12_months = false and cabg_within_12_months = false and aspirin_intolerance = false`.
+- `against`: a Class 3 No Benefit recommendation, `Arg_DAPT_No_Benefit`, "Rec 7 [3: No benefit, A]", `pci_within_12_months = false and acs_within_12_months = false and cabg_within_12_months = false`.
+- `excluding`: a Class 3 Harm recommendation, `Arg_Vorapaxar_Harm`, "Rec 8 [3: Harm, A]", `prior_stroke_or_tia = true or prior_ich = true`.
+
+The rule stays the default `netsupport() > 0`, so several candidates can be recommended at once and the clinician commits one; the Decision's description says so. A second Decision, `P2Y12_Agent_Decision`, is nested in the therapy plan (`TherapyPlan.md`) with its own precondition on the first Decision's result; its assistant-proposed arguments say so in their captions, and a label contraindication (ticagrelor after intracranial hemorrhage) and Rec 9 [3: Harm] (prasugrel after stroke, TIA or ICH) are `excluding` arguments. Use it to see how a Decision is populated; its clinical rules are not a template. Never emit a Decision whose candidates have no arguments or criteria.
 
 ## Related patterns
 

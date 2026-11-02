@@ -290,9 +290,10 @@ agents:
         subagent (scripts/run_cqs.mjs). The gate re-runs the FULL check set
         every time, never waives a FAIL or inherits a prior PASS, and PASSes
         only when zero FAILs remain. Follow the design patterns in
-        skills/cig-monitoring/references/; cig/examples/ici-irae-monitoring.pf
-        is a structural example only (its clinical content is not a template
-        for which monitors to model).
+        skills/cig-monitoring/references/;
+        cig/examples/ccd-antithrombotic-monitoring.pf is a structural example
+        only (its clinical content is not a template for which monitors to
+        model).
     - type: inline
       id: capa_tool_usage
       content: >-

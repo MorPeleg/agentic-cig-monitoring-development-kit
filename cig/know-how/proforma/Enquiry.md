@@ -4,11 +4,11 @@
 
 ## PROforma elements
 
-Composer's native properties for an enquiry and its data items are listed in `TaskProperties.md`. The ones this pattern uses:
+Composer's native properties for an enquiry are listed in `TaskProperties.md` (an Enquiry is a Task and has all the common task properties) and those of its data items in `Data.md`. The ones this pattern uses:
 
-- Task: `enquiry`, with the common task properties (Caption, Description, **Ontology coding**, **Precondition** when the enquiry applies only to some patients) and its kind-specific **Sources**: a `source` whose `data_definition` names the data item it asks for (optional `mandatory :: yes`).
+- Task: `enquiry`, with the common task properties (Caption, Description, **Ontology coding** on its component in the parent plan, **Precondition** when the enquiry applies only to some patients) and its kind-specific **Sources**: a `source` whose `data_definition` names the data item it asks for (optional `mandatory :: yes`).
 - Data item: `data` block with the native **Type** (`real`, `integer`, `boolean`, `text`, `date`, …), **Caption** (the question as asked), **Description**, and when they apply **Units** (`unit`), **Range and Default Value** (`range`, `default_value`), **Derivation** (`derivation`, an expression computing the value) and **Dynamic**. A dynamic data item cannot be an Enquiry source.
-- Data item **Ontology coding**: the observable or finding the item records (`ontology.coding=SNOMED:<id>` + `ontology.label`, found with `snomed_search`). Set it on every item that names a clinical concept; leave an item uncoded only when no single concept fits (e.g. a composite flag), and say so in its description.
+- Data item **Ontology coding**: the observable or finding the item records, in the data item's own metaprops as `ontology.coding=SCT:<id> [<caption>]` (the concept id and the term exactly as `snomed_search` returns them; `Ontology.md`). Set it on every item that names a clinical concept; leave an item uncoded only when no single concept fits (e.g. a composite flag), and say so in its description.
 - Data item metaprops: a `source` + `quote` when the item comes from a specific passage (e.g. a contraindication or a sub-population flag).
 - Tools: `add_task`, `add_data_item`, `add_source` (can create the data item itself with `create_type`), `set_attribute` (data item `caption`, `description`, `metaprops`), `snomed_search`
 
@@ -43,7 +43,7 @@ add_data_item(name: "threshold_measure", type: "real", unit: "<unit>")
 set_attribute(selector: "threshold_measure", attribute: "caption", value: "<the measure, as asked>")
 set_attribute(selector: "threshold_measure", attribute: "description", value: "<what it is>; primary eligibility threshold")
 set_attribute(selector: "threshold_measure", attribute: "metaprops",
-              value: "ontology.coding=SNOMED:<id>\nontology.label=<preferred term, as returned by snomed_search>")
+              value: "ontology.coding=SCT:<id> [<preferred term, as returned by snomed_search>]")
 add_source(task: "Get_Eligibility_Data", data: "threshold_measure")
 ```
 
@@ -53,7 +53,7 @@ A data item modelled from a specific passage also carries that passage:
 add_data_item(name: "on_interacting_medication", type: "boolean")
 set_attribute(selector: "on_interacting_medication", attribute: "caption", value: "On <the interacting medication class>?")
 set_attribute(selector: "on_interacting_medication", attribute: "metaprops",
-              value: "ontology.coding=SNOMED:<id>\nontology.label=<preferred term>\nsource=<Drug> US Prescribing Information, §<n> <Warning>\nquote=§<n>: \"<verbatim sentence that scopes the harm to patients on the interacting medication>\"")
+              value: "ontology.coding=SCT:<id> [<preferred term>]\nsource=<Drug> US Prescribing Information, §<n> <Warning>\nquote=§<n>: \"<verbatim sentence that scopes the harm to patients on the interacting medication>\"")
 add_source(task: "Get_Eligibility_Data", data: "on_interacting_medication")
 ```
 
@@ -74,8 +74,7 @@ data  :: 'threshold_measure' ;
      type :: real ;
      caption :: '<the measure, as asked>' ;
      description :: '<what it is>; primary eligibility threshold' ;
-     metaprops :: 'ontology.coding=SNOMED\\:<id>
-ontology.label=<preferred term>
+     metaprops :: 'ontology.coding=SCT\\:<id> [<preferred term>]
 ' ;
      unit :: '<unit>' ;
 end data.
@@ -83,7 +82,7 @@ end data.
 
 ## ADE Enquiries (Monitor Undesired ADEs)
 
-Enquiries have a second use: each ADE monitor in `Monitor_Undesired_State` is an Enquiry (`Monitor_<ADE>`) that keeps the monitor's goal and metaprops contract and asks for the symptoms and bedside exam findings of that ADE, one data item each (`boolean` for a symptom or sign, `real`/`integer` with a `unit` for a measured value; caption phrased as the question; **SNOMED CT coding required**). A finding several ADEs ask about is one data item, sourced by each of those Enquiries. Its test step reads these items in its precondition. The full pattern is `ADEMonitoringEnquiry.md`.
+Enquiries have a second use: each ADE monitor in `Monitor_Undesired_State` is an Enquiry (`Monitor_<ADE>`) that keeps the monitor's goal and metaprops contract and asks for the symptoms and bedside exam findings of that ADE, one data item each (`boolean` for a symptom or sign, `real`/`integer` with a `unit` for a measured value; caption phrased as the question; **SNOMED CT coding required**, `SCT:<id> [<caption>]`). A finding several ADEs ask about is one data item, sourced by each of those Enquiries. Its test step reads these items in its precondition. The full pattern is `skills/cig-monitoring/references/ADEMonitoringEnquiry.md`.
 
 ## Structural example
 
@@ -91,4 +90,4 @@ In `cig/examples/ccd-antithrombotic-monitoring.pf`, the Enquiry `Get_Antithrombo
 
 ## Related patterns
 
-- `Decision.md` (consumes these data items), `ADEMonitoringEnquiry.md` (ADE monitors as Enquiries), `TopLevelPlan.md`, `MonitoringPlan.md`, `TaskProperties.md` (all native data-item properties), `MetapropsSyntax.md` (population-scoped preconditions).
+- `Decision.md` (consumes these data items), `Data.md` (all native data-item properties), `TaskProperties.md`, `Ontology.md`; in `skills/cig-monitoring/references/`: `ADEMonitoringEnquiry.md` (ADE monitors as Enquiries), `TopLevelPlan.md`, `MonitoringPlan.md`, `MetapropsSyntax.md` (population-scoped preconditions).

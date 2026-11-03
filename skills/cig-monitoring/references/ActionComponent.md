@@ -10,7 +10,7 @@
 
 ## Task properties (Composer's property sheet)
 
-Fill the native properties first; `TaskProperties.md` lists each with its `.pf` attribute and tool call.
+Fill the native properties first; `cig/know-how/proforma/TaskProperties.md` lists each with its `.pf` attribute and tool call.
 
 | Group | Properties | Where |
 |---|---|---|
@@ -25,8 +25,8 @@ Fill the native properties first; `TaskProperties.md` lists each with its `.pf` 
 
 ## Rule of thumb
 
-- The **component** carries plan membership and scheduling (`schedule_constraint`, `optional`, `cycle_repeat`, `number_of_cycles`, `cycle_until`, `ltwh` layout).
-- The **task** (`action`, sub-`plan`, `decision`, `enquiry`) carries clinical meaning: the native properties (`caption`, `description`, `procedure`, `precondition` and the other conditions) and the `metaprops` (`goal.verb` / `goal.noun_phrase`, the `ServiceRequest.*` block of a monitoring action, `source.N` + `quote.N`, and the Ontology coding `ontology.coding` + `ontology.label`).
+- The **component** carries plan membership and scheduling (`schedule_constraint`, `optional`, `cycle_repeat`, `number_of_cycles`, `cycle_until`, `ltwh` layout) and, in its own `metaprops`, the task's **Ontology coding** (`ontology.coding=SCT:<id> [<caption>]`; Composer reads a task's coding from its component, `cig/know-how/proforma/Ontology.md`).
+- The **task** (`action`, sub-`plan`, `decision`, `enquiry`) carries clinical meaning: the native properties (`caption`, `description`, `procedure`, `precondition` and the other conditions) and the `metaprops` (`goal.verb` / `goal.noun_phrase`, the `ServiceRequest.*` block of a monitoring action, `source.N` + `quote.N`, and for a prescribed drug `rxnorm.coding` + `rxnorm.label`).
 - One component points to exactly one task. Let `add_task` create both so the names match.
 
 ## Tool calls
@@ -44,9 +44,13 @@ set_attribute(selector: "Prescribe_Drug", attribute: "procedure", value: "<dose,
 set_attribute(selector: "Prescribe_Drug", attribute: "precondition", value: "<expression>")   # only when the source scopes it
 
 # The action's goal (State Achievement for therapy, Action Enactment for monitoring),
-# its source + verbatim quote, and its Ontology coding (snomed_search "<drug>")
+# and its source + verbatim quote
 set_attribute(selector: "Prescribe_Drug", attribute: "metaprops",
-              value: "goal.noun_phrase=<the guideline's treatment target>\ngoal.verb=achieve\nontology.coding=SNOMED:<id>\nontology.label=<substance>\nquote=§2: \"<verbatim sentence giving the recommended dosage>\"\nsource=<Drug> US Prescribing Information, §2 Dosage and Administration")
+              value: "goal.noun_phrase=<the guideline's treatment target>\ngoal.verb=achieve\nquote=§2: \"<verbatim sentence giving the recommended dosage>\"\nsource=<Drug> US Prescribing Information, §2 Dosage and Administration")
+
+# Its Ontology coding (snomed_search "<drug>"), on its component in the parent plan
+set_attribute(selector: "Therapy_Plan/component:Prescribe_Drug", attribute: "metaprops",
+              value: "ontology.coding=SCT:<id> [<substance>]")
 
 # Optional ordering: this component runs after a sibling in the same plan
 add_task(plan: "<plan>", kind: "action", name: "<later_task>", after: ["<earlier_sibling>"])
@@ -60,8 +64,6 @@ action  :: 'Prescribe_Drug' ;
      description :: 'Prescribes <drug> ... (<source>).' ;
      metaprops :: 'goal.noun_phrase=<the guideline's treatment target>
 goal.verb=achieve
-ontology.coding=SNOMED\\:<id>
-ontology.label=<substance>
 quote=§2\\: "<verbatim sentence>"
 source=<Drug> US Prescribing Information, §2 Dosage and Administration
 ' ;
@@ -71,6 +73,8 @@ end action.
 plan  :: 'Therapy_Plan' ;
      ...
      component :: 'Prescribe_Drug' ;
+          metaprops :: 'ontology.coding=SCT\\:<id> [<substance>]
+' ;
           task_definition :: 'Prescribe_Drug' ;
           ltwh :: 40,40,0,0;
      ...
@@ -81,4 +85,4 @@ The same shape holds for a monitoring action: component `Monitor_<Harm>` in `Mon
 
 ## Related patterns
 
-- `TaskProperties.md`, `TherapyPlan.md`, `MonitoringPlan.md`, `StateAchievementGoal.md`, `ActionEnactmentGoal.md`.
+- `cig/know-how/proforma/TaskProperties.md`, `TherapyPlan.md`, `MonitoringPlan.md`, `StateAchievementGoal.md`, `ActionEnactmentGoal.md`.

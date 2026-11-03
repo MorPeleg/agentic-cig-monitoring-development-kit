@@ -229,8 +229,6 @@ action  :: 'Advise_Avoid_Chronic_NSAIDs' ;
      description :: 'Rec 10 [3: Harm, B-R]: in CCD, chronic NSAIDs should not be used because of increased cardiovascular and bleeding complications. Modelled as an advice step that always completes at the start of the therapy plan, so every drug action can follow it.' ;
      metaprops :: 'goal.noun_phrase=increased cardiovascular and bleeding complications from chronic NSAID use
 goal.verb=avoid
-ontology.coding=SNOMED\\:372665008
-ontology.label=Non-steroidal anti-inflammatory agent (substance)
 quote.1=p.e50, Rec 10\\: "chronic nonsteroidal anti-inflammatory drugs should not be used because of increased cardiovascular and bleeding complications"
 quote.2=p.e53, text 10\\: "HF risk was doubled by all nonsteroidal antiinflammatory drugs."
 source.1=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 10 (p.e50)
@@ -344,8 +342,6 @@ action  :: 'Prescribe_Aspirin' ;
      description :: 'Rec 1 [1, A] recommends low-dose aspirin 81 mg (75-100 mg) to reduce atherosclerotic events in CCD without an oral anticoagulant indication. Aspirin is also part of every DAPT, vorapaxar and low-dose rivaroxaban regimen and of the short triple therapy with a DOAC after PCI (Recs 2-4, 11, 12, 15), so it is delivered for every regimen that contains it.' ;
      metaprops :: 'goal.noun_phrase=reduction of atherosclerotic events and MACE
 goal.verb=achieve
-ontology.coding=SNOMED\\:387458008
-ontology.label=Aspirin (substance)
 quote.1=p.e50, Rec 1\\: "low-dose aspirin 81 mg (75-100 mg) is recommended to reduce atherosclerotic events"
 quote.2=p.e50, Rec 12\\: "continuing aspirin in addition to clopidogrel for up to 1 month is reasonable if the patient has a high thrombotic risk and low bleeding risk"
 rxnorm.coding=RXNORM\\:1191
@@ -362,8 +358,6 @@ action  :: 'Prescribe_Clopidogrel' ;
      description :: 'Rec 2 [1, A] (DAPT with aspirin for 6 months after PCI, then single antiplatelet therapy), Rec 11 [1, B-R] (with a DOAC for 6 months after PCI) and supportive text 1 (alternative to aspirin when aspirin is not tolerated). Runs after both the NSAID advice and the P2Y12 decision, so it still runs on the clopidogrel-monotherapy path where that decision is discarded.' ;
      metaprops :: 'goal.noun_phrase=reduction of MACE and stent-related events after PCI, or of atherosclerotic events when aspirin is not tolerated
 goal.verb=achieve
-ontology.coding=SNOMED\\:386952008
-ontology.label=Clopidogrel (substance)
 quote.1=p.e50, Rec 2\\: "dual antiplatelet therapy (DAPT) consisting of aspirin and clopidogrel for 6 months post PCI followed by single antiplatelet therapy (SAPT) is indicated"
 quote.2=p.e50, Rec 11\\: "DAPT for 1 to 4 weeks followed by clopidogrel alone for 6 months should be administered in addition to DOAC"
 quote.3=\\u00A72.2\\: "75 mg once daily orally without a loading dose"
@@ -384,8 +378,6 @@ action  :: 'Prescribe_Ticagrelor' ;
      description :: 'Rec 4 [2b, A] allows extended DAPT beyond 12 months after MI for up to 3 years; its evidence (PEGASUS) used ticagrelor 60 mg twice daily, which reduced cardiovascular death, MI or stroke. Chosen by the assistant-proposed P2Y12 agent rule.' ;
      metaprops :: 'goal.noun_phrase=reduction of cardiovascular death, MI or stroke after MI
 goal.verb=achieve
-ontology.coding=SNOMED\\:698805004
-ontology.label=Ticagrelor (substance)
 quote.1=p.e50, Rec 4\\: "extended DAPT beyond 12 months for a period of up to 3 years may be reasonable to reduce MACE"
 quote.2=p.e52, text 4\\: "Treatment with ticagrelor 60 mg reduced the risk of cardiovascular death, MI, or stroke by 16% and increased the risk of major bleeding"
 quote.3=\\u00A72.2\\: "Administer 90 mg of BRILINTA twice daily during the first year after an ACS event."
@@ -406,8 +398,6 @@ action  :: 'Prescribe_Prasugrel' ;
      description :: 'Prasugrel is indicated after ACS managed with PCI (EFFIENT label) and can serve as the P2Y12 inhibitor of DAPT or of P2Y12 monotherapy after short DAPT (Rec 3 [2a, A]); Rec 9 [3: Harm, B-R] forbids it after stroke, TIA or ICH. Chosen by the assistant-proposed P2Y12 agent rule.' ;
      metaprops :: 'goal.noun_phrase=reduction of thrombotic cardiovascular events after ACS treated with PCI
 goal.verb=achieve
-ontology.coding=SNOMED\\:443129001
-ontology.label=Prasugrel (substance)
 quote.1=p.e50, Rec 3\\: "P2Y12 inhibitor monotherapy for at least 12 months is reasonable to reduce bleeding risk"
 quote.2=\\u00A72\\: "Continue at 10 mg once daily with or without food. Consider 5 mg once daily for patients <60 kg"
 rxnorm.coding=RXNORM\\:613391
@@ -424,8 +414,6 @@ action  :: 'Prescribe_Vorapaxar' ;
      description :: 'Rec 5 [2b, B-R]: after a previous MI without stroke, TIA or ICH, vorapaxar may be added to aspirin to reduce MACE; Rec 8 [3: Harm, A] forbids it after stroke, TIA or ICH.' ;
      metaprops :: 'goal.noun_phrase=reduction of MACE after MI
 goal.verb=achieve
-ontology.coding=SNOMED\\:708718003
-ontology.label=Vorapaxar (substance)
 quote.1=p.e50, Rec 5\\: "vorapaxar may be added to aspirin therapy to reduce MACE"
 quote.2=\\u00A72.1\\: "Take one tablet of ZONTIVITY 2.08 mg orally once daily, with or without food."
 rxnorm.coding=RXNORM\\:1537034
@@ -442,8 +430,6 @@ action  :: 'Prescribe_Low_Dose_Rivaroxaban' ;
      description :: 'Rec 15 [2a, B-R]: at high ischemic and low or moderate bleeding risk, adding low-dose rivaroxaban 2.5 mg twice daily to aspirin 81 mg daily is reasonable for long-term MACE reduction.' ;
      metaprops :: 'goal.noun_phrase=long-term reduction of MACE in high ischemic risk
 goal.verb=achieve
-ontology.coding=SNOMED\\:442031002
-ontology.label=Rivaroxaban (substance)
 quote.1=p.e50, Rec 15\\: "the addition of low-dose rivaroxaban 2.5 mg twice daily to aspirin 81 mg daily is reasonable for long-term reduction of risk for MACE"
 quote.2=\\u00A72.1\\: "2.5 mg orally twice daily with or without food, in combination with aspirin"
 rxnorm.coding=RXNORM\\:1114195
@@ -460,8 +446,6 @@ action  :: 'Prescribe_DOAC' ;
      description :: 'Recs 11-14: in CCD with an oral anticoagulant indication a DOAC is given with short antiplatelet therapy after PCI (Rec 11, 12), alone 1 year after PCI (Rec 13) or alone without an acute antiplatelet indication (Rec 14). One class-level action because §4.3.1 does not choose the agent; doses follow the US labels and the procedure notes the guideline\'s trial doses (approved open questions 4 and 5). The SNOMED CT concept (anticoagulant therapy) is broader than DOAC, since no DOAC concept was returned.' ;
      metaprops :: 'goal.noun_phrase=prevention of thromboembolism for the anticoagulant indication with the lowest bleeding risk alongside or after antiplatelet therapy
 goal.verb=achieve
-ontology.coding=SNOMED\\:182764009
-ontology.label=Anticoagulant therapy (procedure)
 quote.1=p.e50, Rec 14\\: "DOAC monotherapy may be considered if there is no acute indication for concomitant antiplatelet therapy"
 quote.2=p.e50, Rec 13\\: "discontinuation of aspirin therapy with continuation of DOAC alone may be considered 1 year after PCI to reduce bleeding risk"
 quote.3=p.e54, text 11\\: "apixaban 5 mg twice daily or 2.5 mg twice daily in those with 2 of 3 criteria for high bleeding risk"
@@ -478,8 +462,6 @@ action  :: 'Prescribe_PPI' ;
      description :: 'Rec 16 [2a, B-R]: in CCD on DAPT a PPI can reduce gastrointestinal bleeding risk. Pantoprazole is the PPI because it has no clinically important interaction with clopidogrel; it is also given during DOAC plus antiplatelet therapy, which starts as triple therapy (approved open question 7, off-label for this indication).' ;
      metaprops :: 'goal.noun_phrase=gastrointestinal bleeding during DAPT or antiplatelet plus anticoagulant therapy
 goal.verb=avoid
-ontology.coding=SNOMED\\:395821003
-ontology.label=Pantoprazole (substance)
 quote.1=p.e50, Rec 16\\: "In patients with CCD on DAPT, the use of a PPI can be effective in reducing gastrointestinal bleeding risk"
 quote.2=\\u00A77\\: "Concomitant administration of pantoprazole and clopidogrel in healthy subjects had no clinically important effect on exposure to the active metabolite of clopidogrel"
 rxnorm.coding=RXNORM\\:40790
@@ -496,6 +478,8 @@ plan  :: 'Antithrombotic_Therapy' ;
      description :: 'Delivers the chosen antithrombotic regimen: NSAID-avoidance advice first, then the P2Y12-agent decision and the drug actions, each gated by the regimen it belongs to. The whole plan is skipped when there is active pathological bleeding, which every antithrombotic label contraindicates.' ;
      precondition ::active_pathological_bleeding = false;
      component :: 'Advise_Avoid_Chronic_NSAIDs' ;
+          metaprops :: 'ontology.coding=SCT\\:372665008 [Non-steroidal anti-inflammatory agent (substance)]
+' ;
           task_definition :: 'Advise_Avoid_Chronic_NSAIDs' ;
           ltwh :: 40,40,0,0;
      component :: 'P2Y12_Agent_Decision' ;
@@ -503,37 +487,53 @@ plan  :: 'Antithrombotic_Therapy' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,140,0,0;
      component :: 'Prescribe_Aspirin' ;
+          metaprops :: 'ontology.coding=SCT\\:387458008 [Aspirin (substance)]
+' ;
           task_definition :: 'Prescribe_Aspirin' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,240,0,0;
      component :: 'Prescribe_Clopidogrel' ;
+          metaprops :: 'ontology.coding=SCT\\:386952008 [Clopidogrel (substance)]
+' ;
           task_definition :: 'Prescribe_Clopidogrel' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           schedule_constraint :: completed('P2Y12_Agent_Decision') ;
           ltwh :: 40,340,0,0;
      component :: 'Prescribe_Ticagrelor' ;
+          metaprops :: 'ontology.coding=SCT\\:698805004 [Ticagrelor (substance)]
+' ;
           task_definition :: 'Prescribe_Ticagrelor' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           schedule_constraint :: completed('P2Y12_Agent_Decision') ;
           ltwh :: 40,440,0,0;
      component :: 'Prescribe_Prasugrel' ;
+          metaprops :: 'ontology.coding=SCT\\:443129001 [Prasugrel (substance)]
+' ;
           task_definition :: 'Prescribe_Prasugrel' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           schedule_constraint :: completed('P2Y12_Agent_Decision') ;
           ltwh :: 40,540,0,0;
      component :: 'Prescribe_Vorapaxar' ;
+          metaprops :: 'ontology.coding=SCT\\:708718003 [Vorapaxar (substance)]
+' ;
           task_definition :: 'Prescribe_Vorapaxar' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,640,0,0;
      component :: 'Prescribe_Low_Dose_Rivaroxaban' ;
+          metaprops :: 'ontology.coding=SCT\\:442031002 [Rivaroxaban (substance)]
+' ;
           task_definition :: 'Prescribe_Low_Dose_Rivaroxaban' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,740,0,0;
      component :: 'Prescribe_DOAC' ;
+          metaprops :: 'ontology.coding=SCT\\:182764009 [Anticoagulant therapy (procedure)]
+' ;
           task_definition :: 'Prescribe_DOAC' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,840,0,0;
      component :: 'Prescribe_PPI' ;
+          metaprops :: 'ontology.coding=SCT\\:395821003 [Pantoprazole (substance)]
+' ;
           task_definition :: 'Prescribe_PPI' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,940,0,0;
@@ -560,8 +560,6 @@ literature_basis=the DOAC labels warn that premature discontinuation increases t
 monitored_target=completion of the prescribed antithrombotic regimen (Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban, Prescribe_DOAC)
 monitoring_frequency_basis=proposed, tied to the regimen transition points of Figure 9 (1, 3, 6 and 12 months) and then routine CCD follow-up; the guideline and labels give no cadence
 monitoring_stance=proposed_by_assistant
-ontology.coding=SNOMED\\:410122002
-ontology.label=Assessment of compliance with medication regimen (procedure)
 provenance_type=assistant_completed_from_guidelines
 quote.1=Boxed Warning (A)\\: "Premature discontinuation of any oral anticoagulant, including XARELTO, increases the risk of thrombotic events."
 quote.2=\\u00A75.3\\: "Lapses in therapy should be avoided"
@@ -596,8 +594,6 @@ literature_basis=the guideline fixes the duration of each regimen (Figure 9, Rec
 monitored_target=completion of the regimen durations chosen by Antithrombotic_Regimen_Decision and delivered by Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC
 monitoring_frequency_basis=the review points are the step-down times of Figure 9 (1 month, 1 to 3 months, 6 months, 12 months), then yearly
 monitoring_stance=proposed_by_assistant
-ontology.coding=SNOMED\\:182836005
-ontology.label=Review of medication (procedure)
 provenance_type=assistant_completed_from_guidelines
 quote.1=p.e50, Rec 2\\: "dual antiplatelet therapy (DAPT) consisting of aspirin and clopidogrel for 6 months post PCI followed by single antiplatelet therapy (SAPT) is indicated"
 quote.2=p.e50, Rec 11\\: "DAPT for 1 to 4 weeks followed by clopidogrel alone for 6 months should be administered in addition to DOAC"
@@ -632,8 +628,6 @@ literature_basis=the guideline says chronic NSAIDs should not be used in CCD (3\
 monitored_target=avoidance of chronic NSAIDs (avoid goal of Advise_Avoid_Chronic_NSAIDs)
 monitoring_frequency_basis=proposed, at each routine visit because NSAIDs are often bought over the counter
 monitoring_stance=proposed_by_assistant
-ontology.coding=SNOMED\\:430193006
-ontology.label=Medication reconciliation (procedure)
 provenance_type=assistant_completed_from_guidelines
 quote.1=p.e50, Rec 10\\: "chronic nonsteroidal anti-inflammatory drugs should not be used because of increased cardiovascular and bleeding complications"
 quote.2=\\u00A77.4\\: "Coadministration of Plavix and NSAIDs increases the risk of gastrointestinal bleeding."
@@ -666,8 +660,6 @@ literature_basis=the guideline supports a PPI while on DAPT, and the label asks 
 monitored_target=delivery and timely stop of gastroprotection (avoid goal of Prescribe_PPI)
 monitoring_frequency_basis=proposed, at each visit and at each step-down of Figure 9
 monitoring_stance=proposed_by_assistant
-ontology.coding=SNOMED\\:182836005
-ontology.label=Review of medication (procedure)
 provenance_type=assistant_completed_from_guidelines
 quote.1=p.e50, Rec 16\\: "In patients with CCD on DAPT, the use of a PPI can be effective in reducing gastrointestinal bleeding risk"
 quote.2=\\u00A75.10\\: "Use the shortest duration of PPI therapy appropriate to the condition being treated."
@@ -684,15 +676,23 @@ plan  :: 'Monitor_Actions' ;
      caption :: 'Monitor completion of the antithrombotic recommendations' ;
      description :: 'Action Enactment monitoring: adherence, regimen duration and step-down, NSAID avoidance and the continued need for the PPI.' ;
      component :: 'Monitor_Antithrombotic_Adherence' ;
+          metaprops :: 'ontology.coding=SCT\\:410122002 [Assessment of compliance with medication regimen (procedure)]
+' ;
           task_definition :: 'Monitor_Antithrombotic_Adherence' ;
           ltwh :: 40,40,0,0;
      component :: 'Monitor_Regimen_Duration' ;
+          metaprops :: 'ontology.coding=SCT\\:182836005 [Review of medication (procedure)]
+' ;
           task_definition :: 'Monitor_Regimen_Duration' ;
           ltwh :: 40,140,0,0;
      component :: 'Monitor_NSAID_Avoidance' ;
+          metaprops :: 'ontology.coding=SCT\\:430193006 [Medication reconciliation (procedure)]
+' ;
           task_definition :: 'Monitor_NSAID_Avoidance' ;
           ltwh :: 40,240,0,0;
      component :: 'Monitor_PPI_Continued_Need' ;
+          metaprops :: 'ontology.coding=SCT\\:182836005 [Review of medication (procedure)]
+' ;
           task_definition :: 'Monitor_PPI_Continued_Need' ;
           ltwh :: 40,340,0,0;
 end plan.
@@ -718,8 +718,6 @@ literature_basis=every antithrombotic in \\u00A74.3.1 is recommended to reduce M
 monitored_target=MACE and atherosclerotic events (achieve goals of Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC)
 monitoring_frequency_basis=proposed, at the Figure 9 transition points then routine CCD follow-up; the guideline gives no cadence in \\u00A74.3.1
 monitoring_stance=proposed_by_assistant
-ontology.coding=SNOMED\\:405617006
-ontology.label=Cardiovascular event (event)
 provenance_type=assistant_completed_from_guidelines
 quote.1=p.e50, Rec 1\\: "low-dose aspirin 81 mg (75-100 mg) is recommended to reduce atherosclerotic events"
 quote.2=\\u00A74.1\\: "Discontinue ZONTIVITY in patients who experience a stroke, TIA, or ICH"
@@ -737,6 +735,8 @@ plan  :: 'Monitor_Desired_State' ;
      caption :: 'Monitor the desired outcome (absence of ischemic events)' ;
      description :: 'State Achievement monitoring of the shared achieve goal of the antithrombotic drugs: fewer ischemic events and MACE.' ;
      component :: 'Monitor_Ischemic_Events' ;
+          metaprops :: 'ontology.coding=SCT\\:405617006 [Cardiovascular event (event)]
+' ;
           task_definition :: 'Monitor_Ischemic_Events' ;
           ltwh :: 40,40,0,0;
 end plan.
@@ -788,8 +788,6 @@ literature_basis=the guideline names GI bleeding as a common side effect of DAPT
 monitored_target=bleeding, including gastrointestinal and intracranial bleeding, as an adverse effect of Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC (and the avoid goal of Prescribe_PPI)
 monitoring_frequency_basis=symptom review at every visit because bleeding is the most frequent serious ADE of every drug in the CIG, with event-driven testing as the labels direct
 monitoring_stance=recommended
-ontology.coding=SNOMED\\:131148009
-ontology.label=Bleeding (finding)
 provenance_type=package_insert_specified
 quote.1=p.e55, text 16\\: "Increased bleeding including gastrointestinal bleeding is a common side effect of DAPT"
 quote.2=\\u00A75.2\\: "Promptly evaluate any signs or symptoms of blood loss and consider the need for blood replacement."
@@ -840,8 +838,7 @@ role=test_ordering
      choice_mode :: multiple ;
      candidate :: 'Hemoglobin' ;
           caption :: 'Hemoglobin' ;
-          metaprops :: 'ontology.coding=LOINC\\:718-7
-ontology.label=Hemoglobin [Mass/volume] in Blood
+          metaprops :: 'ontology.coding=LNC\\:718-7 [Hemoglobin [Mass/volume] in Blood]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Hemoglobin' ;
@@ -851,8 +848,7 @@ ontology.label=Hemoglobin [Mass/volume] in Blood
           recommendation ::netsupport() > 0;
      candidate :: 'Hematocrit' ;
           caption :: 'Hematocrit' ;
-          metaprops :: 'ontology.coding=LOINC\\:4544-3
-ontology.label=Hematocrit [Volume Fraction] of Blood by Automated count
+          metaprops :: 'ontology.coding=LNC\\:4544-3 [Hematocrit [Volume Fraction] of Blood by Automated count]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Hematocrit' ;
@@ -883,8 +879,6 @@ literature_basis=the guideline repeats the FDA warning against omeprazole and es
 monitored_target=loss of antithrombotic effect or excess bleeding from drug interactions with Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC
 monitoring_frequency_basis=at initiation and whenever the medication list changes, because the risk arises from a new co-medication
 monitoring_stance=recommended
-ontology.coding=SNOMED\\:79899007
-ontology.label=Drug interaction (finding)
 provenance_type=package_insert_specified
 quote.1=p.e55, text 16\\: "The FDA has added a boxed warning to avoid use of omeprazole with clopidogrel as well as other potent CYP 2C19 inhibitors, including esomeprazole."
 quote.2=\\u00A75.1\\: "Avoid concomitant use of Plavix with omeprazole or esomeprazole because both significantly reduce the antiplatelet activity of Plavix"
@@ -926,8 +920,6 @@ action  :: 'Order_Serum_Digoxin' ;
      description :: 'Orders a serum digoxin level for Monitor_Drug_Interactions: the ticagrelor label asks to monitor digoxin levels when ticagrelor is started or changed in a patient on digoxin.' ;
      metaprops :: 'goal.noun_phrase=serum digoxin level
 goal.verb=order
-ontology.coding=LOINC\\:10535-3
-ontology.label=Digoxin [Mass/volume] in Serum or Plasma
 ordered_for=Monitor_Drug_Interactions
 quote.1=\\u00A77.5\\: "monitor digoxin levels with initiation of or change in BRILINTA therapy"
 role=test_order
@@ -958,8 +950,6 @@ literature_basis=every DOAC label carries a Boxed Warning that epidural or spina
 monitored_target=spinal or epidural hematoma as a boxed-warning adverse effect of Prescribe_DOAC and Prescribe_Low_Dose_Rivaroxaban
 monitoring_frequency_basis=label-specified, frequent checks around each neuraxial procedure
 monitoring_stance=recommended
-ontology.coding=SNOMED\\:703861005
-ontology.label=Spinal epidural hematoma (disorder)
 provenance_type=package_insert_specified
 quote.1=Boxed Warning (B)\\: "Monitor patients frequently for signs and symptoms of neurological impairment. If neurological compromise is noted, urgent treatment is necessary"
 quote.2=\\u00A75.3\\: "Indwelling epidural or intrathecal catheters should not be removed earlier than 24 hours after the last administration of ELIQUIS."
@@ -1004,8 +994,6 @@ literature_basis=each P2Y12 and DOAC label states how long before surgery to int
 monitored_target=surgical bleeding and thrombotic events around procedures for Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC
 monitoring_frequency_basis=event-driven at each planned procedure, as the labels describe
 monitoring_stance=recommended
-ontology.coding=SNOMED\\:110265006
-ontology.label=Postoperative hemorrhage (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.3\\: "When possible, interrupt therapy with Plavix for five days prior to such surgery. Resume Plavix as soon as hemostasis is achieved."
 quote.2=\\u00A75.2\\: "If possible, Effient should be discontinued at least 7 days prior to CABG."
@@ -1050,8 +1038,6 @@ literature_basis=the dabigatran and rivaroxaban labels instruct baseline and per
 monitored_target=renal function that sets anticoagulant dosing and eligibility for Prescribe_DOAC and Prescribe_Low_Dose_Rivaroxaban
 monitoring_frequency_basis=label-specified baseline and periodic assessment, with a proposed minimum of every 12 months
 monitoring_stance=recommended
-ontology.coding=SNOMED\\:442407001
-ontology.label=Estimation of creatinine clearance by Cockcroft-Gault formula (procedure)
 provenance_type=package_insert_specified
 quote.1=\\u00A72.4\\: "Assess renal function prior to initiation of treatment with PRADAXA Capsules. Periodically assess renal function as clinically indicated"
 quote.2=\\u00A75.4\\: "Periodically assess renal function as clinically indicated (i.e., more frequently in situations in which renal function may decline) and adjust therapy accordingly"
@@ -1080,8 +1066,6 @@ action  :: 'Order_Serum_Creatinine' ;
      description :: 'Orders serum creatinine, from which the Cockcroft-Gault creatinine clearance is calculated, for Monitor_Renal_Function: anticoagulant dose and eligibility depend on it, and the labels ask for baseline and periodic renal assessment, more often when renal function may decline.' ;
      metaprops :: 'goal.noun_phrase=serum creatinine for Cockcroft-Gault creatinine clearance
 goal.verb=order
-ontology.coding=LOINC\\:2160-0
-ontology.label=Creatinine [Mass/volume] in Serum or Plasma
 ordered_for=Monitor_Renal_Function
 quote.1=\\u00A72.4\\: "Assess renal function prior to initiation of treatment with PRADAXA Capsules. Periodically assess renal function as clinically indicated"
 role=test_order
@@ -1112,8 +1096,6 @@ literature_basis=both thienopyridine labels warn that TTP, sometimes fatal, can 
 monitored_target=thrombotic thrombocytopenic purpura as a labeled adverse effect of Prescribe_Clopidogrel and Prescribe_Prasugrel
 monitoring_frequency_basis=symptom-triggered because TTP is rare and acute, with attention to the first weeks of exposure
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:78129009
-ontology.label=Thrombotic thrombocytopenic purpura (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.4\\: "TTP, sometimes fatal, has been reported following use of Plavix, sometimes after a short exposure (<2 weeks)."
 quote.2=\\u00A75.4\\: "TTP has been reported with the use of Effient. TTP can occur after a brief exposure (<2 weeks)."
@@ -1151,8 +1133,7 @@ source.1=PLAVIX (clopidogrel) US Prescribing Information 2025, \\u00A75.4
      choice_mode :: multiple ;
      candidate :: 'Platelet_Count' ;
           caption :: 'Platelet count' ;
-          metaprops :: 'ontology.coding=LOINC\\:777-3
-ontology.label=Platelets [\\#/volume] in Blood by Automated count
+          metaprops :: 'ontology.coding=LNC\\:777-3 [Platelets [\\#/volume] in Blood by Automated count]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Platelet_Count' ;
@@ -1162,8 +1143,7 @@ ontology.label=Platelets [\\#/volume] in Blood by Automated count
           recommendation ::netsupport() > 0;
      candidate :: 'Blood_Smear_Schistocytes' ;
           caption :: 'Blood smear for schistocytes' ;
-          metaprops :: 'ontology.coding=LOINC\\:800-3
-ontology.label=Schistocytes [Presence] in Blood by Light microscopy
+          metaprops :: 'ontology.coding=LNC\\:800-3 [Schistocytes [Presence] in Blood by Light microscopy]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Blood_Smear_Schistocytes' ;
@@ -1173,8 +1153,7 @@ ontology.label=Schistocytes [Presence] in Blood by Light microscopy
           recommendation ::netsupport() > 0;
      candidate :: 'LDH' ;
           caption :: 'LDH' ;
-          metaprops :: 'ontology.coding=LOINC\\:2532-0
-ontology.label=Lactate dehydrogenase [Enzymatic activity/volume] in Serum or Plasma
+          metaprops :: 'ontology.coding=LNC\\:2532-0 [Lactate dehydrogenase [Enzymatic activity/volume] in Serum or Plasma]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_LDH' ;
@@ -1184,8 +1163,7 @@ ontology.label=Lactate dehydrogenase [Enzymatic activity/volume] in Serum or Pla
           recommendation ::netsupport() > 0;
      candidate :: 'Serum_Creatinine' ;
           caption :: 'Serum creatinine' ;
-          metaprops :: 'ontology.coding=LOINC\\:2160-0
-ontology.label=Creatinine [Mass/volume] in Serum or Plasma
+          metaprops :: 'ontology.coding=LNC\\:2160-0 [Creatinine [Mass/volume] in Serum or Plasma]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Serum_Creatinine' ;
@@ -1216,8 +1194,6 @@ literature_basis=the clopidogrel Boxed Warning says effectiveness depends on CYP
 monitored_target=diminished antiplatelet effect in CYP2C19 poor metabolizers as a boxed-warning risk of Prescribe_Clopidogrel
 monitoring_frequency_basis=event-driven, because the label does not mandate routine genotyping
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:738786005
-ontology.label=Cytochrome P450 family 2 subfamily C member 19 poor metabolizer (finding)
 provenance_type=package_insert_specified
 quote.1=Boxed Warning\\: "Tests are available to identify patients who are CYP2C19 poor metabolizers."
 quote.2=Boxed Warning\\: "Consider use of another platelet P2Y 12 inhibitor in patients identified as CYP2C19 poor metabolizers."
@@ -1238,8 +1214,6 @@ action  :: 'Order_CYP2C19_Genotype' ;
      description :: 'Orders CYP2C19 genotyping for Monitor_CYP2C19_Poor_Metabolizer: after an ischemic event on clopidogrel, a poor-metabolizer result would lead to another P2Y12 inhibitor (clopidogrel Boxed Warning).' ;
      metaprops :: 'goal.noun_phrase=CYP2C19 genotype
 goal.verb=order
-ontology.coding=LOINC\\:57132-3
-ontology.label=CYP2C19 gene allele [Genotype] in Blood or Tissue by Molecular genetics method Nominal
 ordered_for=Monitor_CYP2C19_Poor_Metabolizer
 quote.1=Boxed Warning\\: "Tests are available to identify patients who are CYP2C19 poor metabolizers."
 role=test_order
@@ -1270,8 +1244,6 @@ literature_basis=the aspirin label warns of severe allergic reactions and says t
 monitored_target=hypersensitivity reactions to Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Prasugrel and Prescribe_Ticagrelor
 monitoring_frequency_basis=symptom-triggered because reactions are acute
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:416098002
-ontology.label=Allergy to drug (finding)
 provenance_type=package_insert_specified
 quote.1=Allergy alert\\: "Aspirin may cause a severe allergic reaction, which may include\\: hives facial swelling shock asthma (wheezing)"
 quote.2=\\u00A75.5\\: "Hypersensitivity including rash, angioedema or hematologic reaction has been reported in patients receiving Plavix"
@@ -1316,8 +1288,6 @@ literature_basis=the label says ticagrelor-related dyspnea needs no specific tre
 monitored_target=dyspnea as a labeled adverse effect of Prescribe_Ticagrelor
 monitoring_frequency_basis=symptom-triggered, as the label describes
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:267036007
-ontology.label=Dyspnea (finding)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.3\\: "If a patient develops new, prolonged, or worsened dyspnea that is determined to be related to BRILINTA, no specific treatment is required"
 quote.2=\\u00A75.3\\: "In the case of intolerable dyspnea requiring discontinuation of BRILINTA, consider prescribing another antiplatelet agent."
@@ -1354,8 +1324,6 @@ literature_basis=the label warns that ticagrelor can cause ventricular pauses an
 monitored_target=bradyarrhythmia (ventricular pauses, AV block) as a labeled adverse effect of Prescribe_Ticagrelor
 monitoring_frequency_basis=proposed, a pulse check at each routine visit is cheap and catches symptomatic bradycardia
 monitoring_stance=proposed_by_assistant
-ontology.coding=SNOMED\\:421869004
-ontology.label=Bradyarrhythmia (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.4\\: "BRILINTA can cause ventricular pauses"
 quote.2=\\u00A75.4\\: "Patients with a history of sick sinus syndrome, 2 nd or 3 rd degree AV block or bradycardia-related syncope not protected by a pacemaker were excluded from clinical studies"
@@ -1378,8 +1346,6 @@ action  :: 'Order_ECG' ;
      description :: 'Orders a 12-lead ECG for Monitor_Ticagrelor_Bradyarrhythmia, to look for ventricular pauses or AV block when syncope, dizziness or a slow pulse is found on ticagrelor.' ;
      metaprops :: 'goal.noun_phrase=12-lead ECG
 goal.verb=order
-ontology.coding=LOINC\\:34534-8
-ontology.label=12 lead EKG panel
 ordered_for=Monitor_Ticagrelor_Bradyarrhythmia
 role=test_order
 ' ;
@@ -1408,8 +1374,6 @@ literature_basis=the label reports central sleep apnea including Cheyne-Stokes r
 monitored_target=central sleep apnea as a labeled adverse effect of Prescribe_Ticagrelor
 monitoring_frequency_basis=symptom-triggered, as the label describes
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:27405005
-ontology.label=Central sleep apnea syndrome (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.6\\: "If central sleep apnea is suspected, consider further clinical assessment."
 source.1=BRILINTA (ticagrelor) US Prescribing Information 2026, \\u00A75.6 Central Sleep Apnea
@@ -1430,8 +1394,6 @@ action  :: 'Order_Polysomnography' ;
      description :: 'Orders a sleep study for Monitor_Ticagrelor_Central_Sleep_Apnea, as the further clinical assessment the ticagrelor label advises when central sleep apnea is suspected.' ;
      metaprops :: 'goal.noun_phrase=polysomnography (sleep study)
 goal.verb=order
-ontology.coding=LOINC\\:28633-6
-ontology.label=Polysomnography (sleep) study
 ordered_for=Monitor_Ticagrelor_Central_Sleep_Apnea
 role=test_order
 ' ;
@@ -1460,8 +1422,6 @@ literature_basis=the label says PPI therapy may raise the risk of C. difficile-a
 monitored_target=C. difficile-associated diarrhea as a labeled adverse effect of Prescribe_PPI
 monitoring_frequency_basis=symptom-triggered, as the label describes
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:186431008
-ontology.label=Infection caused by Clostridioides difficile (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.3\\: "This diagnosis should be considered for diarrhea that does not improve"
 quote.2=\\u00A717\\: "Advise patients to immediately call their healthcare provider if they experience diarrhea that does not improve"
@@ -1484,8 +1444,6 @@ action  :: 'Order_Stool_C_Difficile_Test' ;
      description :: 'Orders a stool C. difficile toxin test for Monitor_PPI_CDAD, because the pantoprazole label says C. difficile-associated diarrhea should be considered for diarrhea that does not improve.' ;
      metaprops :: 'goal.noun_phrase=stool C. difficile toxin test
 goal.verb=order
-ontology.coding=LOINC\\:34713-8
-ontology.label=Clostridioides difficile toxin A+B [Presence] in Stool
 ordered_for=Monitor_PPI_CDAD
 role=test_order
 ' ;
@@ -1514,8 +1472,6 @@ literature_basis=the label\'s own instruction is to consider magnesium before st
 monitored_target=hypomagnesemia as a labeled adverse effect of Prescribe_PPI
 monitoring_frequency_basis=label-specified baseline and periodic testing, with a proposed 12-month interval
 monitoring_stance=recommended
-ontology.coding=SNOMED\\:190855004
-ontology.label=Hypomagnesemia (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.8\\: "For patients expected to be on prolonged treatment or who take PPIs with medications such as digoxin or drugs that may cause hypomagnesemia (e.g., diuretics)"
 quote.2=\\u00A75.8\\: "health care professionals may consider monitoring magnesium levels prior to initiation of PPI treatment and periodically"
@@ -1549,8 +1505,7 @@ source.1=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.8
      choice_mode :: multiple ;
      candidate :: 'Serum_Magnesium' ;
           caption :: 'Serum magnesium' ;
-          metaprops :: 'ontology.coding=LOINC\\:19123-9
-ontology.label=Magnesium [Mass/volume] in Serum or Plasma
+          metaprops :: 'ontology.coding=LNC\\:19123-9 [Magnesium [Mass/volume] in Serum or Plasma]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Serum_Magnesium' ;
@@ -1560,8 +1515,7 @@ ontology.label=Magnesium [Mass/volume] in Serum or Plasma
           recommendation ::netsupport() > 0;
      candidate :: 'Serum_Calcium' ;
           caption :: 'Serum calcium' ;
-          metaprops :: 'ontology.coding=LOINC\\:17861-6
-ontology.label=Calcium [Mass/volume] in Serum or Plasma
+          metaprops :: 'ontology.coding=LNC\\:17861-6 [Calcium [Mass/volume] in Serum or Plasma]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Serum_Calcium' ;
@@ -1571,8 +1525,7 @@ ontology.label=Calcium [Mass/volume] in Serum or Plasma
           recommendation ::netsupport() > 0;
      candidate :: 'Serum_Potassium' ;
           caption :: 'Serum potassium' ;
-          metaprops :: 'ontology.coding=LOINC\\:2823-3
-ontology.label=Potassium [Moles/volume] in Serum or Plasma
+          metaprops :: 'ontology.coding=LNC\\:2823-3 [Potassium [Moles/volume] in Serum or Plasma]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Serum_Potassium' ;
@@ -1603,8 +1556,6 @@ literature_basis=the label links long-term (a year or longer) and high-dose PPI 
 monitored_target=osteoporosis-related fracture as a labeled adverse effect of long-term Prescribe_PPI
 monitoring_frequency_basis=proposed yearly review, matching the one-year threshold in the label
 monitoring_stance=proposed_by_assistant
-ontology.coding=SNOMED\\:443165006
-ontology.label=Osteoporotic fracture of bone (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.4\\: "The risk of fracture was increased in patients who received high-dose, defined as multiple daily doses, and long-term PPI therapy (a year or longer)."
 quote.2=\\u00A717\\: "Advise patients to report any fractures, especially of the hip, wrist or spine, to their healthcare provider"
@@ -1639,8 +1590,6 @@ literature_basis=the label says acute TIN can occur at any point during PPI ther
 monitored_target=acute tubulointerstitial nephritis as a labeled adverse effect of Prescribe_PPI
 monitoring_frequency_basis=symptom-triggered, as the label describes
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:28637003
-ontology.label=Acute tubulointerstitial nephritis (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.2\\: "Discontinue PROTONIX and evaluate patients with suspected acute TIN"
 quote.2=\\u00A717\\: "Advise patients to call their healthcare provider immediately if they experience signs and/or symptoms associated with acute tubulointerstitial nephritis"
@@ -1672,8 +1621,7 @@ role=test_ordering
      choice_mode :: multiple ;
      candidate :: 'Serum_Creatinine' ;
           caption :: 'Serum creatinine' ;
-          metaprops :: 'ontology.coding=LOINC\\:2160-0
-ontology.label=Creatinine [Mass/volume] in Serum or Plasma
+          metaprops :: 'ontology.coding=LNC\\:2160-0 [Creatinine [Mass/volume] in Serum or Plasma]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Serum_Creatinine' ;
@@ -1683,8 +1631,7 @@ ontology.label=Creatinine [Mass/volume] in Serum or Plasma
           recommendation ::netsupport() > 0;
      candidate :: 'Urinalysis' ;
           caption :: 'Urinalysis' ;
-          metaprops :: 'ontology.coding=LOINC\\:24356-8
-ontology.label=Urinalysis complete panel - Urine
+          metaprops :: 'ontology.coding=LNC\\:24356-8 [Urinalysis complete panel - Urine]
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Urinalysis' ;
@@ -1715,8 +1662,6 @@ literature_basis=the label reports new or exacerbated CLE and SLE with PPIs and 
 monitored_target=cutaneous or systemic lupus erythematosus as a labeled adverse effect of Prescribe_PPI
 monitoring_frequency_basis=symptom-triggered, as the label describes
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:7119001
-ontology.label=Cutaneous lupus erythematosus (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.6\\: "If signs or symptoms consistent with CLE or SLE are noted in patients receiving PROTONIX, discontinue the drug and refer the patient to the appropriate specialist"
 source.1=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.6
@@ -1751,8 +1696,6 @@ literature_basis=the label reports severe cutaneous reactions (EM, SJS/TEN, DRES
 monitored_target=severe cutaneous adverse reactions as a labeled adverse effect of Prescribe_PPI
 monitoring_frequency_basis=symptom-triggered, as the label describes
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:768946000
-ontology.label=Stevens-Johnson syndrome, toxic epidermal necrolysis spectrum (disorder)
 provenance_type=package_insert_specified
 quote.1=\\u00A75.5\\: "Discontinue PROTONIX at the first signs or symptoms of severe cutaneous adverse reactions or other signs of hypersensitivity and consider further evaluation."
 source.1=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.5
@@ -1775,6 +1718,8 @@ plan  :: 'Monitor_Undesired_State' ;
           task_definition :: 'Display_Potential_ADEs' ;
           ltwh :: 40,40,0,0;
      component :: 'Monitor_Bleeding' ;
+          metaprops :: 'ontology.coding=SCT\\:131148009 [Bleeding (finding)]
+' ;
           task_definition :: 'Monitor_Bleeding' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,140,0,0;
@@ -1783,30 +1728,44 @@ plan  :: 'Monitor_Undesired_State' ;
           schedule_constraint :: completed('Monitor_Bleeding') ;
           ltwh :: 40,240,0,0;
      component :: 'Monitor_Drug_Interactions' ;
+          metaprops :: 'ontology.coding=SCT\\:79899007 [Drug interaction (finding)]
+' ;
           task_definition :: 'Monitor_Drug_Interactions' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,340,0,0;
      component :: 'Order_Serum_Digoxin' ;
+          metaprops :: 'ontology.coding=LNC\\:10535-3 [Digoxin [Mass/volume] in Serum or Plasma]
+' ;
           task_definition :: 'Order_Serum_Digoxin' ;
           schedule_constraint :: completed('Monitor_Drug_Interactions') ;
           ltwh :: 40,440,0,0;
      component :: 'Monitor_Spinal_Epidural_Hematoma' ;
+          metaprops :: 'ontology.coding=SCT\\:703861005 [Spinal epidural hematoma (disorder)]
+' ;
           task_definition :: 'Monitor_Spinal_Epidural_Hematoma' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,540,0,0;
      component :: 'Monitor_Perioperative_Interruption' ;
+          metaprops :: 'ontology.coding=SCT\\:110265006 [Postoperative hemorrhage (disorder)]
+' ;
           task_definition :: 'Monitor_Perioperative_Interruption' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,640,0,0;
      component :: 'Monitor_Renal_Function' ;
+          metaprops :: 'ontology.coding=SCT\\:442407001 [Estimation of creatinine clearance by Cockcroft-Gault formula (procedure)]
+' ;
           task_definition :: 'Monitor_Renal_Function' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,740,0,0;
      component :: 'Order_Serum_Creatinine' ;
+          metaprops :: 'ontology.coding=LNC\\:2160-0 [Creatinine [Mass/volume] in Serum or Plasma]
+' ;
           task_definition :: 'Order_Serum_Creatinine' ;
           schedule_constraint :: completed('Monitor_Renal_Function') ;
           ltwh :: 40,840,0,0;
      component :: 'Monitor_TTP' ;
+          metaprops :: 'ontology.coding=SCT\\:78129009 [Thrombotic thrombocytopenic purpura (disorder)]
+' ;
           task_definition :: 'Monitor_TTP' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,940,0,0;
@@ -1815,46 +1774,68 @@ plan  :: 'Monitor_Undesired_State' ;
           schedule_constraint :: completed('Monitor_TTP') ;
           ltwh :: 40,1040,0,0;
      component :: 'Monitor_CYP2C19_Poor_Metabolizer' ;
+          metaprops :: 'ontology.coding=SCT\\:738786005 [Cytochrome P450 family 2 subfamily C member 19 poor metabolizer (finding)]
+' ;
           task_definition :: 'Monitor_CYP2C19_Poor_Metabolizer' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,1140,0,0;
      component :: 'Order_CYP2C19_Genotype' ;
+          metaprops :: 'ontology.coding=LNC\\:57132-3 [CYP2C19 gene allele [Genotype] in Blood or Tissue by Molecular genetics method Nominal]
+' ;
           task_definition :: 'Order_CYP2C19_Genotype' ;
           schedule_constraint :: completed('Monitor_CYP2C19_Poor_Metabolizer') ;
           ltwh :: 40,1240,0,0;
      component :: 'Monitor_Antiplatelet_Hypersensitivity' ;
+          metaprops :: 'ontology.coding=SCT\\:416098002 [Allergy to drug (finding)]
+' ;
           task_definition :: 'Monitor_Antiplatelet_Hypersensitivity' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,1340,0,0;
      component :: 'Monitor_Ticagrelor_Dyspnea' ;
+          metaprops :: 'ontology.coding=SCT\\:267036007 [Dyspnea (finding)]
+' ;
           task_definition :: 'Monitor_Ticagrelor_Dyspnea' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,1440,0,0;
      component :: 'Monitor_Ticagrelor_Bradyarrhythmia' ;
+          metaprops :: 'ontology.coding=SCT\\:421869004 [Bradyarrhythmia (disorder)]
+' ;
           task_definition :: 'Monitor_Ticagrelor_Bradyarrhythmia' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,1540,0,0;
      component :: 'Order_ECG' ;
+          metaprops :: 'ontology.coding=LNC\\:34534-8 [12 lead EKG panel]
+' ;
           task_definition :: 'Order_ECG' ;
           schedule_constraint :: completed('Monitor_Ticagrelor_Bradyarrhythmia') ;
           ltwh :: 40,1640,0,0;
      component :: 'Monitor_Ticagrelor_Central_Sleep_Apnea' ;
+          metaprops :: 'ontology.coding=SCT\\:27405005 [Central sleep apnea syndrome (disorder)]
+' ;
           task_definition :: 'Monitor_Ticagrelor_Central_Sleep_Apnea' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,1740,0,0;
      component :: 'Order_Polysomnography' ;
+          metaprops :: 'ontology.coding=LNC\\:28633-6 [Polysomnography (sleep) study]
+' ;
           task_definition :: 'Order_Polysomnography' ;
           schedule_constraint :: completed('Monitor_Ticagrelor_Central_Sleep_Apnea') ;
           ltwh :: 40,1840,0,0;
      component :: 'Monitor_PPI_CDAD' ;
+          metaprops :: 'ontology.coding=SCT\\:186431008 [Infection caused by Clostridioides difficile (disorder)]
+' ;
           task_definition :: 'Monitor_PPI_CDAD' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,1940,0,0;
      component :: 'Order_Stool_C_Difficile_Test' ;
+          metaprops :: 'ontology.coding=LNC\\:34713-8 [Clostridioides difficile toxin A+B [Presence] in Stool]
+' ;
           task_definition :: 'Order_Stool_C_Difficile_Test' ;
           schedule_constraint :: completed('Monitor_PPI_CDAD') ;
           ltwh :: 40,2040,0,0;
      component :: 'Monitor_PPI_Hypomagnesemia' ;
+          metaprops :: 'ontology.coding=SCT\\:190855004 [Hypomagnesemia (disorder)]
+' ;
           task_definition :: 'Monitor_PPI_Hypomagnesemia' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,2140,0,0;
@@ -1863,10 +1844,14 @@ plan  :: 'Monitor_Undesired_State' ;
           schedule_constraint :: completed('Monitor_PPI_Hypomagnesemia') ;
           ltwh :: 40,2240,0,0;
      component :: 'Monitor_PPI_Bone_Fracture' ;
+          metaprops :: 'ontology.coding=SCT\\:443165006 [Osteoporotic fracture of bone (disorder)]
+' ;
           task_definition :: 'Monitor_PPI_Bone_Fracture' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,2340,0,0;
      component :: 'Monitor_PPI_Interstitial_Nephritis' ;
+          metaprops :: 'ontology.coding=SCT\\:28637003 [Acute tubulointerstitial nephritis (disorder)]
+' ;
           task_definition :: 'Monitor_PPI_Interstitial_Nephritis' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,2440,0,0;
@@ -1875,10 +1860,14 @@ plan  :: 'Monitor_Undesired_State' ;
           schedule_constraint :: completed('Monitor_PPI_Interstitial_Nephritis') ;
           ltwh :: 40,2540,0,0;
      component :: 'Monitor_PPI_Cutaneous_Lupus' ;
+          metaprops :: 'ontology.coding=SCT\\:7119001 [Cutaneous lupus erythematosus (disorder)]
+' ;
           task_definition :: 'Monitor_PPI_Cutaneous_Lupus' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,2640,0,0;
      component :: 'Monitor_PPI_Severe_Cutaneous_Reactions' ;
+          metaprops :: 'ontology.coding=SCT\\:768946000 [Stevens-Johnson syndrome, toxic epidermal necrolysis spectrum (disorder)]
+' ;
           task_definition :: 'Monitor_PPI_Severe_Cutaneous_Reactions' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,2740,0,0;
@@ -1903,8 +1892,7 @@ data  :: 'requires_oral_anticoagulation' ;
      type :: boolean ;
      caption :: 'Does the patient have an indication for long-term oral anticoagulation (e.g. atrial fibrillation)?' ;
      description :: 'Indication for long-term oral anticoagulation (e.g. atrial fibrillation). Separates the regimens without an oral anticoagulant (Recs 1-10, 15) from those with a DOAC (Recs 11-14). The SNOMED CT concept records current use of an anticoagulant, not the indication.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:711150003
-ontology.label=Long-term current use of anticoagulant (situation)
+     metaprops :: 'ontology.coding=SCT\\:711150003 [Long-term current use of anticoagulant (situation)]
 quote=p.e50, Rec 1\\: "In patients with CCD and no indication for oral anticoagulant therapy, low-dose aspirin 81 mg (75-100 mg) is recommended"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 1 (p.e50)
 ' ;
@@ -1914,8 +1902,7 @@ data  :: 'pci_within_12_months' ;
      type :: boolean ;
      caption :: 'PCI within the past 12 months?' ;
      description :: 'Percutaneous coronary intervention within the past 12 months; the PCI-related DAPT and DOAC-plus-antiplatelet pathways of Figure 9 apply in this window. The 12-month window is held in the data-item logic; the SNOMED CT concept records a history of PCI.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:405741001
-ontology.label=History of percutaneous coronary intervention (situation)
+     metaprops :: 'ontology.coding=SCT\\:405741001 [History of percutaneous coronary intervention (situation)]
 quote=p.e50, Rec 2\\: "In patients with CCD treated with PCI, dual antiplatelet therapy (DAPT) consisting of aspirin and clopidogrel for 6 months post PCI"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 2 (p.e50)
 ' ;
@@ -1925,8 +1912,7 @@ data  :: 'des_implanted' ;
      type :: boolean ;
      caption :: 'Was a drug-eluting stent implanted at that PCI?' ;
      description :: 'A drug-eluting stent was implanted at the recent PCI; required for the short-DAPT then P2Y12-monotherapy option of Rec 3.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:705637003
-ontology.label=Drug-eluting coronary artery stent (physical object)
+     metaprops :: 'ontology.coding=SCT\\:705637003 [Drug-eluting coronary artery stent (physical object)]
 quote=p.e50, Rec 3\\: "In select patients with CCD treated with PCI and a drug-eluting stent (DES) who have completed a 1- to 3-month course of DAPT"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 3 (p.e50)
 ' ;
@@ -1936,8 +1922,7 @@ data  :: 'acs_within_12_months' ;
      type :: boolean ;
      caption :: 'Acute coronary syndrome within the past 12 months?' ;
      description :: 'Acute coronary syndrome within the past 12 months; recent ACS is an indication for DAPT (Figure 9) and an acute indication for antiplatelet therapy alongside a DOAC (Rec 14).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:394659003
-ontology.label=Acute coronary syndrome (disorder)
+     metaprops :: 'ontology.coding=SCT\\:394659003 [Acute coronary syndrome (disorder)]
 quote=p.e50, Rec 7\\: "In patients with CCD without recent ACS or a PCI-related indication for DAPT"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 7 (p.e50)
 ' ;
@@ -1947,8 +1932,7 @@ data  :: 'cabg_within_12_months' ;
      type :: boolean ;
      caption :: 'CABG within the past 12 months?' ;
      description :: 'Coronary artery bypass grafting within the past 12 months. Rec 6 gives no DAPT duration after CABG; the first postoperative year is used (approved open question 1).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:232717009
-ontology.label=Coronary artery bypass grafting (procedure)
+     metaprops :: 'ontology.coding=SCT\\:232717009 [Coronary artery bypass grafting (procedure)]
 quote=p.e50, Rec 6\\: "the use of DAPT after CABG may be useful to reduce the incidence of saphenous vein graft occlusion"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 6 (p.e50)
 ' ;
@@ -1958,8 +1942,7 @@ data  :: 'previous_mi' ;
      type :: boolean ;
      caption :: 'History of myocardial infarction?' ;
      description :: 'History of myocardial infarction; the population of extended DAPT (Rec 4), vorapaxar (Rec 5) and ticagrelor 60 mg (PEGASUS).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:1755008
-ontology.label=Old myocardial infarction (disorder)
+     metaprops :: 'ontology.coding=SCT\\:1755008 [Old myocardial infarction (disorder)]
 quote=p.e50, Rec 4\\: "In patients with CCD who have had a previous MI and are at low bleeding risk"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 4 (p.e50)
 ' ;
@@ -1969,8 +1952,7 @@ data  :: 'prior_stroke_or_tia' ;
      type :: boolean ;
      caption :: 'History of ischemic stroke or TIA?' ;
      description :: 'History of ischemic stroke or transient ischemic attack; excludes vorapaxar (Rec 8) and prasugrel (Rec 9). The SNOMED CT concept covers cerebrovascular accident; TIA is a separate concept (161511000) not coded here.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:275526006
-ontology.label=History of cerebrovascular accident (situation)
+     metaprops :: 'ontology.coding=SCT\\:275526006 [History of cerebrovascular accident (situation)]
 quote=p.e50, Rec 9\\: "In patients with CCD and previous stroke, TIA, or ICH, prasugrel should not be used"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 9 (p.e50)
 ' ;
@@ -1980,8 +1962,7 @@ data  :: 'prior_ich' ;
      type :: boolean ;
      caption :: 'History of intracranial hemorrhage?' ;
      description :: 'History of intracranial hemorrhage; excludes vorapaxar (Rec 8), prasugrel (Rec 9) and ticagrelor (BRILINTA §4.1).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:16864911000119103
-ontology.label=History of intracranial hemorrhage (situation)
+     metaprops :: 'ontology.coding=SCT\\:16864911000119103 [History of intracranial hemorrhage (situation)]
 quote=\\u00A74.1\\: "BRILINTA is contraindicated in patients with a history of intracranial hemorrhage (ICH) because of a high risk of recurrent ICH in this population"
 source=BRILINTA (ticagrelor) US Prescribing Information 2026, \\u00A74.1
 ' ;
@@ -1991,8 +1972,7 @@ data  :: 'high_bleeding_risk' ;
      type :: boolean ;
      caption :: 'High bleeding risk (validated score such as PRECISE-DAPT, DAPT or PARIS, or clinical judgment)?' ;
      description :: 'High bleeding risk, assessed with a validated score (PRECISE-DAPT, DAPT or PARIS) or clinical judgment; steers the choice and duration of antiplatelet therapy (Synopsis; Recs 3, 4, 12, 15).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:711536002
-ontology.label=At high risk for bleeding (finding)
+     metaprops :: 'ontology.coding=SCT\\:711536002 [At high risk for bleeding (finding)]
 quote=p.e50, Synopsis\\: "The use of validated risk scores to address bleeding risk can be useful in choice and duration of antiplatelet therapy."
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Synopsis (p.e50)
 ' ;
@@ -2002,8 +1982,7 @@ data  :: 'high_thrombotic_risk' ;
      type :: boolean ;
      caption :: 'High risk of recurrent ischemic events (e.g. multivessel CAD with diabetes, recurrent MI, PAD, HF or CKD, or complex PCI)?' ;
      description :: 'High risk of recurrent ischemic events (the COMPASS definition: multivessel CAD with diabetes requiring medication, recurrent MI, PAD, HF or CKD; or complex PCI features). The SNOMED CT concept is the nearest match (increased risk for cardiovascular event).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:395112001
-ontology.label=At increased risk for cardiovascular event (finding)
+     metaprops :: 'ontology.coding=SCT\\:395112001 [At increased risk for cardiovascular event (finding)]
 quote=p.e55, text 15\\: "multivessel CAD and at least one of the following\\: diabetes requiring medication, recurrent MI, peripheral artery disease, HF, or CKD"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 supportive text 15 (p.e55)
 ' ;
@@ -2013,8 +1992,7 @@ data  :: 'aspirin_intolerance' ;
      type :: boolean ;
      caption :: 'Aspirin allergy or intolerance (incl. NSAID hypersensitivity or the asthma-rhinitis-nasal polyps syndrome)?' ;
      description :: 'Aspirin allergy or intolerance, including NSAID hypersensitivity and the asthma-rhinitis-nasal polyps syndrome; selects clopidogrel monotherapy instead of aspirin. The SNOMED CT concept covers aspirin allergy only, not intolerance.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:293586001
-ontology.label=Allergy to aspirin (finding)
+     metaprops :: 'ontology.coding=SCT\\:293586001 [Allergy to aspirin (finding)]
 quote=p.e51, text 1\\: "As an alternative to low-dose aspirin, clopidogrel may be used in individuals who cannot tolerate aspirin therapy"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 supportive text 1 (p.e51)
 ' ;
@@ -2024,8 +2002,7 @@ data  :: 'active_pathological_bleeding' ;
      type :: boolean ;
      caption :: 'Active pathological bleeding (e.g. peptic ulcer, intracranial hemorrhage)?' ;
      description :: 'Active pathological bleeding such as a peptic ulcer or intracranial hemorrhage; every antithrombotic label contraindicates it, so it gates the whole therapy plan. Shares its SNOMED CT concept with Monitor_Bleeding.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:131148009
-ontology.label=Bleeding (finding)
+     metaprops :: 'ontology.coding=SCT\\:131148009 [Bleeding (finding)]
 quote=\\u00A74.1\\: "Plavix is contraindicated in patients with active pathological bleeding such as peptic ulcer or intracranial hemorrhage."
 source=PLAVIX (clopidogrel) US Prescribing Information 2025, \\u00A74.1
 ' ;
@@ -2035,8 +2012,7 @@ data  :: 'age_years' ;
      type :: integer ;
      caption :: 'Age' ;
      description :: 'Age in years; prasugrel is generally not recommended at 75 years or older (EFFIENT Boxed Warning).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:424144002
-ontology.label=Current chronological age (observable entity)
+     metaprops :: 'ontology.coding=SCT\\:424144002 [Current chronological age (observable entity)]
 quote=Boxed Warning\\: "In patients \\u226575 years of age, Effient is generally not recommended, because of the increased risk of fatal and intracranial bleeding and uncertain benefit"
 source=EFFIENT (prasugrel) US Prescribing Information 2022, Boxed Warning
 ' ;
@@ -2056,8 +2032,7 @@ data  :: 'unusual_bleeding_or_bruising' ;
      type :: boolean ;
      caption :: 'Unusual, prolonged or excessive bleeding or bruising since the last visit?' ;
      description :: 'Unusual, prolonged or excessive bleeding or bruising reported by the patient. Asked by Monitor_Bleeding. The SNOMED CT concept is broader (any bleeding).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:131148009
-ontology.label=Bleeding (finding)
+     metaprops :: 'ontology.coding=SCT\\:131148009 [Bleeding (finding)]
 ' ;
 end data.
 
@@ -2065,8 +2040,7 @@ data  :: 'hematuria' ;
      type :: boolean ;
      caption :: 'Blood in the urine since the last visit?' ;
      description :: 'Blood in the urine reported by the patient. Asked by Monitor_Bleeding and Monitor_PPI_Interstitial_Nephritis.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:34436003
-ontology.label=Blood in urine (finding)
+     metaprops :: 'ontology.coding=SCT\\:34436003 [Blood in urine (finding)]
 ' ;
 end data.
 
@@ -2074,8 +2048,7 @@ data  :: 'blood_in_stool' ;
      type :: boolean ;
      caption :: 'Red or black tarry stools since the last visit?' ;
      description :: 'Red or black tarry stools reported by the patient, a sign of gastrointestinal bleeding. Asked by Monitor_Bleeding. The SNOMED CT concept is broader (gastrointestinal hemorrhage, of which red or black stools are a sign).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:74474003
-ontology.label=Gastrointestinal hemorrhage (disorder)
+     metaprops :: 'ontology.coding=SCT\\:74474003 [Gastrointestinal hemorrhage (disorder)]
 ' ;
 end data.
 
@@ -2083,8 +2056,7 @@ data  :: 'hematemesis' ;
      type :: boolean ;
      caption :: 'Vomiting blood or coffee-ground material since the last visit?' ;
      description :: 'Vomiting of blood or coffee-ground material reported by the patient. Asked by Monitor_Bleeding.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:8765009
-ontology.label=Hematemesis (disorder)
+     metaprops :: 'ontology.coding=SCT\\:8765009 [Hematemesis (disorder)]
 ' ;
 end data.
 
@@ -2092,8 +2064,7 @@ data  :: 'hemoptysis' ;
      type :: boolean ;
      caption :: 'Coughing up blood since the last visit?' ;
      description :: 'Coughing up blood reported by the patient. Asked by Monitor_Bleeding.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:66857006
-ontology.label=Hemoptysis (finding)
+     metaprops :: 'ontology.coding=SCT\\:66857006 [Hemoptysis (finding)]
 ' ;
 end data.
 
@@ -2101,8 +2072,7 @@ data  :: 'syncope' ;
      type :: boolean ;
      caption :: 'Fainting since the last visit?' ;
      description :: 'Fainting (syncope) reported by the patient. Asked by Monitor_Bleeding and Monitor_Ticagrelor_Bradyarrhythmia.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:271594007
-ontology.label=Syncope (finding)
+     metaprops :: 'ontology.coding=SCT\\:271594007 [Syncope (finding)]
 ' ;
 end data.
 
@@ -2110,8 +2080,7 @@ data  :: 'sudden_severe_headache' ;
      type :: boolean ;
      caption :: 'Sudden severe headache since the last visit?' ;
      description :: 'Sudden severe headache reported by the patient, a possible sign of intracranial bleeding. Asked by Monitor_Bleeding.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:95660002
-ontology.label=Thunderclap headache (disorder)
+     metaprops :: 'ontology.coding=SCT\\:95660002 [Thunderclap headache (disorder)]
 ' ;
 end data.
 
@@ -2119,8 +2088,7 @@ data  :: 'systolic_bp' ;
      type :: real ;
      caption :: 'Systolic blood pressure at this visit (mmHg)' ;
      description :: 'Systolic blood pressure measured at the visit; a low value (below 90 mmHg) is unexplained hypotension that may signal bleeding. Asked by Monitor_Bleeding.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:271649006
-ontology.label=Systolic blood pressure (observable entity)
+     metaprops :: 'ontology.coding=SCT\\:271649006 [Systolic blood pressure (observable entity)]
 ' ;
      unit :: 'mmHg' ;
 end data.
@@ -2129,8 +2097,7 @@ data  :: 'diastolic_bp' ;
      type :: real ;
      caption :: 'Diastolic blood pressure at this visit (mmHg)' ;
      description :: 'Diastolic blood pressure measured at the visit, recorded with the systolic value. Asked by Monitor_Bleeding.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:271650006
-ontology.label=Diastolic blood pressure (observable entity)
+     metaprops :: 'ontology.coding=SCT\\:271650006 [Diastolic blood pressure (observable entity)]
 ' ;
      unit :: 'mmHg' ;
 end data.
@@ -2139,8 +2106,7 @@ data  :: 'new_medication_started' ;
      type :: boolean ;
      caption :: 'Has a new medicine been started since the last visit?' ;
      description :: 'A new prescription, over-the-counter medicine or herbal product started since the last visit. Asked by Monitor_Drug_Interactions.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:266712008
-ontology.label=New medication commenced (finding)
+     metaprops :: 'ontology.coding=SCT\\:266712008 [New medication commenced (finding)]
 ' ;
 end data.
 
@@ -2148,8 +2114,7 @@ data  :: 'on_omeprazole_or_esomeprazole' ;
      type :: boolean ;
      caption :: 'Taking omeprazole or esomeprazole?' ;
      description :: 'Current use of omeprazole or esomeprazole, which reduce the antiplatelet effect of clopidogrel. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is broader (any PPI therapy).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:870251000
-ontology.label=Proton pump inhibitor therapy (procedure)
+     metaprops :: 'ontology.coding=SCT\\:870251000 [Proton pump inhibitor therapy (procedure)]
 ' ;
 end data.
 
@@ -2157,8 +2122,7 @@ data  :: 'aspirin_dose_over_100_mg' ;
      type :: boolean ;
      caption :: 'Taking more than 100 mg of aspirin a day?' ;
      description :: 'A daily aspirin dose above 100 mg, which reduces the effect of ticagrelor. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the nearest match (aspirin therapy); there is no dose concept.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:717854002
-ontology.label=Aspirin therapy (procedure)
+     metaprops :: 'ontology.coding=SCT\\:717854002 [Aspirin therapy (procedure)]
 ' ;
 end data.
 
@@ -2166,8 +2130,7 @@ data  :: 'on_strong_cyp3a_or_pgp_modulator' ;
      type :: boolean ;
      caption :: 'Taking a strong CYP3A or P-gp inhibitor or inducer?' ;
      description :: 'Current use of a strong CYP3A or P-gp inhibitor or inducer, which changes exposure to ticagrelor, vorapaxar and the DOACs. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the nearest match (cytochrome P450 inhibitor).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:735424007
-ontology.label=Cytochrome P450 inhibitor (disposition)
+     metaprops :: 'ontology.coding=SCT\\:735424007 [Cytochrome P450 inhibitor (disposition)]
 ' ;
 end data.
 
@@ -2175,8 +2138,7 @@ data  :: 'on_ssri_or_snri' ;
      type :: boolean ;
      caption :: 'Taking an SSRI or SNRI?' ;
      description :: 'Current use of a selective serotonin or serotonin-norepinephrine re-uptake inhibitor, which adds bleeding risk. Asked by Monitor_Drug_Interactions. The SNOMED CT concept covers SSRIs only.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:373225007
-ontology.label=Selective serotonin re-uptake inhibitor
+     metaprops :: 'ontology.coding=SCT\\:373225007 [Selective serotonin re-uptake inhibitor]
 ' ;
 end data.
 
@@ -2184,8 +2146,7 @@ data  :: 'on_other_anticoagulant' ;
      type :: boolean ;
      caption :: 'Taking another anticoagulant?' ;
      description :: 'Current use of another anticoagulant, which adds bleeding risk. Asked by Monitor_Drug_Interactions.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:711150003
-ontology.label=Long-term current use of anticoagulant (situation)
+     metaprops :: 'ontology.coding=SCT\\:711150003 [Long-term current use of anticoagulant (situation)]
 ' ;
 end data.
 
@@ -2193,8 +2154,7 @@ data  :: 'on_digoxin' ;
      type :: boolean ;
      caption :: 'Taking digoxin?' ;
      description :: 'Current use of digoxin, whose level is monitored when ticagrelor is started or changed. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the substance.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:387461009
-ontology.label=Digoxin (substance)
+     metaprops :: 'ontology.coding=SCT\\:387461009 [Digoxin (substance)]
 ' ;
 end data.
 
@@ -2202,8 +2162,7 @@ data  :: 'neuraxial_procedure_performed' ;
      type :: boolean ;
      caption :: 'Has neuraxial anesthesia or a spinal puncture been performed during anticoagulant therapy?' ;
      description :: 'Neuraxial anesthesia or spinal puncture performed during anticoagulant therapy, the event that triggers frequent neurological checks. Asked by Monitor_Spinal_Epidural_Hematoma.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:405650006
-ontology.label=Neuraxial nerve block (procedure)
+     metaprops :: 'ontology.coding=SCT\\:405650006 [Neuraxial nerve block (procedure)]
 ' ;
 end data.
 
@@ -2211,8 +2170,7 @@ data  :: 'back_pain' ;
      type :: boolean ;
      caption :: 'Back pain after the epidural or spinal procedure?' ;
      description :: 'Back pain after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:161891005
-ontology.label=Backache (finding)
+     metaprops :: 'ontology.coding=SCT\\:161891005 [Backache (finding)]
 ' ;
 end data.
 
@@ -2220,8 +2178,7 @@ data  :: 'leg_numbness_or_tingling' ;
      type :: boolean ;
      caption :: 'Numbness or tingling of the legs after the epidural or spinal procedure?' ;
      description :: 'Numbness or tingling of the legs after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma. The SNOMED CT concept covers only numbness, not tingling.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:309537005
-ontology.label=Numbness of lower limb (finding)
+     metaprops :: 'ontology.coding=SCT\\:309537005 [Numbness of lower limb (finding)]
 ' ;
 end data.
 
@@ -2229,8 +2186,7 @@ data  :: 'leg_weakness' ;
      type :: boolean ;
      caption :: 'Weakness of the legs after the epidural or spinal procedure?' ;
      description :: 'Weakness of the legs after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:1137412000
-ontology.label=Weakness of muscle of lower limb (finding)
+     metaprops :: 'ontology.coding=SCT\\:1137412000 [Weakness of muscle of lower limb (finding)]
 ' ;
 end data.
 
@@ -2238,8 +2194,7 @@ data  :: 'bowel_or_bladder_dysfunction' ;
      type :: boolean ;
      caption :: 'Bowel or bladder problems after the epidural or spinal procedure?' ;
      description :: 'Bowel or bladder dysfunction after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma. The SNOMED CT concept covers the bowel part only.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:235594008
-ontology.label=Bowel dysfunction (disorder)
+     metaprops :: 'ontology.coding=SCT\\:235594008 [Bowel dysfunction (disorder)]
 ' ;
 end data.
 
@@ -2247,8 +2202,7 @@ data  :: 'planned_surgery_or_invasive_procedure' ;
      type :: boolean ;
      caption :: 'Is surgery, CABG or an invasive or dental procedure planned?' ;
      description :: 'A planned surgery, CABG or invasive or dental procedure, the event that triggers the perioperative antithrombotic plan. Asked by Monitor_Perioperative_Interruption.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:405613005
-ontology.label=Planned procedure (situation)
+     metaprops :: 'ontology.coding=SCT\\:405613005 [Planned procedure (situation)]
 ' ;
 end data.
 
@@ -2256,8 +2210,7 @@ data  :: 'urgent_cabg_likely' ;
      type :: boolean ;
      caption :: 'Is urgent CABG likely?' ;
      description :: 'Urgent CABG is likely, in which case prasugrel or ticagrelor should not be started. Asked by Monitor_Perioperative_Interruption. The SNOMED CT concept is the nearest match (emergency CABG).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:414088005
-ontology.label=Emergency CABG
+     metaprops :: 'ontology.coding=SCT\\:414088005 [Emergency CABG]
 ' ;
 end data.
 
@@ -2265,8 +2218,7 @@ data  :: 'renal_function_check_due' ;
      type :: boolean ;
      caption :: 'Is a renal function check due (baseline, or 12 months since the last one)?' ;
      description :: 'The scheduled renal function test is due: at baseline before starting, then at least every 12 months. Asked by Monitor_Renal_Function. The SNOMED CT concept is the nearest match (renal function monitoring).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:182809008
-ontology.label=Renal function monitoring (regime/therapy)
+     metaprops :: 'ontology.coding=SCT\\:182809008 [Renal function monitoring (regime/therapy)]
 ' ;
 end data.
 
@@ -2274,8 +2226,7 @@ data  :: 'vomiting_or_diarrhea' ;
      type :: boolean ;
      caption :: 'Vomiting or diarrhea since the last visit?' ;
      description :: 'Vomiting or diarrhea reported by the patient, which may reduce renal function. Asked by Monitor_Renal_Function. The SNOMED CT concept covers only the combined finding of diarrhea and vomiting, not either one alone.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:249519007
-ontology.label=Diarrhea and vomiting (finding)
+     metaprops :: 'ontology.coding=SCT\\:249519007 [Diarrhea and vomiting (finding)]
 ' ;
 end data.
 
@@ -2283,8 +2234,7 @@ data  :: 'dehydration' ;
      type :: boolean ;
      caption :: 'Is the patient dehydrated?' ;
      description :: 'Dehydration, which may reduce renal function. Asked by Monitor_Renal_Function.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:34095006
-ontology.label=Dehydration (disorder)
+     metaprops :: 'ontology.coding=SCT\\:34095006 [Dehydration (disorder)]
 ' ;
 end data.
 
@@ -2292,8 +2242,7 @@ data  :: 'new_nephrotoxic_medication' ;
      type :: boolean ;
      caption :: 'Has a new medicine that can affect the kidneys been started?' ;
      description :: 'A new nephrotoxic medicine started since the last visit. Asked by Monitor_Renal_Function. The SNOMED CT concept is broader (any new medication).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:266712008
-ontology.label=New medication commenced (finding)
+     metaprops :: 'ontology.coding=SCT\\:266712008 [New medication commenced (finding)]
 ' ;
 end data.
 
@@ -2301,8 +2250,7 @@ data  :: 'acute_illness' ;
      type :: boolean ;
      caption :: 'Acute illness since the last visit?' ;
      description :: 'An acute illness, during which renal function may decline. Asked by Monitor_Renal_Function.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:2704003
-ontology.label=Acute disease (disorder)
+     metaprops :: 'ontology.coding=SCT\\:2704003 [Acute disease (disorder)]
 ' ;
 end data.
 
@@ -2310,8 +2258,7 @@ data  :: 'unexplained_purpura' ;
      type :: boolean ;
      caption :: 'Unexplained purple skin spots?' ;
      description :: 'Unexplained purple skin spots (purpura) reported by the patient. Asked by Monitor_TTP.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:284078000
-ontology.label=Purpuric rash (disorder)
+     metaprops :: 'ontology.coding=SCT\\:284078000 [Purpuric rash (disorder)]
 ' ;
 end data.
 
@@ -2319,8 +2266,7 @@ data  :: 'extreme_fatigue' ;
      type :: boolean ;
      caption :: 'Extreme tiredness?' ;
      description :: 'Extreme tiredness reported by the patient. Asked by Monitor_TTP.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:60119000
-ontology.label=Exhaustion (finding)
+     metaprops :: 'ontology.coding=SCT\\:60119000 [Exhaustion (finding)]
 ' ;
 end data.
 
@@ -2328,8 +2274,7 @@ data  :: 'jaundice' ;
      type :: boolean ;
      caption :: 'Yellow skin or eyes?' ;
      description :: 'Yellow skin or eyes (jaundice). Asked by Monitor_TTP.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:18165001
-ontology.label=Jaundice (finding)
+     metaprops :: 'ontology.coding=SCT\\:18165001 [Jaundice (finding)]
 ' ;
 end data.
 
@@ -2337,8 +2282,7 @@ data  :: 'fever' ;
      type :: boolean ;
      caption :: 'Fever since the last visit?' ;
      description :: 'Fever reported by the patient or measured at the visit. Asked by Monitor_TTP, Monitor_PPI_CDAD and Monitor_PPI_Interstitial_Nephritis.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:386661006
-ontology.label=Fever (finding)
+     metaprops :: 'ontology.coding=SCT\\:386661006 [Fever (finding)]
 ' ;
 end data.
 
@@ -2346,8 +2290,7 @@ data  :: 'confusion' ;
      type :: boolean ;
      caption :: 'New confusion?' ;
      description :: 'New confusion reported by the patient or a carer. Asked by Monitor_TTP.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:286933003
-ontology.label=Confusional state (disorder)
+     metaprops :: 'ontology.coding=SCT\\:286933003 [Confusional state (disorder)]
 ' ;
 end data.
 
@@ -2355,8 +2298,7 @@ data  :: 'reduced_urine_output' ;
      type :: boolean ;
      caption :: 'Passing less urine than usual?' ;
      description :: 'Reduced urine output reported by the patient. Asked by Monitor_TTP and Monitor_PPI_Interstitial_Nephritis.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:718403007
-ontology.label=Decreased urine output (finding)
+     metaprops :: 'ontology.coding=SCT\\:718403007 [Decreased urine output (finding)]
 ' ;
 end data.
 
@@ -2364,8 +2306,7 @@ data  :: 'cyp2c19_status' ;
      type :: text ;
      caption :: 'CYP2C19 genotype result on file?' ;
      description :: 'The CYP2C19 genotype result on file: poor metabolizer, not a poor metabolizer, or unknown (no result). Asked by Monitor_CYP2C19_Poor_Metabolizer. The SNOMED CT concept names the result the clopidogrel label acts on (CYP2C19 poor metabolizer).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:738786005
-ontology.label=Cytochrome P450 family 2 subfamily C member 19 poor metabolizer (finding)
+     metaprops :: 'ontology.coding=SCT\\:738786005 [Cytochrome P450 family 2 subfamily C member 19 poor metabolizer (finding)]
 ' ;
      range ::"poor_metabolizer","not_poor_metabolizer","unknown";
 end data.
@@ -2374,8 +2315,7 @@ data  :: 'ischemic_event_on_clopidogrel' ;
      type :: boolean ;
      caption :: 'Ischemic event (new chest pain, MI or stroke symptoms) while on clopidogrel?' ;
      description :: 'An ischemic event while on clopidogrel, which prompts CYP2C19 testing. Asked by Monitor_CYP2C19_Poor_Metabolizer. The SNOMED CT concept is broader (acute coronary syndrome) and does not cover stroke.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:394659003
-ontology.label=Acute coronary syndrome (disorder)
+     metaprops :: 'ontology.coding=SCT\\:394659003 [Acute coronary syndrome (disorder)]
 ' ;
 end data.
 
@@ -2383,8 +2323,7 @@ data  :: 'hives' ;
      type :: boolean ;
      caption :: 'Hives?' ;
      description :: 'Hives (urticaria) after starting or switching an antiplatelet. Asked by Monitor_Antiplatelet_Hypersensitivity.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:126485001
-ontology.label=Urticaria (disorder)
+     metaprops :: 'ontology.coding=SCT\\:126485001 [Urticaria (disorder)]
 ' ;
 end data.
 
@@ -2392,8 +2331,7 @@ data  :: 'facial_or_throat_swelling' ;
      type :: boolean ;
      caption :: 'Swelling of the face, lips or throat?' ;
      description :: 'Swelling of the face, lips or throat (angioedema). Asked by Monitor_Antiplatelet_Hypersensitivity.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:41291007
-ontology.label=Angioedema (disorder)
+     metaprops :: 'ontology.coding=SCT\\:41291007 [Angioedema (disorder)]
 ' ;
 end data.
 
@@ -2401,8 +2339,7 @@ data  :: 'wheezing' ;
      type :: boolean ;
      caption :: 'Wheezing?' ;
      description :: 'Wheezing, a sign of bronchospasm. Asked by Monitor_Antiplatelet_Hypersensitivity.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:56018004
-ontology.label=Wheezing (finding)
+     metaprops :: 'ontology.coding=SCT\\:56018004 [Wheezing (finding)]
 ' ;
 end data.
 
@@ -2410,8 +2347,7 @@ data  :: 'widespread_rash' ;
      type :: boolean ;
      caption :: 'Widespread rash?' ;
      description :: 'A widespread rash after starting or switching an antiplatelet. Asked by Monitor_Antiplatelet_Hypersensitivity.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:725119006
-ontology.label=Generalized rash (disorder)
+     metaprops :: 'ontology.coding=SCT\\:725119006 [Generalized rash (disorder)]
 ' ;
 end data.
 
@@ -2419,8 +2355,7 @@ data  :: 'new_or_worse_dyspnea' ;
      type :: boolean ;
      caption :: 'New, prolonged or worse shortness of breath?' ;
      description :: 'New, prolonged or worsened shortness of breath. Asked by Monitor_Ticagrelor_Dyspnea.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:267036007
-ontology.label=Dyspnea (finding)
+     metaprops :: 'ontology.coding=SCT\\:267036007 [Dyspnea (finding)]
 ' ;
 end data.
 
@@ -2428,8 +2363,7 @@ data  :: 'intolerable_dyspnea' ;
      type :: boolean ;
      caption :: 'Is the shortness of breath intolerable?' ;
      description :: 'Shortness of breath the patient finds intolerable, which warrants switching antiplatelet agent. Asked by Monitor_Ticagrelor_Dyspnea. The SNOMED CT concept is the nearest match (dyspnea at rest).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:161941007
-ontology.label=Dyspnea at rest (finding)
+     metaprops :: 'ontology.coding=SCT\\:161941007 [Dyspnea at rest (finding)]
 ' ;
 end data.
 
@@ -2437,8 +2371,7 @@ data  :: 'dizziness' ;
      type :: boolean ;
      caption :: 'Dizziness or light-headedness since the last visit?' ;
      description :: 'Dizziness or light-headedness reported by the patient. Asked by Monitor_Ticagrelor_Bradyarrhythmia.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:404640003
-ontology.label=Dizziness (finding)
+     metaprops :: 'ontology.coding=SCT\\:404640003 [Dizziness (finding)]
 ' ;
 end data.
 
@@ -2446,8 +2379,7 @@ data  :: 'pulse_rate' ;
      type :: integer ;
      caption :: 'Pulse rate at this visit (/min)' ;
      description :: 'Pulse rate measured at the visit; a slow pulse (below 50/min) prompts an ECG. Asked by Monitor_Ticagrelor_Bradyarrhythmia.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:78564009
-ontology.label=Heart rate measured at systemic artery (observable entity)
+     metaprops :: 'ontology.coding=SCT\\:78564009 [Heart rate measured at systemic artery (observable entity)]
 ' ;
      unit :: '/min' ;
 end data.
@@ -2456,8 +2388,7 @@ data  :: 'breathing_pauses_during_sleep' ;
      type :: boolean ;
      caption :: 'Pauses in breathing or irregular breathing during sleep (noticed by the patient or partner)?' ;
      description :: 'Pauses in breathing or irregular breathing during sleep, noticed by the patient or bed partner. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea. The SNOMED CT concept is broader (sleep apnea).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:73430006
-ontology.label=Sleep apnea (disorder)
+     metaprops :: 'ontology.coding=SCT\\:73430006 [Sleep apnea (disorder)]
 ' ;
 end data.
 
@@ -2465,8 +2396,7 @@ data  :: 'daytime_sleepiness' ;
      type :: boolean ;
      caption :: 'Daytime sleepiness?' ;
      description :: 'New daytime sleepiness. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:1367959007
-ontology.label=Excessive daytime sleepiness (finding)
+     metaprops :: 'ontology.coding=SCT\\:1367959007 [Excessive daytime sleepiness (finding)]
 ' ;
 end data.
 
@@ -2474,8 +2404,7 @@ data  :: 'frequent_night_waking' ;
      type :: boolean ;
      caption :: 'Frequent waking at night?' ;
      description :: 'Frequent waking at night. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:423052008
-ontology.label=Frequent night waking (finding)
+     metaprops :: 'ontology.coding=SCT\\:423052008 [Frequent night waking (finding)]
 ' ;
 end data.
 
@@ -2483,8 +2412,7 @@ data  :: 'persistent_diarrhea' ;
      type :: boolean ;
      caption :: 'Diarrhea that does not improve?' ;
      description :: 'Diarrhea that does not improve. Asked by Monitor_PPI_CDAD. The SNOMED CT concept is the nearest match (chronic diarrhea).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:236071009
-ontology.label=Chronic diarrhea (disorder)
+     metaprops :: 'ontology.coding=SCT\\:236071009 [Chronic diarrhea (disorder)]
 ' ;
 end data.
 
@@ -2492,8 +2420,7 @@ data  :: 'abdominal_pain' ;
      type :: boolean ;
      caption :: 'Abdominal pain?' ;
      description :: 'Abdominal pain reported by the patient. Asked by Monitor_PPI_CDAD.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:21522001
-ontology.label=Abdominal pain (finding)
+     metaprops :: 'ontology.coding=SCT\\:21522001 [Abdominal pain (finding)]
 ' ;
 end data.
 
@@ -2501,8 +2428,7 @@ data  :: 'magnesium_check_due' ;
      type :: boolean ;
      caption :: 'Is a magnesium check due (baseline, or 12 months since the last one)?' ;
      description :: 'The scheduled serum magnesium test is due: at baseline before starting pantoprazole, then every 12 months while it continues. Asked by Monitor_PPI_Hypomagnesemia. The SNOMED CT concept is the nearest match (the serum magnesium measurement).' ;
-     metaprops :: 'ontology.coding=SNOMED\\:63571001
-ontology.label=Magnesium measurement, serum (procedure)
+     metaprops :: 'ontology.coding=SCT\\:63571001 [Magnesium measurement, serum (procedure)]
 ' ;
 end data.
 
@@ -2510,8 +2436,7 @@ data  :: 'muscle_cramps_or_spasms' ;
      type :: boolean ;
      caption :: 'Muscle cramps or spasms?' ;
      description :: 'Muscle cramps or spasms reported by the patient. Asked by Monitor_PPI_Hypomagnesemia. The SNOMED CT concept covers only cramp, not spasms.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:55300003
-ontology.label=Cramp (finding)
+     metaprops :: 'ontology.coding=SCT\\:55300003 [Cramp (finding)]
 ' ;
 end data.
 
@@ -2519,8 +2444,7 @@ data  :: 'tremor' ;
      type :: boolean ;
      caption :: 'Tremor?' ;
      description :: 'Tremor reported by the patient or seen at the visit. Asked by Monitor_PPI_Hypomagnesemia.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:26079004
-ontology.label=Tremor (finding)
+     metaprops :: 'ontology.coding=SCT\\:26079004 [Tremor (finding)]
 ' ;
 end data.
 
@@ -2528,8 +2452,7 @@ data  :: 'palpitations' ;
      type :: boolean ;
      caption :: 'Palpitations or an irregular heartbeat?' ;
      description :: 'Palpitations or an irregular heartbeat reported by the patient. Asked by Monitor_PPI_Hypomagnesemia.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:80313002
-ontology.label=Palpitations (finding)
+     metaprops :: 'ontology.coding=SCT\\:80313002 [Palpitations (finding)]
 ' ;
 end data.
 
@@ -2537,8 +2460,7 @@ data  :: 'seizure' ;
      type :: boolean ;
      caption :: 'Seizure since the last visit?' ;
      description :: 'A seizure since the last visit. Asked by Monitor_PPI_Hypomagnesemia.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:91175000
-ontology.label=Seizure (finding)
+     metaprops :: 'ontology.coding=SCT\\:91175000 [Seizure (finding)]
 ' ;
 end data.
 
@@ -2546,8 +2468,7 @@ data  :: 'new_fracture' ;
      type :: boolean ;
      caption :: 'Any fracture since the last visit (especially hip, wrist or spine)?' ;
      description :: 'A fracture since the last visit, especially of the hip, wrist or spine. Asked by Monitor_PPI_Bone_Fracture.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:125605004
-ontology.label=Fracture of bone (disorder)
+     metaprops :: 'ontology.coding=SCT\\:125605004 [Fracture of bone (disorder)]
 ' ;
 end data.
 
@@ -2555,8 +2476,7 @@ data  :: 'new_rash' ;
      type :: boolean ;
      caption :: 'New rash?' ;
      description :: 'A new rash reported by the patient. Asked by Monitor_PPI_Interstitial_Nephritis.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:271807003
-ontology.label=Eruption of skin (disorder)
+     metaprops :: 'ontology.coding=SCT\\:271807003 [Eruption of skin (disorder)]
 ' ;
 end data.
 
@@ -2564,8 +2484,7 @@ data  :: 'joint_pain' ;
      type :: boolean ;
      caption :: 'New joint pain?' ;
      description :: 'New joint pain reported by the patient. Asked by Monitor_PPI_Interstitial_Nephritis and Monitor_PPI_Cutaneous_Lupus.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:57676002
-ontology.label=Pain of joint (finding)
+     metaprops :: 'ontology.coding=SCT\\:57676002 [Pain of joint (finding)]
 ' ;
 end data.
 
@@ -2573,8 +2492,7 @@ data  :: 'photosensitive_rash' ;
      type :: boolean ;
      caption :: 'New or worsening rash on sun-exposed skin?' ;
      description :: 'A new or worsening rash on sun-exposed skin. Asked by Monitor_PPI_Cutaneous_Lupus.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:90128006
-ontology.label=Photosensitivity (finding)
+     metaprops :: 'ontology.coding=SCT\\:90128006 [Photosensitivity (finding)]
 ' ;
 end data.
 
@@ -2582,8 +2500,7 @@ data  :: 'blistering_or_peeling_skin' ;
      type :: boolean ;
      caption :: 'Blistering or peeling skin?' ;
      description :: 'Blistering or peeling skin. Asked by Monitor_PPI_Severe_Cutaneous_Reactions. The SNOMED CT concept covers only blistering (bullous eruption), not peeling skin.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:271759003
-ontology.label=Bullous eruption (disorder)
+     metaprops :: 'ontology.coding=SCT\\:271759003 [Bullous eruption (disorder)]
 ' ;
 end data.
 
@@ -2591,8 +2508,7 @@ data  :: 'mouth_sores' ;
      type :: boolean ;
      caption :: 'Mouth sores?' ;
      description :: 'Sores in the mouth. Asked by Monitor_PPI_Severe_Cutaneous_Reactions.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:26284000
-ontology.label=Ulcer of mouth (disorder)
+     metaprops :: 'ontology.coding=SCT\\:26284000 [Ulcer of mouth (disorder)]
 ' ;
 end data.
 
@@ -2600,7 +2516,6 @@ data  :: 'rash_with_fever' ;
      type :: boolean ;
      caption :: 'Rash with fever?' ;
      description :: 'A rash accompanied by fever. Asked by Monitor_PPI_Severe_Cutaneous_Reactions. The SNOMED CT concept is the nearest match (skin eruption); fever is a separate item.' ;
-     metaprops :: 'ontology.coding=SNOMED\\:271807003
-ontology.label=Eruption of skin (disorder)
+     metaprops :: 'ontology.coding=SCT\\:271807003 [Eruption of skin (disorder)]
 ' ;
 end data.

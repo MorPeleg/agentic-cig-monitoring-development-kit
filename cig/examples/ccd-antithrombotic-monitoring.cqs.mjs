@@ -283,7 +283,8 @@ export default [
           ...order(h, t),
           instrument: h.meta(t, "instrument"),
           frequency_basis: h.meta(t, "monitoring_frequency_basis"),
-          coding: h.meta(t, "ontology.coding"),
+          // the coding sits on the task's component in the parent plan (cig/know-how/proforma/Ontology.md)
+          coding: h.coding(t),
         })),
     expect: (rows) =>
       // the 17 approved ADE monitors, each an undesired_ade order with a test, an instrument and a schedule
@@ -616,22 +617,22 @@ export default [
     expect: (rows) => {
       const r = (n) => rows.find((x) => x.name === n);
       const step = (n) => r(n).tests[0];
-      const loincs = (n) => step(n).tests.map((x) => x.coding);
+      const loincs = (n) => step(n).tests.map((x) => `${x.system}:${x.code}`);
       return (
         // all 17 ADE Enquiries, each after Display_Potential_ADEs, which lists one item per Enquiry
         sameSet(rows.map((x) => x.name), ADE_MONITORS) &&
         rows.every((x) => x.afterDisplay && x.displayItems === ADE_MONITORS.length) &&
-        // every Enquiry collects at least one finding, each coded in SNOMED CT
-        rows.every((x) => x.findings.length > 0 && x.findings.every((d) => /^SNOMED:\d{6,18}$/.test(d.coding || ""))) &&
-        // exactly the approved test steps: LOINC coded, after their Enquiry, gated on that Enquiry's findings
+        // every Enquiry collects at least one finding, each coded in SNOMED CT (Composer form SCT:<id> [<caption>])
+        rows.every((x) => x.findings.length > 0 && x.findings.every((d) => /^SCT:\d{6,18} \[.+\]$/.test(d.coding || ""))) &&
+        // exactly the approved test steps: LOINC coded (LNC:<code> [<caption>]), after their Enquiry, gated on that Enquiry's findings
         rows.reduce((n, x) => n + x.tests.length, 0) === 10 &&
-        rows.every((x) => x.tests.length <= 1 && x.tests.every((s) => s.runsAfter && s.readsFindings && s.tests.every((c) => /^LOINC:\d{1,7}-\d$/.test(c.coding || "")))) &&
+        rows.every((x) => x.tests.length <= 1 && x.tests.every((s) => s.runsAfter && s.readsFindings && s.tests.every((c) => /^LNC:\d{1,7}-\d \[.+\]$/.test(c.coding || "")))) &&
         // spot checks from proposal 20261030 §6 and §7
         step("Monitor_Bleeding").kind === "decision" && step("Monitor_Bleeding").choice_mode === "multiple" &&
-        sameSet(loincs("Monitor_Bleeding"), ["LOINC:718-7", "LOINC:4544-3"]) &&
+        sameSet(loincs("Monitor_Bleeding"), ["LNC:718-7", "LNC:4544-3"]) &&
         /systolic_bp < 90/.test(step("Monitor_Bleeding").precondition) &&
         r("Monitor_Bleeding").findings.some((d) => d.name === "systolic_bp" && d.type === "real") &&
-        step("Monitor_Renal_Function").name === "Order_Serum_Creatinine" && loincs("Monitor_Renal_Function")[0] === "LOINC:2160-0" &&
+        step("Monitor_Renal_Function").name === "Order_Serum_Creatinine" && loincs("Monitor_Renal_Function")[0] === "LNC:2160-0" &&
         step("Monitor_TTP").tests.length === 4 &&
         step("Monitor_PPI_Hypomagnesemia").tests.length === 3 &&
         ["Monitor_Spinal_Epidural_Hematoma", "Monitor_Perioperative_Interruption", "Monitor_Antiplatelet_Hypersensitivity",

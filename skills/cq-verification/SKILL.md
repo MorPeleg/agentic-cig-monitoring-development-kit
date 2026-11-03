@@ -53,8 +53,8 @@ export default [
 The same JSON the `export_json` tool returns. Every field is always present (`null`, `[]` or `false` when unset).
 
 - `metadata` {`name`, `title`, `desc`, `author`, `version`, …}; `metaprops` (guideline level); `root` (the root plan's name).
-- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, `ServiceRequest.performerInstruction`, `monitored_target`, `applies_when`, `source` / `source.N`, `quote` / `quote.N`, `ontology.coding`, `ontology.label`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure` (the native order / instruction text), …; for plans `components[]` {`name`, `task`, `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`}; and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
-- `data[]`: `name`, `type`, `caption`, `description`, `unit`, `range[]`, `default_value`, `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops` (e.g. `ontology.coding`, `source`, `quote`). Candidate and argument `metaprops` are in the export too.
+- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, `ServiceRequest.performerInstruction`, `monitored_target`, `applies_when`, `source` / `source.N`, `quote` / `quote.N`, `rxnorm.coding`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure` (the native order / instruction text), …; for plans `components[]` {`name`, `task`, `metaprops` (a task's `ontology.coding` lives here, on its component), `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`}; and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
+- `data[]`: `name`, `type`, `caption`, `description`, `unit`, `range[]`, `default_value`, `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops` (e.g. `ontology.coding`, `source`, `quote`). Candidate and argument `metaprops` are in the export too. An `ontology.coding` value is Composer's `<SCT|LNC|IC0|IC9>:<code> [<caption>]` (`cig/know-how/proforma/Ontology.md`); read it with `h.coding`.
 
 #### `h`: the helpers `run_cqs.mjs` provides
 
@@ -70,7 +70,8 @@ The same JSON the `export_json` tool returns. Every field is always present (`nu
 | `h.monitorEnquiries()` | the ADE Enquiries only |
 | `h.adeDisplay()` | the ADE display action(s), each with `items`: the list items of its Markdown caption |
 | `h.findingsOf(enquiry)` | the data item objects an Enquiry asks for (its sources) |
-| `h.testSteps(enquiry?)` | the test steps (`Order_<Test>` actions, `Tests_Ordering_Recommendations_<ADE>` decisions), optionally of one ADE Enquiry, as `{ name, kind, ordered_for, precondition, choice_mode, tests: [{ name, coding, label }] }` |
+| `h.testSteps(enquiry?)` | the test steps (`Order_<Test>` actions, `Tests_Ordering_Recommendations_<ADE>` decisions), optionally of one ADE Enquiry, as `{ name, kind, ordered_for, precondition, choice_mode, tests: [{ name, coding, system, code, caption }] }`; `coding` is the raw value (an `Order_<Test>` action's from its component), `system`/`code`/`caption` its parts |
+| `h.coding(x)` | the ontology coding of a task (read from its component in the parent plan, as Composer does), a data item, a candidate, a task or data item name, or a raw value, parsed as `{ system, code, caption }` (`system` is `SCT`, `LNC`, `IC0` or `IC9`); `null` when uncoded or not in Composer's form |
 | `h.therapyActions()` | actions whose `goal.verb` is `achieve` or `avoid` (trimmed, case-insensitive) |
 | `h.children(plan)` | the tasks run by the plan's components, one level |
 | `h.descendants(plan)` | every task below the plan, all levels |
@@ -115,9 +116,9 @@ Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
     steps: h.testSteps("Monitor_<Harm>"),
   }],
   expect: (rows) =>
-    rows[0].findings.length > 0 && rows[0].findings.every((f) => /^SNOMED:/.test(f.coding || "")) &&
+    rows[0].findings.length > 0 && rows[0].findings.every((f) => /^SCT:\d{6,18} \[.+\]$/.test(f.coding || "")) &&
     rows[0].steps.length === 1 && rows[0].steps[0].precondition &&
-    rows[0].steps[0].tests.every((t) => /^LOINC:\d+-\d$/.test(t.coding || "")),
+    rows[0].steps[0].tests.every((t) => t.system === "LNC" && /^\d+-\d$/.test(t.code || "")),
 }
 ```
 
@@ -190,7 +191,7 @@ Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
       timing: h.meta(t, "ServiceRequest.occurrenceTiming"),
       clinician: h.meta(t, "ServiceRequest.performerInstruction"),
       quotes: h.meta(t, "quote", true),
-      coding: h.meta(t, "ontology.coding"),
+      coding: h.coding(t), // { system, code, caption }, from the task's component
     }];
   },
   expect: (rows) => /<the triggered test>/.test(rows[0]?.code) && rows[0].clinician && rows[0].quotes.length > 0,
@@ -243,7 +244,7 @@ A query that returns literals, reads the proposal, or filters a list you typed p
 
 ### Repeatable and escaped metaprops
 
-Repeatable keys are numbered (`source.1`, `source.2`, and their `quote.1`, `quote.2`); read them with `h.meta(t, "source", true)` / `h.meta(t, "quote", true)`. Values come back unescaped (`=` and `:`, not `\=` / `\:`), so match plain text (`ontology.coding` reads `SNOMED:197456007`). The order lives in the HL7 FHIR `ServiceRequest.*` keys, repeated in `goal.noun_phrase` (as `ServiceRequest.<field> = <value>` parts joined by `; `) and stated in the native `procedure`; query the keys, not the noun phrase. There are no `order.*` keys (the gate fails them).
+Repeatable keys are numbered (`source.1`, `source.2`, and their `quote.1`, `quote.2`); read them with `h.meta(t, "source", true)` / `h.meta(t, "quote", true)`. Values come back unescaped (`=` and `:`, not `\=` / `\:`), so match plain text (`ontology.coding` reads `SCT:197456007 [Acute pancreatitis (disorder)]`; a task's is on its component, so use `h.coding(t)`). The order lives in the HL7 FHIR `ServiceRequest.*` keys, repeated in `goal.noun_phrase` (as `ServiceRequest.<field> = <value>` parts joined by `; `) and stated in the native `procedure`; query the keys, not the noun phrase. There are no `order.*` keys (the gate fails them).
 
 ### Component name versus task name
 

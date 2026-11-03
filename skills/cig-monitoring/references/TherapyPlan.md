@@ -4,12 +4,12 @@
 
 ## PROforma elements
 
-Composer's native task properties are listed in `TaskProperties.md`. The ones this pattern uses:
+Composer's native task properties are listed in `cig/know-how/proforma/TaskProperties.md`. The ones this pattern uses:
 
 - Tasks: `plan` (the therapy plan), `action` (one per intervention)
 - On the plan: Caption, Description, the **Precondition** (an executable expression, usually on the eligibility decision), and a Termination or Abort condition when the guideline gives a stopping rule
-- On each action: Caption, Description, procedure, a **Precondition** when the source scopes the intervention to a sub-population, the **Ontology coding** of the procedure or substance (`ontology.coding` + `ontology.label`), and the `metaprops` (`goal.verb` / `goal.noun_phrase`, `source.N` + `quote.N`)
-- On each component: the repeat properties (`cycle_repeat`, `number_of_cycles` or `cycle_until`) when the guideline gives a cyclic regimen
+- On each action: Caption, Description, procedure, a **Precondition** when the source scopes the intervention to a sub-population, and the `metaprops` (`goal.verb` / `goal.noun_phrase`, `source.N` + `quote.N`, `rxnorm.coding` for a single drug)
+- On each component: the action's **Ontology coding** of the procedure or substance (`ontology.coding=SCT:<id> [<term>]`, `cig/know-how/proforma/Ontology.md`), and the repeat properties (`cycle_repeat`, `number_of_cycles` or `cycle_until`) when the guideline gives a cyclic regimen
 - Tools: `add_task`, `set_attribute`, `check_expression`, `snomed_search` (the coding pass)
 
 ## Tool calls
@@ -33,9 +33,11 @@ set_attribute(selector: "Prescribe_Drug", attribute: "procedure", value: "<start
 set_attribute(selector: "Prescribe_Drug", attribute: "precondition", value: "<expression over Enquiry data items>")
 
 # Each therapy action gets a State Achievement Goal (see StateAchievementGoal.md), its quoted
-# source and its Ontology coding
+# source, and its Ontology coding on its component
 set_attribute(selector: "Prescribe_Drug", attribute: "metaprops",
-              value: "goal.verb=achieve\ngoal.noun_phrase=<the guideline's treatment target>\nsource=<Drug> US Prescribing Information, §2 Dosage and Administration\nquote=§2: \"<verbatim sentence giving the recommended starting dosage>\"\nontology.coding=SNOMED:<id>\nontology.label=<substance or procedure, as returned by snomed_search>")
+              value: "goal.verb=achieve\ngoal.noun_phrase=<the guideline's treatment target>\nsource=<Drug> US Prescribing Information, §2 Dosage and Administration\nquote=§2: \"<verbatim sentence giving the recommended starting dosage>\"")
+set_attribute(selector: "Therapy_Plan/component:Prescribe_Drug", attribute: "metaprops",
+              value: "ontology.coding=SCT:<id> [<substance or procedure, as returned by snomed_search>]")
 ```
 
 ## `.pf` text
@@ -88,4 +90,4 @@ Each drug action has an `achieve` or `avoid` goal, a description citing the reco
 
 ## Related patterns
 
-- `ActionComponent.md`, `StateAchievementGoal.md`, `TopLevelPlan.md`, `TaskProperties.md`.
+- `ActionComponent.md`, `StateAchievementGoal.md`, `TopLevelPlan.md`, `cig/know-how/proforma/TaskProperties.md`.

@@ -8,7 +8,7 @@
 - Root goal: metaprops `goal.verb=treat` + `goal.noun_phrase=<condition>` on the root plan
 - Ordering: `schedule_constraint :: completed('<sibling>') ;` on each later component (from `add_task(after: [...])`)
 - Gating: the native **Precondition** `precondition :: result_of(Eligibility_Decision) = Eligible ;` on the therapy plan
-- Other native plan properties (`TaskProperties.md`): Caption, Description, Ontology coding, Termination condition (`terminate`), Abort condition (`abort`); set them when the guideline gives a stopping rule
+- Other native plan properties (`cig/know-how/proforma/TaskProperties.md`): Caption, Description, Ontology coding, Termination condition (`terminate`), Abort condition (`abort`); set them when the guideline gives a stopping rule
 - CIG identity: the `metadata` block (`title`, `desc`, `author`, `version`)
 - Tools: `create_guideline`, `set_metadata`, `add_task`, `set_attribute`
 
@@ -34,9 +34,9 @@ set_attribute(selector: "Condition_Therapy_Plan", attribute: "caption", value: "
 set_attribute(selector: "Condition_Therapy_Plan", attribute: "metaprops",
               value: "goal.verb=treat\ngoal.noun_phrase=<condition and population>")
 
-# 1. Enquiry: eligibility data (populate it: Enquiry.md)
+# 1. Enquiry: eligibility data (populate it: cig/know-how/proforma/Enquiry.md)
 add_task(plan: "Condition_Therapy_Plan", kind: "enquiry", name: "Get_Eligibility_Data", caption: "...")
-# 2. Decision: eligibility, after the enquiry (populate it: Decision.md)
+# 2. Decision: eligibility, after the enquiry (populate it: cig/know-how/proforma/Decision.md)
 add_task(plan: "Condition_Therapy_Plan", kind: "decision", name: "Eligibility_Decision", caption: "...",
          after: ["Get_Eligibility_Data"])
 # 3. Therapy plan, after the decision, gated by eligibility (TherapyPlan.md)
@@ -98,4 +98,4 @@ Two points differ from the generic calls above, and both are legitimate variants
 
 ## Related patterns
 
-- `Enquiry.md`, `Decision.md`, `TherapyPlan.md`, `MonitoringPlan.md`, `TaskProperties.md`.
+- `cig/know-how/proforma/Enquiry.md`, `cig/know-how/proforma/Decision.md`, `TherapyPlan.md`, `MonitoringPlan.md`, `cig/know-how/proforma/TaskProperties.md`.

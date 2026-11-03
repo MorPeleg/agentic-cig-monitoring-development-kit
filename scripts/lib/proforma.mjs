@@ -138,3 +138,66 @@ export function setMetaprops(file, selector, map) {
   });
   setAttribute(file, selector, "metaprops", lines.join("\n") + "\n");
 }
+
+// ---------------------------------------------------------------- ontology coding
+//
+// Composer's native "Ontology coding" (cig/know-how/proforma/Ontology.md): the metaprop
+// `ontology.coding`, whose value is Composer's "Deontics code" `<prefix>:<code> [<caption>]`.
+// Composer accepts it only with a three-character provider prefix and a bracketed caption;
+// any other value shows as an empty Ontology field. A task's coding is read from its
+// component in the parent plan, not from the task definition.
+
+/** Composer's terminology providers, by Deontics code prefix. */
+export const CODING_SYSTEMS = {
+  SCT: { name: "SNOMED CT", code: /^\d{6,18}$/, codeHint: "a SNOMED CT concept id (6-18 digits)" },
+  LNC: { name: "LOINC", code: /^\d{1,7}-\d$/, codeHint: "a LOINC code (<1-7 digits>-<check digit>)" },
+  IC0: { name: "ICD-10-CM", code: /^\S+$/, codeHint: "an ICD-10-CM code" },
+  IC9: { name: "ICD-9-CM", code: /^\S+$/, codeHint: "an ICD-9-CM code" },
+};
+export const ONTOLOGY_CODING = /^(SCT|LNC|IC0|IC9):(\S+) \[(.+)\]$/;
+// the kit's earlier forms (scheme names and a separate ontology.label), and their Composer prefix
+export const OLD_SCHEMES = { SNOMED: "SCT", SNOMEDCT: "SCT", "SNOMED-CT": "SCT", SCT: "SCT", LOINC: "LNC", LNC: "LNC", ICD10: "IC0", ICD10CM: "IC0", "ICD-10": "IC0", "ICD-10-CM": "IC0", IC0: "IC0", ICD9: "IC9", ICD9CM: "IC9", "ICD-9-CM": "IC9", IC9: "IC9" };
+
+/** Parse a Composer ontology coding `<prefix>:<code> [<caption>]` into {system, code, caption}, or null. */
+export function parseCoding(value) {
+  const m = ONTOLOGY_CODING.exec(String(value ?? "").trim());
+  return m ? { system: m[1], code: m[2], caption: m[3].trim() } : null;
+}
+
+/** Format {system, code, caption} as Composer's Deontics code. */
+export function formatCoding({ system, code, caption }) {
+  return `${system}:${String(code).trim()} [${String(caption).trim()}]`;
+}
+
+/** Convert an older kit coding (SNOMED:<id> + ontology.label) to Composer's form; null if it cannot be. */
+export function upgradeCoding(value, label) {
+  const v = String(value ?? "").trim();
+  if (!v) return null;
+  if (parseCoding(v)) return v;
+  const m = /^([A-Za-z][A-Za-z0-9_-]*):\s*(\S+?)(?:\s+\[(.+)\])?$/.exec(v);
+  if (!m) return null;
+  const system = OLD_SCHEMES[m[1].toUpperCase()];
+  const caption = (m[3] || label || "").trim();
+  if (!system || !caption) return null;
+  return formatCoding({ system, code: m[2], caption });
+}
+
+/** The components that run a task, with their parent plan: [{plan, component, selector}]. */
+export function componentsOfTask(g, taskName) {
+  const out = [];
+  for (const p of g.tasks) {
+    for (const c of p.components || []) {
+      if (c.task === taskName) out.push({ plan: p.name, component: c, selector: `${p.name}/component:${c.name}` });
+    }
+  }
+  return out;
+}
+
+/** A task's ontology coding (raw value) as Composer reads it: from its first coded component. */
+export function taskCoding(g, taskName) {
+  for (const { component } of componentsOfTask(g, taskName)) {
+    const v = (component.metaprops?.["ontology.coding"] || "").trim();
+    if (v) return v;
+  }
+  return null;
+}

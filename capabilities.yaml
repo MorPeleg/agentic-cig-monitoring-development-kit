@@ -165,13 +165,13 @@ skills:
         - rxnorm_search
   # PROforma authoring skill and the HTML guideline viewer. Minitour/proforma is
   # private for now: run `capa auth github.com` once with an account that can read it.
-  # Pinned to the v0.3.0 release: the interactive viewer with the Download Composer
+  # Pinned to the v0.3.1 release: the interactive viewer with the Download Composer
   # project button (build_report.mjs --attach-dir), Composer ontology coding and
   # Markdown captions.
   - id: proforma
     type: github
     def:
-      repo: Minitour/proforma@proforma:v0.3.0
+      repo: Minitour/proforma@proforma:v0.3.1
       description: >-
         PROforma (.pf) authoring with the proforma CLI, and the interactive HTML
         guideline viewer (scripts/build_report.mjs: task tree, plan canvas with
@@ -541,7 +541,7 @@ servers:
       cmd: npx
       args:
         - -y
-        - proforma-mcp@0.3.0
+        - proforma-mcp@0.3.1
         - serve
   - id: sharecube
     type: mcp

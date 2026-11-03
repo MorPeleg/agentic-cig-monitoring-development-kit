@@ -5,7 +5,7 @@ description: Build a PROforma computer-interpretable guideline (CIG) as a `.pf` 
 
 # CIG Monitoring Skill
 
-Use this skill to build a **PROforma 1.9 guideline file** (`projects/<project_dir>/guideline/<name>.pf`) for a clinical guideline within a defined scope, authored and validated with the **proforma MCP tools** (capa ids `pf_<tool>`; CLI `npx -y proforma-mcp@0.3.0 <subcommand>`). It focuses on:
+Use this skill to build a **PROforma 1.9 guideline file** (`projects/<project_dir>/guideline/<name>.pf`) for a clinical guideline within a defined scope, authored and validated with the **proforma MCP tools** (capa ids `pf_<tool>`; CLI `npx -y proforma-mcp@0.3.1 <subcommand>`). It focuses on:
 
 - **monitoring completion of therapy recommendations** — modeled as **Action Enactment Goals** (`goal.verb=order`), and
 - **monitoring desired and undesired effects of therapy** — modeled as **State Achievement Goals** (`goal.verb=achieve` / `goal.verb=avoid`).

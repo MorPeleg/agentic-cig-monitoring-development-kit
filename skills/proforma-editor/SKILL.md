@@ -10,7 +10,7 @@ file (`.pf`)** in this kit — the CIG at
 `projects/<project_dir>/guideline/<name>.pf`, the structural example
 `cig/examples/ccd-antithrombotic-monitoring.pf`, or a scratch copy. The tools are
 provided by the **proforma** MCP server (npm `proforma-mcp`, pinned
-`proforma-mcp@0.3.0`) and operate on the file on disk, which is the source of
+`proforma-mcp@0.3.1`) and operate on the file on disk, which is the source of
 truth.
 
 ## The never-hand-edit rule
@@ -36,7 +36,7 @@ truth.
 - **File path:** every tool except `proforma_reference` takes `file` — pass an
   **absolute** path.
 - **CLI equivalent** (scripts, quick checks):
-  `npx -y proforma-mcp@0.3.0 <subcommand> --file <path> ...` (`lint`,
+  `npx -y proforma-mcp@0.3.1 <subcommand> --file <path> ...` (`lint`,
   `export`, `mermaid`, `check-expression`, `outline`, `get`, `create`,
   `add-task`, `add-data`, `add-source`, `add-candidate`, `add-argument`, `set`,
   `unset`, `upsert`, `set-metadata`, `format`, …; `--help` on each). Parameter

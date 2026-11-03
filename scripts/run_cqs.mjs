@@ -15,7 +15,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { exportGuideline, metaValues } from "./lib/proforma.mjs";
+import { exportGuideline, metaValues, parseCoding, taskCoding } from "./lib/proforma.mjs";
 
 const argv = process.argv.slice(2);
 const opts = { file: null, queries: null, proposal: null, report: null };
@@ -64,6 +64,18 @@ const isMonitor = (t) =>
   verbOf(t) === "order" &&
   ((t.kind === "action" && !["ade_display", "test_order"].includes(roleOf(t))) ||
     (t.kind === "enquiry" && Object.keys(t.metaprops || {}).some((k) => k.startsWith("ServiceRequest."))));
+// the raw ontology.coding of a task (from its component), a data item or candidate, a name or a value
+const isTask = (x) => x && typeof x === "object" && typeof x.kind === "string" && byName.has(x.name);
+const codingValue = (x) => {
+  if (x == null) return null;
+  if (typeof x === "string") {
+    if (byName.has(x)) return taskCoding(g, x);
+    const d = g.data.find((dd) => dd.name === x);
+    return d ? d.metaprops?.["ontology.coding"] ?? null : x;
+  }
+  if (isTask(x)) return taskCoding(g, x.name);
+  return x.metaprops?.["ontology.coding"] ?? null;
+};
 const h = {
   /** Tasks, optionally of one kind (plan, action, enquiry, decision, task). */
   tasks: (kind) => g.tasks.filter((t) => !kind || t.kind === kind),
@@ -86,7 +98,8 @@ const h = {
   /** The data items an Enquiry asks for (its sources), as data item objects. */
   findingsOf: (enquiry) => (byName.get(enquiry)?.sources ?? []).map((s) => g.data.find((d) => d.name === s.data)).filter(Boolean),
   /** Test steps (Order_<Test> Actions, Tests_Ordering_Recommendations_<ADE> Decisions), optionally for one ADE Enquiry:
-   *  {name, kind, ordered_for, precondition, tests: [{name, coding, label}]} */
+   *  {name, kind, ordered_for, precondition, tests: [{name, coding, system, code, caption, label}]}
+   *  (coding is the raw Composer value; label is the caption, kept for older query files) */
   testSteps: (enquiry) =>
     g.tasks
       .filter((t) => (t.kind === "action" && roleOf(t) === "test_order") || (t.kind === "decision" && roleOf(t) === "test_ordering"))
@@ -97,11 +110,15 @@ const h = {
         ordered_for: (t.metaprops.ordered_for || "").trim() || null,
         precondition: t.precondition,
         choice_mode: t.choice_mode ?? null,
-        tests:
-          t.kind === "action"
-            ? [{ name: t.name, coding: t.metaprops["ontology.coding"] ?? null, label: t.metaprops["ontology.label"] ?? null }]
-            : t.candidates.map((c) => ({ name: c.name, coding: c.metaprops?.["ontology.coding"] ?? null, label: c.metaprops?.["ontology.label"] ?? null })),
+        tests: (t.kind === "action" ? [t] : t.candidates).map((x) => {
+          const c = h.coding(x);
+          return { name: x.name, coding: codingValue(x), system: c?.system ?? null, code: c?.code ?? null, caption: c?.caption ?? null, label: c?.caption ?? null };
+        }),
       })),
+  /** The ontology coding of a task (read from its component in the parent plan, as Composer does),
+   *  a data item, a candidate or a raw value, parsed from Composer's "<prefix>:<code> [<caption>]":
+   *  {system: "SCT"|"LNC"|"IC0"|"IC9", code, caption}, or null when uncoded or not in that form. */
+  coding: (x) => parseCoding(codingValue(x)),
   therapyActions: () => g.tasks.filter((t) => t.kind === "action" && ["achieve", "avoid"].includes(verbOf(t))),
   /** Tasks run by the components of a plan (one level). */
   children: (plan) => (byName.get(plan)?.components ?? []).map((c) => byName.get(c.task)).filter(Boolean),

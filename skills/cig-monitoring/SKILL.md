@@ -24,7 +24,7 @@ Per-CIG working output goes under `projects/<project_dir>/`: `guideline/<name>.p
 
 ## PROforma model
 
-Every task has the native properties of Composer's property sheet, listed with their `.pf` attribute and tool call in **`references/TaskProperties.md`**: Caption, Description, **Ontology coding**, Metaproperties; the control properties **Precondition**, Wait condition, Postcondition, Event trigger, Context and scheduling; the repeat properties (cycle interval, number of repetitions, repeat until); and the kind-specific ones (an action's procedure, a decision's choice mode, an enquiry's sources, a plan's termination and abort conditions). Fill the native property before reaching for a metaprop. **The Precondition and the Ontology coding are the ones most often missing: set them wherever they apply.**
+Every task has the native properties of Composer's property sheet, listed with their `.pf` attribute and tool call in **`cig/know-how/proforma/TaskProperties.md`**: Caption, Description, **Ontology coding**, Metaproperties; the control properties **Precondition**, Wait condition, Postcondition, Event trigger, Context and scheduling; the repeat properties (cycle interval, number of repetitions, repeat until); and the kind-specific ones (an action's procedure, a decision's choice mode, an enquiry's sources, a plan's termination and abort conditions). Fill the native property before reaching for a metaprop. **The Precondition and the Ontology coding are the ones most often missing: set them wherever they apply.**
 
 | Concept | In the `.pf` | Tool |
 |---|---|---|
@@ -33,8 +33,8 @@ Every task has the native properties of Composer's property sheet, listed with t
 | Sequence | `schedule_constraint :: completed('Earlier') ;` on the component | `add_task(after: ["Earlier"])` |
 | Caption, Description, procedure (native) | `caption`, `description`, `procedure` | `add_task(caption:)`, `set_attribute` |
 | Precondition (native) — population gate, executable | `precondition :: <expression> ;` | `add_task(precondition:)` or `set_attribute`, then `check_expression` |
-| Wait condition, Postcondition, Event trigger, cycles (native) | `wait_condition`, `postcondition`, `trigger`, `cycle_repeat` / `number_of_cycles` / `cycle_until` | `set_attribute` (see `TaskProperties.md`) |
-| Ontology coding (native) — the clinical concept | metaprop `ontology.coding=SNOMED:<id>` + `ontology.label`; an ordered test `ontology.coding=LOINC:<code>` | `snomed_search` / `loinc_search`, then `set_attribute(attribute: "metaprops")` |
+| Wait condition, Postcondition, Event trigger, cycles (native) | `wait_condition`, `postcondition`, `trigger`, `cycle_repeat` / `number_of_cycles` / `cycle_until` | `set_attribute` (see `cig/know-how/proforma/TaskProperties.md`) |
+| Ontology coding (native) — the clinical concept | metaprop `ontology.coding=SCT:<id> [<caption>]` (an ordered test `LNC:<code> [<caption>]`): a task's on its **component** in the parent plan, a data item's or candidate's in its own metaprops (`cig/know-how/proforma/Ontology.md`) | `snomed_search` / `loinc_search`, then `set_attribute(selector: "<plan>/component:<task>", attribute: "metaprops")` |
 | ADE monitor (in `Monitor_Undesired_State`) | `Display_Potential_ADEs` action first; one `enquiry` per ADE (finding data items as sources); its test step: `Order_<Test>` action or `Tests_Ordering_Recommendations_<ADE>` decision | `add_task`, `add_data_item`, `add_source`, `add_candidate`, `add_argument` (`references/ADEMonitoringEnquiry.md`) |
 | Goal of a task | metaprops keys `goal.verb` + `goal.noun_phrase` (optional `goal.evidence_grade`) | `set_attribute(attribute: "metaprops")` |
 | Monitoring order (HL7 FHIR `ServiceRequest`) | metaprops `ServiceRequest.intent`, `.code`, `.occurrenceTiming`, `.patientInstruction`, `.performerInstruction`; repeated in `goal.noun_phrase`; stated in the native `procedure` | `set_attribute` |
@@ -49,12 +49,17 @@ There are no Goal objects: each task carries exactly one goal through its `goal.
 
 **Expressions** (preconditions, argument conditions) are PROforma, not prose: `and`/`or` lower-case, `not(x)` for negation, `<>` for not-equal, `result_of(D) = C` for a single-choice decision, `result_set(D) includes C` for multiple. Type-check with `check_expression` against the file.
 
-See `references/` for the design patterns, each with neutral `.pf` text and the tool calls that create it:
+The generic PROforma modelling know-how (what Composer represents and how) is in `cig/know-how/proforma/`:
 
-- `references/TaskProperties.md` — Composer's **native task, candidate and data-item properties**, mapped to `.pf` attributes
+- `cig/know-how/proforma/TaskProperties.md` — Composer's **native task and candidate properties** (Plan, Action, Enquiry and Decision are all Tasks), mapped to `.pf` attributes
+- `cig/know-how/proforma/Data.md` — data items (type, caption, unit, range, derivation, coding)
+- `cig/know-how/proforma/Ontology.md` — the **ontology coding** contract (`SCT:<id> [<caption>]`, where each element carries it)
+- `cig/know-how/proforma/Enquiry.md` — populate the eligibility/baseline data items (do not leave empty)
+- `cig/know-how/proforma/Decision.md` — populate candidates + criteria (do not leave empty)
+
+See `references/` for the monitoring design patterns, each with neutral `.pf` text and the tool calls that create it:
+
 - `references/TopLevelPlan.md`
-- `references/Enquiry.md` — populate the eligibility/baseline data items (do not leave empty)
-- `references/Decision.md` — populate candidates + criteria (do not leave empty)
 - `references/TherapyPlan.md`
 - `references/MonitoringPlan.md`
 - `references/ADEMonitoringEnquiry.md` — **ADE monitoring as Enquiries** (display of the ADEs, symptom and exam data items, LOINC-coded test steps) in Monitor Undesired ADEs
@@ -88,7 +93,7 @@ It queries openFDA (newest label first; DailyMed when openFDA has no match or wi
 
 **If this is an iteration (WORKFLOW Step 0), start from the baseline.** Load the latest approved proposal + `semlocal --collection <project_dir>` recall and carry every previously-extracted therapy goal, Enquiry/Decision element, and monitoring action forward as a checklist. A newly added guideline extends and refines that set — it does not reset it. Extraction from the newest guideline is *added to* the baseline, not substituted for it.
 
-**Coding-only iteration (SNOMED CT codes).** If the user asks only to add terminology codes to an existing CIG, this is **not** a new extraction and **not** a full re-emit. Freeze the baseline action set, task names, captions, descriptions, procedures, Decision candidates, `ServiceRequest.*` values, `goal.noun_phrase`, and `source`/`quote` strings. Add or update only `ontology.coding` and `ontology.label` (`MetapropsSyntax.md`, "Ontology coding"), with codes found by `snomed_search`. Do **not** fork or rename the project directory. Delegate emission to `cig-formalization` in **coding-patch mode** (snapshot the `.pf` to `guideline/baseline/`; do not delete it).
+**Coding-only iteration (SNOMED CT codes).** If the user asks only to add terminology codes to an existing CIG, this is **not** a new extraction and **not** a full re-emit. Freeze the baseline action set, task names, captions, descriptions, procedures, Decision candidates, `ServiceRequest.*` values, `goal.noun_phrase`, and `source`/`quote` strings. Add or update only `ontology.coding` (Composer's `SCT:<id> [<caption>]`, on task components, data items and candidates; `cig/know-how/proforma/Ontology.md`), with codes found by `snomed_search`. Do **not** fork or rename the project directory. Delegate emission to `cig-formalization` in **coding-patch mode** (snapshot the `.pf` to `guideline/baseline/`; do not delete it).
 
 From the guidelines extract, citing the source document and page/section for each finding and copying the **verbatim passage** (the sentence or clause, at most about 25 words) it comes from — that passage becomes the element's `quote.N`:
 
@@ -137,7 +142,7 @@ The `cig-monitoring-review` gate (Step 7) flags empty plans, unreachable tasks, 
 
 ### Step 5 — Therapy interventions: Actions + State Achievement Goals
 
-For **each therapy intervention**, `add_task` an `action` in the **Therapy Plan** (this creates the task and its component) and fill its native properties (`references/TaskProperties.md`): a `caption`, a `description` (the recommendation and why it was modelled, with its citations), a `procedure` when there is something concrete to do (dose and titration, minutes of activity, grams of protein), a **`precondition`** when the source scopes the intervention to a sub-population, and the **Ontology coding** of the procedure or substance (coding pass). Set its metaprops to a **State Achievement Goal** — `goal.verb=achieve` or `goal.verb=avoid` plus `goal.noun_phrase` — with at least one `source.N` + verbatim `quote.N` pair.
+For **each therapy intervention**, `add_task` an `action` in the **Therapy Plan** (this creates the task and its component) and fill its native properties (`cig/know-how/proforma/TaskProperties.md`): a `caption`, a `description` (the recommendation and why it was modelled, with its citations), a `procedure` when there is something concrete to do (dose and titration, minutes of activity, grams of protein), a **`precondition`** when the source scopes the intervention to a sub-population, and the **Ontology coding** of the procedure or substance (coding pass). Set its metaprops to a **State Achievement Goal** — `goal.verb=achieve` or `goal.verb=avoid` plus `goal.noun_phrase` — with at least one `source.N` + verbatim `quote.N` pair.
 
 - Example (achieve): `Prescribe_Drug` → `goal.verb=achieve`, `goal.noun_phrase=<the guideline's treatment target, e.g. a measurable reduction within a stated period>`.
 - Example (avoid): `Prescribe_Protective_Measure` → `goal.verb=avoid`, `goal.noun_phrase=<the harm of therapy the guideline recommends preventing>`.
@@ -159,10 +164,10 @@ For each therapy goal and each desired/undesired outcome from Step 5, `add_task`
   - the native `procedure`: `<code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.`
 
   Never stop at intent + code. An older guideline (intermediate `order.*` keys, or no native procedure/description) is converted with `node scripts/migrate_metaprops.mjs <guideline.pf>`.
-- **Native properties** (`references/TaskProperties.md`): a one-line `caption`, a `description` stating what is monitored and why it was modelled (`Monitors <monitored_target>. <literature_basis>.`), the `procedure` above, a **`precondition`** for a sub-population, and the **Ontology coding** (below).
+- **Native properties** (`cig/know-how/proforma/TaskProperties.md`): a one-line `caption`, a `description` stating what is monitored and why it was modelled (`Monitors <monitored_target>. <literature_basis>.`), the `procedure` above, a **`precondition`** for a sub-population, and the **Ontology coding** (below).
 - **Every monitoring action carries the full metaprops** per the **canonical contract in `references/MetapropsSyntax.md`**: Java-properties text, one `key=value` per line, set in **one** `set_attribute(selector: "<action>", attribute: "metaprops", value: "<all lines>")` call. It holds the goal keys, the `ServiceRequest.*` block, **and** provenance and operationalization: `category`, `monitored_target` (names the therapy task it traces to), `applies_when` (the population/condition the source attaches — not universal if the source qualifies it), `provenance_type`, `source_kind`, `source` / `source.1..n` (cite each) with `quote` / `quote.1..n` (the verbatim passage of each, prefixed with page/section), `knowledge_origin`, `guideline_status`, `monitoring_stance` (incl. `routine_not_recommended` when a source advises against routine surveillance), `literature_basis`, `assistant_invention` (separate self-designed from sourced; `none` if fully sourced), `instrument`, `monitoring_frequency_basis`, `trigger`, `cq`. This is **required**, not optional. Gate a sub-population action with an executable `precondition` as well (see `MetapropsSyntax.md`).
 - **No placeholder values** (`source=s`, `instrument=i`, `provenance_type=p`). Use real citations and real content — the gate rejects placeholders. Quotes are copied exactly from the source document, never paraphrased. Keep each value on one line; let the tool and `format` handle escaping. Never write a second metaprops: to change one key, read the current map (`get_component` or `export_json`), change it, and write the whole map back.
-- **Ontology coding** (coding pass): `ontology.coding=SNOMED:<id>` + `ontology.label` for the disorder, finding or measurement procedure the monitor watches and for each finding data item, chosen with `snomed_search`; `ontology.coding=LOINC:<code>` + `ontology.label` for each ordered test (an `Order_<Test>` action or a test-ordering candidate), chosen with `loinc_search`. Record both exactly as returned. A therapy action that prescribes a single drug also gets `rxnorm.coding=RXNORM:<rxcui>` + `rxnorm.label` for the ingredient, chosen with `rxnorm_search`.
+- **Ontology coding** (coding pass, `cig/know-how/proforma/Ontology.md`): `ontology.coding=SCT:<id> [<term>]` for the disorder, finding or measurement procedure the monitor watches (on the monitor's **component** in its parent plan) and for each finding data item (in its own metaprops), chosen with `snomed_search`; `ontology.coding=LNC:<code> [<term>]` for each ordered test (the component of an `Order_<Test>` action, or a test-ordering candidate), chosen with `loinc_search`. Record code and term exactly as returned; the bracketed caption is required, and there is no `ontology.label`. A therapy action that prescribes a single drug also gets `rxnorm.coding=RXNORM:<rxcui>` + `rxnorm.label` for the ingredient on its task definition, chosen with `rxnorm_search` (Composer has no RxNorm provider and shows these as ordinary metaproperties).
 
 See `references/MetapropsSyntax.md` for the canonical contract and its worked value, and `references/ActionEnactmentGoal.md` for the goal/metaprops pattern. The worked value there is a generic labeled ADE (acute pancreatitis from a package insert); it illustrates the contract, not a monitor to add.
 
@@ -171,7 +176,7 @@ See `references/MetapropsSyntax.md` for the canonical contract and its worked va
 Step 6 (emitting the `.pf`) is owned by the dedicated `cig-formalization` skill. **Delegate Step 6 to the `cig-formalizer` subagent** (skill `cig-formalization`); give it the project directory, the approved proposal path, the output path `projects/<project_dir>/guideline/<name>.pf`, and whether this is a full re-emit or a coding patch.
 
 - **Full re-emit** (new CIG, or an approved proposal whose action set changed): snapshot the existing `.pf` to `guideline/baseline/<name>-<YYYYMMDD-HHmmss>.pf`, delete it, `create_guideline`, then build exactly the approved task set in a fresh file — never append to a prior run — and finish with the coding pass (`snomed_search`, and `loinc_search` for the ordered tests). Then `format`, `lint` (0 errors), `to_mermaid` → `guideline/<name>.mmd`.
-- **Coding patch** (coding-only request): snapshot, then only add/replace `ontology.coding` and `ontology.label` (via `snomed_search`) on existing actions and data items. Nothing else may change.
+- **Coding patch** (coding-only request): snapshot, then only add/replace `ontology.coding` (via `snomed_search`) on the components of existing actions and on data items, removing any leftover `ontology.label`. Nothing else may change.
 
 This skill's job is the **WHAT to model** (Steps 1–6 above fix the action set, canonical names, goals, preconditions, stances, and metaprops content in the approved proposal). The proposal is the single source of truth the formalizer transcribes; do not re-specify the emit mechanics here. All edits go through the proforma tools — never edit the `.pf` by hand (each tool edit re-parses and refuses to save a broken file). The canonical metaprops contract remains defined in `references/MetapropsSyntax.md`.
 

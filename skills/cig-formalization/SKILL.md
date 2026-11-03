@@ -10,7 +10,8 @@ description: >-
   their findings and test steps, then a coding pass: SNOMED CT with
   snomed_search, LOINC for ordered tests with loinc_search). Coding-only
   requests (add SNOMED CT codes) use coding-patch mode: do not delete the .pf;
-  add or change only ontology.coding and ontology.label. Use this skill —
+  add or change only ontology.coding (Composer's "<SCT|LNC>:<code> [<caption>]",
+  on components, data items and candidates). Use this skill —
   alongside proforma-editor — whenever an approved
   `projects/<project_dir>/plans/PROPOSAL-*.md` must be turned into (or
   regenerated as) the project guideline, or when the user asks only to add
@@ -82,33 +83,39 @@ during emission.
   — this file is the single source for the contract; do not re-invent or
   duplicate it.
 - **Native task properties (Composer's property sheet):**
-  `skills/cig-monitoring/references/TaskProperties.md` — Caption, Description,
+  `cig/know-how/proforma/TaskProperties.md` — Caption, Description,
   Ontology coding, Precondition, Wait condition, Postcondition, Event trigger,
-  procedure, cycles, and the candidate and data-item properties, each with its
-  `.pf` attribute. Emit every native property the proposal fixes; the
-  Precondition and the Ontology coding are the ones most often missed.
+  procedure, cycles, and the candidate properties, each with its `.pf`
+  attribute; data items in `cig/know-how/proforma/Data.md`. Emit every native
+  property the proposal fixes; the Precondition and the Ontology coding are the
+  ones most often missed.
+- **Ontology coding (value form and location):** `cig/know-how/proforma/Ontology.md`
+  — `ontology.coding=<SCT|LNC>:<code> [<caption>]`, on a task's **component**
+  in its parent plan, in a data item's or candidate's own metaprops.
 - **Goal side + opt-in case-report source rule + labeled-ADE skeleton:**
   `skills/cig-monitoring/references/ActionEnactmentGoal.md`.
 - **ADE monitoring in `Monitor_Undesired_State` (display Action, ADE Enquiries,
   finding data items, test steps, with their tool calls):**
   `skills/cig-monitoring/references/ADEMonitoringEnquiry.md`.
 - **Structural patterns (only when the approved scope includes them):**
-  `references/TopLevelPlan.md`, `MonitoringPlan.md`, `ActionComponent.md`,
-  `StateAchievementGoal.md`, `Enquiry.md`, `Decision.md` (all under
-  `skills/cig-monitoring/references/`).
+  `TopLevelPlan.md`, `MonitoringPlan.md`, `ActionComponent.md`,
+  `StateAchievementGoal.md` (all under `skills/cig-monitoring/references/`),
+  and `cig/know-how/proforma/Enquiry.md`, `cig/know-how/proforma/Decision.md`.
 - **Language:** the `proforma_reference` tool. Read it before writing any
   expression.
 - **SNOMED CT lookup:** the `snomed_search` tool (EBI OLS4, restricted to
   SNOMED CT). It returns `shortForm` `SNOMED_<id>` and the preferred label;
-  record `SNOMED:<id>` and the label exactly as returned.
+  record `SCT:<id> [<label>]` with the id and label exactly as returned.
 - **LOINC lookup (ordered tests):** the `loinc_search` tool (NLM Clinical
   Tables). Each row starts with `LOINC_NUM` and `LONG_COMMON_NAME`; record
-  `LOINC:<LOINC_NUM>` and that name exactly as returned. Use the proposal's
-  §7 code when it fixes one.
+  `LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` exactly as returned. Use the
+  proposal's §7 code when it fixes one.
 - **RxNorm lookup (prescribed drugs):** the `rxnorm_search` tool (NLM RxNav).
   For a therapy action that prescribes one drug, record the ingredient as
   `rxnorm.coding=RXNORM:<rxcui>` + `rxnorm.label=<name>` exactly as returned,
-  in addition to its SNOMED CT `ontology.coding`. Drug-class actions get none.
+  on the task definition (Composer has no RxNorm provider and shows these as
+  ordinary metaproperties), in addition to the SNOMED CT `ontology.coding` on
+  its component. Drug-class actions get none.
 - **Older guidelines:** `node scripts/migrate_metaprops.mjs <guideline.pf>`
   brings a `.pf` onto the current contract: it converts the intermediate
   `order.code` / `order.timing` / `order.patient_instruction` /
@@ -116,7 +123,10 @@ during emission.
   `ServiceRequest.intent=order`), rewrites `goal.noun_phrase` as the
   `ServiceRequest` string, and fills an empty native `procedure` and
   `description` (which also completes a guideline on the older
-  `ServiceRequest`-only contract). It does not add quotes or coding; add the
+  `ServiceRequest`-only contract). It also converts the kit's older coding
+  (`SNOMED:<id>` / `LOINC:<code>` + `ontology.label`, on the task definition)
+  to Composer's `SCT:<id> [<label>]` / `LNC:<code> [<label>]` and moves each
+  task's coding to its component. It does not add quotes or new codes; add the
   quotes from the sources and run the coding pass.
 
 Do all `.pf` editing through the **proforma-editor** tools. Read
@@ -138,18 +148,18 @@ Coding-patch rules (MUST / MUST NOT):
 1. **Do not delete the `.pf`.** Snapshot it to `guideline/baseline/<name>-<YYYYMMDD-HHmmss>.pf` first, then patch the existing file in place.
 2. **Do not add, remove, or rename tasks, components, candidates, arguments, sources or data items.** The Action name set, plan structure, scheduling, Decision candidates and Enquiry data items MUST stay identical to the snapshot.
 3. **Do not change captions, descriptions, procedures, preconditions, `goal.noun_phrase`, the `ServiceRequest.*` keys, `source.N` / `quote.N`, `literature_basis`, `applies_when`, Decision arguments, or the metadata.** Those strings are frozen from the prior approved emit.
-4. **Only add or replace `ontology.coding` and `ontology.label`** on existing monitoring tasks, therapy actions and data items (candidates and arguments only when a real concept fits), with the code and label `snomed_search` returns, and on test steps (`Order_<Test>` actions, test-ordering candidates) with the LOINC code and name `loinc_search` returns (value format in `MetapropsSyntax.md`, "Ontology coding"). Every other key keeps its exact value. Key order does not matter (the tools sort keys on save).
+4. **Only add or replace `ontology.coding`** (Composer's form `<SCT|LNC>:<code> [<caption>]`, `cig/know-how/proforma/Ontology.md`): for monitoring tasks and therapy actions on their **component** in the parent plan, for data items in their own metaprops (candidates and arguments only when a real concept fits), with the code and term `snomed_search` returns, and on test steps (the component of an `Order_<Test>` action, each test-ordering candidate) with the LOINC code and name `loinc_search` returns. Remove a leftover `ontology.label`, and move a coding found on a task definition to its component (`node scripts/migrate_metaprops.mjs` does both). Every other key keeps its exact value. Key order does not matter (the tools sort keys on save).
 5. **Patch a metaprops map by read → add → write back whole**, in one `set_attribute` per element:
-   - read the current map with `export_json` (the element's `metaprops` object, already unescaped) — or `get_component(selector: "Monitor_X", format: "json")`, which returns the raw properties text;
-   - add the two coding keys to that map;
-   - write every line back with `set_attribute(file, selector: "Monitor_X", attribute: "metaprops", value: "<all key=value lines>")`. It **replaces** the whole metaprops; a key you leave out is deleted.
-   Never write a partial map; never write metaprops on the component instead of the task.
+   - read the current map with `export_json` (the element's `metaprops` object, already unescaped; a task's component is in its parent plan's `components[]`) — or `get_component(selector: "<plan>/component:Monitor_X", format: "json")`, which returns the raw properties text;
+   - add the coding key to that map (a component may already hold keys Composer wrote, e.g. `ae.private.component.id`: keep them);
+   - write every line back with `set_attribute(file, selector: "<plan>/component:Monitor_X", attribute: "metaprops", value: "<all key=value lines>")` (a data item: `selector: "<item>"`; a candidate: `"<decision>/candidate:<name>"`). It **replaces** the whole metaprops; a key you leave out is deleted.
+   Never write a partial map; never write a task's `ontology.coding` on the task definition (Composer does not read it there).
 6. If the approved proposal's action set **differs** from the existing `.pf`, this is **not** a coding patch — stop and report. Do not silently switch to a full rebuild.
 7. Do **not** rename the project directory.
 
 After the patch, run `format` and `lint` (0 errors), regenerate the `.mmd` and the `.html` report, then run the freeze gate:
 `node scripts/check_cig.mjs projects/<p>/guideline/<name>.pf --proposal projects/<p>/plans/PROPOSAL-<ts>.md --baseline projects/<p>/guideline/baseline/<snapshot>.pf --coding-patch`.
-It FAILs on any change other than `ontology.coding` / `ontology.label`.
+It FAILs on any change other than `ontology.coding` / `ontology.label` (on components, data items, candidates, and their removal from task definitions).
 
 ## Prime directive: regenerate from empty (full re-emit only)
 
@@ -198,7 +208,7 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
    the native `procedure` is `<code>, <occurrenceTiming>. Patient: <...>. Clinician: <...>.`
    Never stop at intent + code. MUST NOT write any intermediate `order.*` key
    (the gate FAILs them).
-7. **Native task properties filled** (`TaskProperties.md`). Every monitoring
+7. **Native task properties filled** (`cig/know-how/proforma/TaskProperties.md`). Every monitoring
    and therapy action has a `caption` and a `description` (monitoring:
    `Monitors <monitored_target>. <literature_basis>.`; therapy: the
    recommendation and why it was modelled); every monitoring action has its
@@ -206,7 +216,8 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
    order), and every therapy action has one when the proposal gives
    something concrete to do (dose, titration). Every task the proposal scopes
    to a sub-population has its **Precondition**, and every action and
-   concept-bearing data item gets its **Ontology coding** in the coding pass.
+   concept-bearing data item gets its **Ontology coding** in the coding pass
+   (an action's on its component, `cig/know-how/proforma/Ontology.md`).
    Emit the other native properties (Wait condition, Postcondition, Event
    trigger, cycles, a plan's termination/abort condition) exactly when the
    proposal fixes them.
@@ -234,7 +245,7 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
     an `enquiry` (never an `action`) after it, with the monitor metaprops and
     the order in its `description`; its finding data items (SNOMED CT coded);
     and at most one test step after it, gated on the findings: an
-    `Order_<Test>` action (LOINC coded) or a
+    `Order_<Test>` action (LOINC coded on its component) or a
     `Tests_Ordering_Recommendations_<ADE>` decision (`choice_mode multiple`,
     one LOINC-coded candidate per test, each with an argument).
 
@@ -246,7 +257,7 @@ omitted from the listings for brevity. Through capa the tool ids are
 
 1. **Choose the emit mode.** If this is coding-only, follow *Coding-patch mode* and skip steps 3–12. Still read the approved proposal, then run the freeze gate.
 2. **Read** the approved proposal, `skills/cig-monitoring/references/`
-   (`MetapropsSyntax.md`, `TaskProperties.md` and the patterns the scope uses),
+   (`MetapropsSyntax.md`, `cig/know-how/proforma/TaskProperties.md` and the patterns the scope uses),
    and `proforma_reference`.
    Confirm `status: approved`; note the output path, the §5 data items, the §6
    task table, the §9 sources and quotes, and the `cig-actions` block.
@@ -290,7 +301,7 @@ omitted from the listings for brevity. Through capa the tool ids are
    Real types: `real` / `integer` for numeric thresholds (with `unit`),
    `boolean` for yes/no facts, `text` (with `range` when the values are a closed
    list, e.g. `range: "\"none\", \"<named_contraindication>\""`) otherwise.
-   Set every native data-item property the proposal fixes (`TaskProperties.md`:
+   Set every native data-item property the proposal fixes (`cig/know-how/proforma/Data.md`:
    caption, description, type, unit, range, default value, derivation).
    `add_data_item` has no `description` parameter; set it with `set_attribute`.
    A data item modelled from a specific passage (a contraindication, a
@@ -333,14 +344,24 @@ omitted from the listings for brevity. Through capa the tool ids are
     it delivers) and each data item that names a clinical concept (the
     observable or finding it records; **required** on every finding of an ADE
     Enquiry), run `snomed_search` with the concept's plain name, pick the
-    closest single concept, and write it back into the element's metaprops
-    map (read → add → write whole) as `ontology.coding=SNOMED:<id>` +
-    `ontology.label=<label as returned>`. For each ordered test (an
-    `Order_<Test>` action, each candidate of a test-ordering decision) run
-    `loinc_search` and write `ontology.coding=LOINC:<LOINC_NUM>` +
-    `ontology.label=<LONG_COMMON_NAME>` (**required**). For each therapy
-    action that prescribes a single drug, run `rxnorm_search` and add
-    `rxnorm.coding=RXNORM:<rxcui>` + `rxnorm.label` (the ingredient). Use the proposal's §7
+    closest single concept, and write it as one key,
+    `ontology.coding=SCT:<id> [<label as returned>]` (Composer's form, the
+    caption required; `cig/know-how/proforma/Ontology.md`), read → add →
+    write whole, **where Composer reads it**:
+    - a task (monitoring task, therapy action, test-order action): on its
+      **component** in the parent plan,
+      `set_attribute(selector: "<parent plan>/component:<task>", attribute: "metaprops", value: "ontology.coding=SCT:<id> [<label>]")`
+      (keep any key the component already holds); never on the task
+      definition;
+    - a data item or candidate: in its own metaprops, with its other keys
+      (`source`, `quote`).
+    For each ordered test (the component of an `Order_<Test>` action, each
+    candidate of a test-ordering decision) run `loinc_search` and write
+    `ontology.coding=LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` (**required**).
+    No `ontology.label` key: the term is the caption inside the value. For
+    each therapy action that prescribes a single drug, run `rxnorm_search` and
+    add `rxnorm.coding=RXNORM:<rxcui>` + `rxnorm.label` (the ingredient) to the
+    task definition's metaprops. Use the proposal's §7
     Terminology Reuse choice when it fixes one. Code other candidates and
     arguments only when a real concept fits; leave structural options such
     as `Eligible` / `Not_Eligible` uncoded. Record a narrower or broader
@@ -406,9 +427,9 @@ trigger=new or worsening chest pain, or stroke or TIA symptoms
 cq=CQ4, CQ5, CQ8")
 
 # 4) Coding pass (step 11): snomed_search(query: "cardiovascular event") -> SNOMED_405617006,
-#    then read the map, add the two keys, write it back whole
-#    ontology.coding=SNOMED:405617006
-#    ontology.label=Cardiovascular event (event)
+#    then read the component's map, add the coding, write it back whole
+set_attribute(selector: "Monitor_Desired_State/component:Monitor_Ischemic_Events", attribute: "metaprops",
+              value: "ontology.coding=SCT:405617006 [Cardiovascular event (event)]")
 ```
 
 The resulting `.pf` text (after `format`; keys sorted, `=` and `:` inside
@@ -416,7 +437,7 @@ values escaped by the properties writer, shown as `\\=` / `\\:` inside the
 quoted PROforma atom, and non-ASCII characters such as `§` written as
 `\\u00A7`; the tools and `export_json` read them back unescaped).
 The metaprops lines are abbreviated here; the file holds every line written in
-step 3 plus the two coding keys:
+step 3:
 
 ```
 action  :: 'Monitor_Ischemic_Events' ;
@@ -432,9 +453,6 @@ applies_when=all_patients_on_therapy
 goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= ischemic event review (angina or equivalent symptoms, myocardial infarction, stroke or TIA, stent thrombosis, unplanned revascularization); ...
 goal.verb=order
 ...
-ontology.coding=SNOMED\\:405617006
-ontology.label=Cardiovascular event (event)
-...
 quote.1=p.e50, Rec 1\\: "low-dose aspirin 81 mg (75-100 mg) is recommended to reduce atherosclerotic events"
 quote.2=\\u00A74.1\\: "Discontinue ZONTIVITY in patients who experience a stroke, TIA, or ICH"
 ...
@@ -444,9 +462,12 @@ source.1=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.000000000000
      procedure :: 'Ischemic event review (angina or equivalent symptoms, myocardial infarction, stroke or TIA, stent thrombosis, unplanned revascularization), each follow-up visit, ... Patient: ... Clinician: ...' ;
 end action.
 ```
-plus, in `Monitor_Desired_State`, the component the same `add_task` call wrote:
+plus, in `Monitor_Desired_State`, the component the same `add_task` call wrote,
+which carries the task's Ontology coding from the coding pass:
 ```
      component :: 'Monitor_Ischemic_Events' ;
+          metaprops :: 'ontology.coding=SCT\\:405617006 [Cardiovascular event (event)]
+' ;
           task_definition :: 'Monitor_Ischemic_Events' ;
           ltwh :: ...;
 ```
@@ -492,9 +513,9 @@ Rules for the bundle:
   `ServiceRequest.*` keys, and their own caption, description, procedure,
   precondition (when scoped) and quoted source — see
   `references/StateAchievementGoal.md`.
-- `ontology.coding` / `ontology.label` are added in the coding pass (step 11),
+- `ontology.coding` is added in the coding pass (step 11), on the component,
   not guessed: always from a `snomed_search` result (a `loinc_search` result
-  for an ordered test).
+  for an ordered test), as `<SCT|LNC>:<code> [<term as returned>]`.
 
 ## The ADE bundle (Monitor_Undesired_State)
 
@@ -523,8 +544,9 @@ calls") literally; the proposal's §6 fixes each name, data item and test.
    `check_expression`):
    - one test: `add_task(kind: "action", name: "Order_<Test>")`, `caption`,
      `description`, `procedure`, metaprops `role=test_order`,
-     `ordered_for=Monitor_<ADE>`, `goal.verb=order`, `goal.noun_phrase=<test>`
-     and the LOINC coding;
+     `ordered_for=Monitor_<ADE>`, `goal.verb=order`, `goal.noun_phrase=<test>`,
+     and the LOINC coding on its component
+     (`Monitor_Undesired_State/component:Order_<Test>`);
    - two or more: `add_task(kind: "decision", name:
      "Tests_Ordering_Recommendations_<ADE>")`, `set_attribute(attribute:
      "choice_mode", value: "multiple")`, metaprops `role=test_ordering`,
@@ -562,7 +584,7 @@ Monitoring sub-plan (after the Therapy plan) — sequenced with `after` on
 `add_task` (PROforma has no "next" link; the constraint sits on the later
 component). Parallel monitoring sub-plans share the Monitoring plan with no
 constraints between them. Populate the Enquiry's data items and the Decision's
-candidates and arguments (`Enquiry.md`, `Decision.md`) — never leave them empty.
+candidates and arguments (`cig/know-how/proforma/Enquiry.md`, `cig/know-how/proforma/Decision.md`) — never leave them empty.
 
 ## Writing long values safely
 
@@ -616,8 +638,9 @@ re-emit if any fails:
 - [ ] `Monitor_Undesired_State` starts with `Display_Potential_ADEs`, whose
       caption lists one item per ADE Enquiry; every ADE monitor is an
       `enquiry` after it, whose description states the order and whose
-      findings carry SNOMED CT coding; every `Order_<Test>` action and every
-      test-ordering candidate carries `LOINC:<code>` + `ontology.label`; each
+      findings carry SNOMED CT coding (`SCT:<id> [<caption>]`); the component
+      of every `Order_<Test>` action and every test-ordering candidate carries
+      `LNC:<code> [<caption>]`; each
       test step runs after its Enquiry with a precondition over its findings,
       and each test-ordering decision has `choice_mode multiple`.
 - [ ] **Single** root plan (`export_json.root`) for the requested
@@ -640,10 +663,12 @@ re-emit if any fails:
       least one source.
 - [ ] Every monitoring and therapy action pairs its `source` / `source.1..n`
       with `quote` / `quote.1..n` holding a verbatim passage in double quotes.
-- [ ] Every `ontology.coding` is `SNOMED:<id>` (an ordered test:
-      `LOINC:<code>`) with an `ontology.label`, both as returned by
-      `snomed_search` / `loinc_search`; monitoring tasks, therapy actions,
-      concept-bearing data items and ordered tests are coded.
+- [ ] Every `ontology.coding` is Composer's `SCT:<id> [<caption>]` (an
+      ordered test: `LNC:<code> [<caption>]`), code and caption as returned by
+      `snomed_search` / `loinc_search`, with no `ontology.label`; a task's
+      coding is on its component in the parent plan, never on the task
+      definition; monitoring tasks, therapy actions, concept-bearing data items
+      and ordered tests are coded.
 - [ ] Every action whose `applies_when` is a sub-population carries a
       `precondition` that `check_expression` types as `truth_value`, over a data
       item asked by an Enquiry (`data[].asked_by` non-empty); no precondition on
@@ -663,7 +688,8 @@ re-emit if any fails:
       captions, descriptions, procedures, preconditions, Decision candidates,
       data items, `goal.noun_phrase`, `ServiceRequest.*` and `source`/`quote` strings
       equal the snapshot, and the only metaprops keys that differ are
-      `ontology.coding` and `ontology.label`.
+      `ontology.coding` and `ontology.label` (on components, data items and
+      candidates, and their removal from task definitions).
 
 This skill ends at a clean, self-verified `.pf`. Step 7 (the blocking
 `cig-monitoring-review` gate and `cq-verification`) is run separately by the

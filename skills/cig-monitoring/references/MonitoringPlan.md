@@ -11,7 +11,7 @@ The three sub-plans are parallel: they are all components of the Monitoring Plan
 ## PROforma elements
 
 - Tasks: `plan` (monitoring plan and its three sub-plans), `action` (monitoring actions in Monitor Actions and Monitor Desired Outcome States), and in Monitor Undesired ADEs the **ADE Enquiry pattern** (`ADEMonitoringEnquiry.md`): an `action` that displays the ADEs, one `enquiry` per ADE and its test step (`action` or `decision`)
-- Native task properties (`TaskProperties.md`) on each monitoring task: Caption, Description, procedure (the order; an Enquiry has none, so its description carries the order), **Precondition** (for a sub-population), **Ontology coding** (the disorder, finding or measurement watched), and when the guideline needs them Wait condition, Event trigger or the component's repeat properties
+- Native task properties (`cig/know-how/proforma/TaskProperties.md`) on each monitoring task: Caption, Description, procedure (the order; an Enquiry has none, so its description carries the order), **Precondition** (for a sub-population), **Ontology coding** (the disorder, finding or measurement watched), and when the guideline needs them Wait condition, Event trigger or the component's repeat properties
 - Tools: `add_task` (no `after` between the sub-plans), `set_attribute` (description, procedure, metaprops, precondition), `add_data_item`, `add_source`, `add_candidate`, `add_argument`, `check_expression`, `snomed_search` and `loinc_search` (the coding pass)
 
 ## Tool calls
@@ -67,7 +67,7 @@ Each monitoring task in **Monitor Undesired ADEs** must be **operationalized**, 
 3. Set a **frequency** with justification, and an **urgent trigger** for same-day assessment (`MonitoringFrequency.md`).
 4. **Document provenance in the Enquiry's metaprops** (full contract in `MetapropsSyntax.md`): `source` / `source.1..n` (cite each) with `quote` / `quote.1..n` (the verbatim passage of each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` block (repeated in `goal.noun_phrase` and stated in the Enquiry's `description`, since an Enquiry has no procedure) — plus `monitored_target` naming the therapy task the monitor traces to (**traceability**: a reviewer can see which monitoring task each source drove).
 5. If the source limits the harm to a sub-population, set `applies_when` accordingly and add an executable `precondition` over an eligibility/baseline Enquiry data item (e.g. `Monitor_<Harm>` → `on_interacting_medication = true`).
-6. **Code the harm** in the coding pass: `ontology.coding=SNOMED:<id>` + `ontology.label` for the disorder or finding, found with `snomed_search`; code each finding data item with `snomed_search` and each ordered test with `loinc_search` (`LOINC:<code>`).
+6. **Code the harm** in the coding pass: `ontology.coding=SCT:<id> [<term>]` for the disorder or finding, found with `snomed_search`, on the Enquiry's component in `Monitor_Undesired_State`; code each finding data item with `snomed_search` and each ordered test with `loinc_search` (`LNC:<code> [<term>]`). Value form and locations: `cig/know-how/proforma/Ontology.md`.
 
 **Case-report sources are opt-in.** Do not build them unless the user (or approved proposal) includes them. When used, they must document a harm *caused by/occurring during* the drug — not merely that symptoms resolve after stopping it (see the source-quality rule in `ActionEnactmentGoal.md`).
 
@@ -92,4 +92,4 @@ Use it to see the shape of the plan and of the monitor contract. Which monitors 
 
 ## Related patterns
 
-- `ADEMonitoringEnquiry.md`, `ActionComponent.md`, `ActionEnactmentGoal.md`, `TopLevelPlan.md`, `TaskProperties.md`, `MonitoringFrequency.md`.
+- `ADEMonitoringEnquiry.md`, `ActionComponent.md`, `ActionEnactmentGoal.md`, `TopLevelPlan.md`, `cig/know-how/proforma/TaskProperties.md`, `MonitoringFrequency.md`.

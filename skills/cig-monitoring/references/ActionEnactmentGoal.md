@@ -7,7 +7,7 @@
 ## PROforma elements
 
 - Task: `action` (created with `add_task` in a Monitoring sub-plan; see `ActionComponent.md`), or `enquiry` for an ADE monitor (`ADEMonitoringEnquiry.md`)
-- Native task properties (`TaskProperties.md`): `caption` (one line), `description` (what is monitored and why it was modelled), `procedure` (the order as the instruction Composer shows), **`precondition`** (when the source scopes it to a sub-population), and the **Ontology coding** (the disorder, finding or measurement watched). Use Wait condition, Event trigger or the component's repeat properties only when the guideline needs them.
+- Native task properties (`cig/know-how/proforma/TaskProperties.md`): `caption` (one line), `description` (what is monitored and why it was modelled), `procedure` (the order as the instruction Composer shows), **`precondition`** (when the source scopes it to a sub-population), and the **Ontology coding** (the disorder, finding or measurement watched). Use Wait condition, Event trigger or the component's repeat properties only when the guideline needs them.
 - Goal: metaprops keys `goal.verb` and `goal.noun_phrase` on the action (no separate Goal object; one goal per task)
 - `goal.verb` = **`order`** for Action Enactment Goals (the verb list also allows `start`/`stop`; prefer `order` for monitoring orders). `check_cig.mjs` treats every action with `goal.verb=order` as a monitoring action (except the ADE display Action, `role=ade_display`, and the test-order Actions, `role=test_order`, which have their own rules), and every Enquiry with `goal.verb=order` and a `ServiceRequest` block as a monitoring Enquiry.
 
@@ -70,7 +70,7 @@ Every monitoring action **must** carry a full `metaprops` attribute: Java-proper
 - `monitoring_frequency_basis` = justification for the chosen `ServiceRequest.occurrenceTiming`.
 - `trigger` = what prompts urgent/same-day assessment (for harms); `none` for routine surveillance.
 - `cq` = the competency-question ids this action supports.
-- `ontology.coding` / `ontology.label` = Composer's Ontology coding of the disorder, finding or measurement the action watches (`SNOMED:<id>` and the preferred term), found with `snomed_search` in the coding pass.
+- Not in these metaprops: Composer's Ontology coding of the disorder, finding or measurement the action watches, `ontology.coding=SCT:<id> [<preferred term>]`, found with `snomed_search` in the coding pass, goes on the action's **component** in its parent plan (`cig/know-how/proforma/Ontology.md`).
 
 ## Case-report source quality (opt-in only)
 
@@ -116,8 +116,6 @@ literature_basis=the label says to observe patients carefully for signs and symp
 monitored_target=acute pancreatitis as a labeled adverse effect of the drug (Prescribe_Drug)
 monitoring_frequency_basis=symptom-triggered because pancreatitis presents acutely
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED\\:197456007
-ontology.label=Acute pancreatitis (disorder)
 provenance_type=package_insert_specified
 quote=§5.2\\: "If pancreatitis is suspected, discontinue ... and initiate appropriate management."
 source=<Drug> US Prescribing Information, §5.2 Acute Pancreatitis
@@ -138,7 +136,7 @@ end action.
 - Capture the **measurement method** in `ServiceRequest.code` / `ServiceRequest.patientInstruction` / `ServiceRequest.performerInstruction` and in `instrument` (lab test, validated questionnaire, home device, or clinician interview).
 - **Every monitoring action gets the native properties and the full metaprops** (keys above): caption, description, procedure, a precondition where it applies, the Ontology coding; the goal, the `ServiceRequest.*` block, and provenance/operationalization with quoted sources. Keep `goal.noun_phrase` identical to the `ServiceRequest.*` values and `procedure` consistent with them.
 - **Document sources and self-found knowledge** (`source` + `quote`, `knowledge_origin`, `assistant_invention`) so a reviewer can separate guideline-sourced facts from your own design — and tie each action to what it monitors via `monitored_target` (traceability).
-- **Code it** in the coding pass: `ontology.coding=SNOMED:<id>` + `ontology.label` from `snomed_search` (one concept; note a narrower or broader choice in `assistant_invention`).
+- **Code it** in the coding pass: `ontology.coding=SCT:<id> [<term>]` from `snomed_search`, on the action's component in its parent plan (one concept; note a narrower or broader choice in `assistant_invention`).
 
 ## Structural example
 
@@ -146,4 +144,4 @@ Every monitor in `cig/examples/ccd-antithrombotic-monitoring.pf` meets the metap
 
 ## Related patterns
 
-- `ADEMonitoringEnquiry.md` (ADE monitors as Enquiries with test ordering), `MetapropsSyntax.md` (the canonical task contract), `TaskProperties.md`, `MonitoringPlan.md`, `MonitoringFrequency.md`, `ActionComponent.md`, `StateAchievementGoal.md`.
+- `ADEMonitoringEnquiry.md` (ADE monitors as Enquiries with test ordering), `MetapropsSyntax.md` (the canonical task contract), `cig/know-how/proforma/TaskProperties.md`, `MonitoringPlan.md`, `MonitoringFrequency.md`, `ActionComponent.md`, `StateAchievementGoal.md`.

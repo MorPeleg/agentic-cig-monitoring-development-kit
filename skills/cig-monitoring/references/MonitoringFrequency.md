@@ -1,6 +1,6 @@
 # Reference: Monitoring Frequency (default-with-justification guidance)
 
-Guidelines often state *what* and *how* to monitor but omit *how often*. When the guideline gives no cadence, **propose one and justify it** — never leave `ServiceRequest.occurrenceTiming` blank or a placeholder. Record the chosen cadence in the monitoring action's `ServiceRequest.occurrenceTiming` metaprop, repeat it in `goal.noun_phrase` and state it in the native `procedure`, with the justification in `monitoring_frequency_basis` (and the source passage that sets it, if any, in a `quote.N`). `ServiceRequest.occurrenceTiming` is the authoritative schedule; PROforma component cycles (`cycle_repeat`, `number_of_cycles`, `cycle_until`; see `TaskProperties.md`) are optional and not required by the kit.
+Guidelines often state *what* and *how* to monitor but omit *how often*. When the guideline gives no cadence, **propose one and justify it** — never leave `ServiceRequest.occurrenceTiming` blank or a placeholder. Record the chosen cadence in the monitoring action's `ServiceRequest.occurrenceTiming` metaprop, repeat it in `goal.noun_phrase` and state it in the native `procedure`, with the justification in `monitoring_frequency_basis` (and the source passage that sets it, if any, in a `quote.N`). `ServiceRequest.occurrenceTiming` is the authoritative schedule; PROforma component cycles (`cycle_repeat`, `number_of_cycles`, `cycle_until`; see `cig/know-how/proforma/TaskProperties.md`) are optional and not required by the kit.
 
 This is generic guidance by **category of monitored item**. The cadence of a real CIG comes from its own guidelines and package inserts; adapt with justification, and do not copy a default where the source says something else.
 
@@ -34,4 +34,4 @@ Record the stance and condition in the metaprops (`monitoring_stance`, `applies_
 
 ## Related
 
-- `MetapropsSyntax.md`, `ActionEnactmentGoal.md`, `MonitoringPlan.md`, `TaskProperties.md`.
+- `MetapropsSyntax.md`, `ActionEnactmentGoal.md`, `MonitoringPlan.md`, `cig/know-how/proforma/TaskProperties.md`.

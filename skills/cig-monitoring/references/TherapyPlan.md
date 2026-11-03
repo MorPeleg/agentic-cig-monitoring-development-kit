@@ -65,7 +65,26 @@ end plan.
 
 ## Structural example
 
-In `cig/examples/ici-irae-monitoring.pf`, the therapy plan `ICI_Therapy` runs after the Decision and is gated by a precondition on its result. It holds a patient-education action, a specialist-review action that only runs when its own precondition on the Decision's result holds, and the drug action scheduled after both; each has an `achieve` or `avoid` goal, a description, a procedure, a quoted source and its SNOMED CT coding. Use it to see the shape; its interventions are not a template.
+In `cig/examples/ccd-antithrombotic-monitoring.pf`, the therapy plan `Antithrombotic_Therapy` runs after the regimen Decision and is gated by `active_pathological_bleeding = false`, the contraindication every candidate regimen shares. Its components:
+
+```
+plan Antithrombotic_Therapy                        precondition active_pathological_bleeding = false
+  action   Advise_Avoid_Chronic_NSAIDs             goal.verb=avoid; no precondition, runs first
+  decision P2Y12_Agent_Decision                    after the advice; precondition result_of(Antithrombotic_Regimen_Decision) = <a regimen with a P2Y12 inhibitor>
+  action   Prescribe_Aspirin, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban, Prescribe_DOAC
+                                                   after the advice; each gated by result_of(Antithrombotic_Regimen_Decision)
+  action   Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel
+                                                   after the advice and P2Y12_Agent_Decision; gated by result_of(P2Y12_Agent_Decision)
+  action   Prescribe_PPI                           goal.verb=avoid (gastrointestinal bleeding); gated by the DAPT and DOAC-plus-antiplatelet regimens
+```
+
+It shows three things the generic calls above do not:
+
+- **A non-drug recommendation as an action.** `Advise_Avoid_Chronic_NSAIDs` models a "should not be used" recommendation (Rec 10, Class 3: Harm) as an advice step with an `avoid` goal. It always completes, so every drug action can be scheduled after it.
+- **A nested Decision.** `P2Y12_Agent_Decision` chooses the P2Y12 inhibitor inside the therapy plan, only when the chosen regimen contains one; the three P2Y12 drug actions follow it and read its result.
+- **Drug actions gated by decision results.** Each `Prescribe_*` action's precondition is a disjunction of `result_of(...) = <Candidate>` tests over the regimens that contain the drug, so one action serves several regimens without duplication. `Prescribe_Clopidogrel` reads both decisions (`result_of(Antithrombotic_Regimen_Decision) = Clopidogrel_Monotherapy or result_of(P2Y12_Agent_Decision) = Clopidogrel`) because clopidogrel monotherapy skips the P2Y12 decision.
+
+Each drug action has an `achieve` or `avoid` goal, a description citing the recommendation with its class and level, a procedure with the dose and duration, numbered `source.N` + `quote.N`, its SNOMED CT coding and, when the action delivers a single drug ingredient, its RxNorm code (`rxnorm.coding` + `rxnorm.label`; the class-level `Prescribe_DOAC` and the NSAID advice have none). Use it to see the shape; its interventions are not a template.
 
 ## Related patterns
 

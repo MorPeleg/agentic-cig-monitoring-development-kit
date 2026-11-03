@@ -10,9 +10,9 @@ The three sub-plans are parallel: they are all components of the Monitoring Plan
 
 ## PROforma elements
 
-- Tasks: `plan` (monitoring plan and its three sub-plans), `action` (monitoring actions)
-- Native task properties (`TaskProperties.md`) on each monitoring action: Caption, Description, procedure (the order), **Precondition** (for a sub-population), **Ontology coding** (the disorder, finding or measurement watched), and when the guideline needs them Wait condition, Event trigger or the component's repeat properties
-- Tools: `add_task` (no `after` between the sub-plans), `set_attribute` (description, procedure, metaprops, precondition), `check_expression`, `snomed_search` (the coding pass)
+- Tasks: `plan` (monitoring plan and its three sub-plans), `action` (monitoring actions in Monitor Actions and Monitor Desired Outcome States), and in Monitor Undesired ADEs the **ADE Enquiry pattern** (`ADEMonitoringEnquiry.md`): an `action` that displays the ADEs, one `enquiry` per ADE and its test step (`action` or `decision`)
+- Native task properties (`TaskProperties.md`) on each monitoring task: Caption, Description, procedure (the order; an Enquiry has none, so its description carries the order), **Precondition** (for a sub-population), **Ontology coding** (the disorder, finding or measurement watched), and when the guideline needs them Wait condition, Event trigger or the component's repeat properties
+- Tools: `add_task` (no `after` between the sub-plans), `set_attribute` (description, procedure, metaprops, precondition), `add_data_item`, `add_source`, `add_candidate`, `add_argument`, `check_expression`, `snomed_search` and `loinc_search` (the coding pass)
 
 ## Tool calls
 
@@ -33,7 +33,7 @@ add_task(plan: "Monitoring_Plan", kind: "plan", name: "Monitor_Undesired_State",
          caption: "Monitor undesired states and adverse drug effects")
 ```
 
-Each sub-plan then gets its monitoring actions (`add_task(plan: "Monitor_Undesired_State", kind: "action", ...)`, one per item to monitor), each with an Action Enactment Goal, its native caption / description / procedure / precondition / Ontology coding and the full metaprops — see `ActionEnactmentGoal.md` and `MetapropsSyntax.md`. Never leave a sub-plan without actions; if a sub-plan has nothing to hold within the requested scope, omit it.
+Monitor Actions and Monitor Desired Outcome States then get their monitoring actions (`add_task(plan: "Monitor_Desired_State", kind: "action", ...)`, one per item to monitor), each with an Action Enactment Goal, its native caption / description / procedure / precondition / Ontology coding and the full metaprops — see `ActionEnactmentGoal.md` and `MetapropsSyntax.md`. Monitor Undesired ADEs gets `Display_Potential_ADEs`, one ADE Enquiry per ADE (same goal and metaprops contract) and each Enquiry's test step — see `ADEMonitoringEnquiry.md`. Never leave a sub-plan without monitoring tasks; if a sub-plan has nothing to hold within the requested scope, omit it.
 
 ## `.pf` text
 
@@ -60,21 +60,36 @@ end plan.
 
 ## Operationalizing the Undesired-ADE sub-plan (required)
 
-Each action in **Monitor Undesired ADEs** must be **operationalized**, not just named. For every harm:
+Each monitoring task in **Monitor Undesired ADEs** must be **operationalized**, not just named, and made executable with the **ADE Enquiry pattern** (`ADEMonitoringEnquiry.md`): the plan starts with `Display_Potential_ADEs` (its caption a Markdown list of the ADEs); each ADE monitor is an **Enquiry** whose data items are the symptoms and bedside findings; a test step (`Order_<Test>` Action or `Tests_Ordering_Recommendations_<ADE>` Decision) after it orders the tests when a finding is positive. For every harm:
 
-1. Map the harm/syndrome to **observable manifestations** (the symptoms, signs or lab changes by which it presents).
+1. Map the harm/syndrome to **observable manifestations** (the symptoms, signs or lab changes by which it presents). The symptoms and exam findings become the Enquiry's data items (SNOMED CT coded); the lab and imaging tests become its test step (LOINC coded).
 2. Choose an **instrument**: patient symptom report, named lab test, validated questionnaire, or clinician exam.
 3. Set a **frequency** with justification, and an **urgent trigger** for same-day assessment (`MonitoringFrequency.md`).
-4. **Document provenance in the action's metaprops** (full contract in `MetapropsSyntax.md`): `source` / `source.1..n` (cite each) with `quote` / `quote.1..n` (the verbatim passage of each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` block (repeated in `goal.noun_phrase` and stated in the native `procedure`) — plus `monitored_target` naming the therapy task the action traces to (**traceability**: a reviewer can see which monitoring task each source drove).
-5. If the source limits the harm to a sub-population, set `applies_when` accordingly and add an executable `precondition` over an Enquiry data item (e.g. `Monitor_<Harm>` → `on_interacting_medication = true`).
-6. **Code the harm** in the coding pass: `ontology.coding=SNOMED:<id>` + `ontology.label` for the disorder or finding, found with `snomed_search`.
+4. **Document provenance in the Enquiry's metaprops** (full contract in `MetapropsSyntax.md`): `source` / `source.1..n` (cite each) with `quote` / `quote.1..n` (the verbatim passage of each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` block (repeated in `goal.noun_phrase` and stated in the Enquiry's `description`, since an Enquiry has no procedure) — plus `monitored_target` naming the therapy task the monitor traces to (**traceability**: a reviewer can see which monitoring task each source drove).
+5. If the source limits the harm to a sub-population, set `applies_when` accordingly and add an executable `precondition` over an eligibility/baseline Enquiry data item (e.g. `Monitor_<Harm>` → `on_interacting_medication = true`).
+6. **Code the harm** in the coding pass: `ontology.coding=SNOMED:<id>` + `ontology.label` for the disorder or finding, found with `snomed_search`; code each finding data item with `snomed_search` and each ordered test with `loinc_search` (`LOINC:<code>`).
 
 **Case-report sources are opt-in.** Do not build them unless the user (or approved proposal) includes them. When used, they must document a harm *caused by/occurring during* the drug — not merely that symptoms resolve after stopping it (see the source-quality rule in `ActionEnactmentGoal.md`).
 
 ## Structural example
 
-In `cig/examples/ici-irae-monitoring.pf`, `Monitoring_Plan` holds two parallel sub-plans, `Monitor_Actions` and `Monitor_Undesired_State`; its scope (a toxicity guideline) has no desired-outcome monitors, so that sub-plan is omitted rather than left empty. Two of its ADE monitors are scoped to a sub-population by a precondition over Enquiry data items. Use it to see the shape; which monitors to model comes from the user's guidelines and the approved proposal.
+In `cig/examples/ccd-antithrombotic-monitoring.pf`, `Monitoring_Plan` holds all three parallel sub-plans:
+
+```
+plan Monitoring_Plan
+  plan Monitor_Actions            4 Actions: Monitor_Antithrombotic_Adherence, Monitor_Regimen_Duration,
+                                  Monitor_NSAID_Avoidance, Monitor_PPI_Continued_Need
+  plan Monitor_Desired_State      1 Action: Monitor_Ischemic_Events (the absence of ischemic events, the achieve goal of every drug action)
+  plan Monitor_Undesired_State    Display_Potential_ADEs, then 17 ADE Enquiries with their test steps (ADEMonitoringEnquiry.md)
+```
+
+It shows the two kinds of scoped monitor:
+
+- **Drug-gated monitors.** A monitor that watches one drug (e.g. `Monitor_Ticagrelor_Dyspnea`) keeps `applies_when=all_patients_on_therapy`, since it applies to everyone on that drug, and runs only for the regimens that contain the drug through a precondition over the Decision results: `result_of(P2Y12_Agent_Decision) = Ticagrelor`. The gate WARNs on this combination; the example's approved proposal records the convention.
+- **Sub-population monitors.** `Monitor_PPI_Hypomagnesemia` narrows `applies_when` to the patients the label names (prolonged pantoprazole, or pantoprazole with digoxin or a diuretic), and its precondition reads the Enquiry data item `on_digoxin_or_diuretic` alongside the regimen results. `Monitor_PPI_Bone_Fracture` does the same with `previous_mi` (long-term pantoprazole during extended DAPT after MI).
+
+Use it to see the shape of the plan and of the monitor contract. Which monitors to model comes from the user's guidelines and the approved proposal.
 
 ## Related patterns
 
-- `ActionComponent.md`, `ActionEnactmentGoal.md`, `TopLevelPlan.md`, `TaskProperties.md`, `MonitoringFrequency.md`.
+- `ADEMonitoringEnquiry.md`, `ActionComponent.md`, `ActionEnactmentGoal.md`, `TopLevelPlan.md`, `TaskProperties.md`, `MonitoringFrequency.md`.

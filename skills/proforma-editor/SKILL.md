@@ -8,7 +8,7 @@ description: Read, edit, validate and diagram PROforma 1.9 guideline files (.pf,
 Use this skill whenever you need to **inspect or modify a PROforma guideline
 file (`.pf`)** in this kit — the CIG at
 `projects/<project_dir>/guideline/<name>.pf`, the structural example
-`cig/examples/ici-irae-monitoring.pf`, or a scratch copy. The tools are
+`cig/examples/ccd-antithrombotic-monitoring.pf`, or a scratch copy. The tools are
 provided by the **proforma** MCP server (npm `proforma-mcp`, pinned
 `proforma-mcp@0.2.0`) and operate on the file on disk, which is the source of
 truth.
@@ -42,6 +42,10 @@ truth.
   `unset`, `upsert`, `set-metadata`, `format`, …; `--help` on each). Parameter
   names are the same with `-` for `_`. The kit's `scripts/check_cig.mjs` and
   `scripts/run_cqs.mjs` call it for you (`PROFORMA_BIN` overrides the binary).
+  On Windows, pass a multi-line value (such as the Markdown caption of
+  `Display_Potential_ADEs`) through the MCP tools or `scripts/lib/proforma.mjs`
+  (which runs the binary directly), not through `npx`: the `npx.cmd` wrapper
+  drops everything after the first newline of an argument.
 
 ## Tools overview
 
@@ -190,7 +194,8 @@ add_source(file, task: "Get_Eligibility_Data", data: "on_interacting_medication"
 - **Composer's "Ontology coding" field is the metaprop `ontology.coding`**
   (`SCHEME:code`, e.g. `SNOMED:197456007`); Composer hides the key in its
   metaprops editor and shows the term as a field. Add `ontology.label` with
-  the preferred term. Find codes with the kit's `snomed_search` tool.
+  the preferred term. Find codes with the kit's `snomed_search` tool, and
+  LOINC codes for ordered tests (`LOINC:718-7`) with `loinc_search`.
 - **Composer (and every tool save) sorts metaprops keys**, so key order is not
   significant; the key set and values are.
 - **`set_attribute` replaces** an attribute. For metaprops that means the whole

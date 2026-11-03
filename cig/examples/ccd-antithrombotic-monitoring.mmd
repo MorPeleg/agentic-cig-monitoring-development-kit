@@ -1,0 +1,161 @@
+---
+title: CCD Antithrombotic Therapy and Monitoring (2023 AHA/ACC CCD Guideline §4.3.1)
+---
+flowchart TD
+    ccd_antithrombotic_monitoring__Get_Antithrombotic_Data{"Get_Antithrombotic_Data<br/><i>Collect the patient data for antithrombotic regimen selection</i>"}
+    class ccd_antithrombotic_monitoring__Get_Antithrombotic_Data enquiry
+    ccd_antithrombotic_monitoring__Antithrombotic_Regimen_Decision(("Antithrombotic_Regimen_Decision<br/><i>Choose the antithrombotic regimen</i>"))
+    class ccd_antithrombotic_monitoring__Antithrombotic_Regimen_Decision decision
+    subgraph ccd_antithrombotic_monitoring__Antithrombotic_Therapy["Antithrombotic_Therapy<br/><i>Antithrombotic therapy (when there is no active pathological bleeding)</i>"]
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs("Advise_Avoid_Chronic_NSAIDs<br/><i>Advise avoiding chronic NSAID use</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__P2Y12_Agent_Decision(("P2Y12_Agent_Decision<br/><i>Choose the P2Y12 inhibitor</i>"))
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__P2Y12_Agent_Decision decision
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Aspirin("Prescribe_Aspirin<br/><i>Prescribe low-dose aspirin 81 mg once daily</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Aspirin action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Clopidogrel("Prescribe_Clopidogrel<br/><i>Prescribe clopidogrel 75 mg once daily</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Clopidogrel action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Ticagrelor("Prescribe_Ticagrelor<br/><i>Prescribe ticagrelor 90 mg twice daily in the first year after ACS or MI, then 60 mg twice daily</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Ticagrelor action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Prasugrel("Prescribe_Prasugrel<br/><i>Prescribe prasugrel 10 mg once daily after ACS treated with PCI</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Prasugrel action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Vorapaxar("Prescribe_Vorapaxar<br/><i>Add vorapaxar 2.08 mg once daily to aspirin after MI</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Vorapaxar action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Low_Dose_Rivaroxaban("Prescribe_Low_Dose_Rivaroxaban<br/><i>Add rivaroxaban 2.5 mg twice daily to aspirin 81 mg</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Low_Dose_Rivaroxaban action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_DOAC("Prescribe_DOAC<br/><i>Prescribe a DOAC at its labeled dose</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_DOAC action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_PPI("Prescribe_PPI<br/><i>Prescribe pantoprazole 40 mg once daily for gastroprotection</i>")
+        class ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_PPI action
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__P2Y12_Agent_Decision
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Aspirin
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Clopidogrel
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__P2Y12_Agent_Decision -->|"?"| ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Clopidogrel
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Ticagrelor
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__P2Y12_Agent_Decision -->|"Ticagrelor"| ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Ticagrelor
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Prasugrel
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__P2Y12_Agent_Decision -->|"Prasugrel"| ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Prasugrel
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Vorapaxar
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_Low_Dose_Rivaroxaban
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_DOAC
+        ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Advise_Avoid_Chronic_NSAIDs --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy__Prescribe_PPI
+    end
+    style ccd_antithrombotic_monitoring__Antithrombotic_Therapy fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+    subgraph ccd_antithrombotic_monitoring__Monitoring_Plan["Monitoring_Plan<br/><i>Monitor antithrombotic therapy</i>"]
+        subgraph ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions["Monitor_Actions<br/><i>Monitor completion of the antithrombotic recommendations</i>"]
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_Antithrombotic_Adherence("Monitor_Antithrombotic_Adherence<br/><i>Monitor adherence to the antithrombotic regimen (visit review with refill check)</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_Antithrombotic_Adherence action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_Regimen_Duration("Monitor_Regimen_Duration<br/><i>Review regimen duration and step-down against Figure 9 (1, 3, 6, 12 months, then yearly)</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_Regimen_Duration action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_NSAID_Avoidance("Monitor_NSAID_Avoidance<br/><i>Check for chronic NSAID use at each visit</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_NSAID_Avoidance action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_PPI_Continued_Need("Monitor_PPI_Continued_Need<br/><i>Review the continued need for pantoprazole at each visit and step-down</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions__Monitor_PPI_Continued_Need action
+        end
+        style ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Actions fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+        subgraph ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Desired_State["Monitor_Desired_State<br/><i>Monitor the desired outcome (absence of ischemic events)</i>"]
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Desired_State__Monitor_Ischemic_Events("Monitor_Ischemic_Events<br/><i>Monitor for ischemic events (angina, MI, stroke or TIA, stent thrombosis)</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Desired_State__Monitor_Ischemic_Events action
+        end
+        style ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Desired_State fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+        subgraph ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State["Monitor_Undesired_State<br/><i>Monitor adverse drug effects</i>"]
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs("Display_Potential_ADEs<br/><i># *Monitoring for ADEs:*  <br/>1. Bleeding  <br/>2. Drug interactions  <br/>3. Spinal or epidural hematoma  <br/>4. Perioperative bleeding and thrombosis  <br/>5. Renal function (anticoagulant dosing)  <br/>6. Thrombotic thrombocytopenic purpura  <br/>7. Reduced clopidogrel effect (CYP2C19 poor metabolizer)  <br/>8. Antiplatelet hypersensitivity  <br/>9. Dyspnea (ticagrelor)  <br/>10. Bradyarrhythmia (ticagrelor)  <br/>11. Central sleep apnea (ticagrelor)  <br/>12. C. difficile-associated diarrhea (PPI)  <br/>13. Hypomagnesemia (PPI)  <br/>14. Bone fracture (PPI)  <br/>15. Acute interstitial nephritis (PPI)  <br/>16. Cutaneous lupus erythematosus (PPI)  <br/>17. Severe cutaneous reactions (PPI)  </i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Bleeding{"Monitor_Bleeding<br/><i>Monitor for bleeding (symptom review, Hb/Hct on suspicion)</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Bleeding enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_Bleeding(("Tests_Ordering_Recommendations_Bleeding<br/><i>Which tests to order for suspected bleeding?</i>"))
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_Bleeding decision
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Drug_Interactions{"Monitor_Drug_Interactions<br/><i>Review interacting medications at initiation, each visit and each new medicine</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Drug_Interactions enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Serum_Digoxin("Order_Serum_Digoxin<br/><i>Order serum digoxin level</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Serum_Digoxin action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Spinal_Epidural_Hematoma{"Monitor_Spinal_Epidural_Hematoma<br/><i>Monitor for spinal or epidural hematoma around neuraxial procedures</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Spinal_Epidural_Hematoma enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Perioperative_Interruption{"Monitor_Perioperative_Interruption<br/><i>Plan antithrombotic interruption before surgery or invasive procedures</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Perioperative_Interruption enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Renal_Function{"Monitor_Renal_Function<br/><i>Monitor renal function (creatinine, Cockcroft-Gault CrCl) for anticoagulant dosing</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Renal_Function enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Serum_Creatinine("Order_Serum_Creatinine<br/><i>Order serum creatinine for Cockcroft-Gault creatinine clearance</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Serum_Creatinine action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_TTP{"Monitor_TTP<br/><i>Monitor for thrombotic thrombocytopenic purpura on a thienopyridine</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_TTP enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_TTP(("Tests_Ordering_Recommendations_TTP<br/><i>Which tests to order for suspected thrombotic thrombocytopenic purpura?</i>"))
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_TTP decision
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_CYP2C19_Poor_Metabolizer{"Monitor_CYP2C19_Poor_Metabolizer<br/><i>Review CYP2C19 poor-metabolizer status on clopidogrel</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_CYP2C19_Poor_Metabolizer enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_CYP2C19_Genotype("Order_CYP2C19_Genotype<br/><i>Order CYP2C19 genotype</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_CYP2C19_Genotype action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Antiplatelet_Hypersensitivity{"Monitor_Antiplatelet_Hypersensitivity<br/><i>Monitor for antiplatelet hypersensitivity reactions</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Antiplatelet_Hypersensitivity enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Dyspnea{"Monitor_Ticagrelor_Dyspnea<br/><i>Monitor for dyspnea on ticagrelor</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Dyspnea enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Bradyarrhythmia{"Monitor_Ticagrelor_Bradyarrhythmia<br/><i>Check the pulse for bradyarrhythmia on ticagrelor (ECG on symptoms)</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Bradyarrhythmia enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_ECG("Order_ECG<br/><i>Order 12-lead ECG</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_ECG action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Central_Sleep_Apnea{"Monitor_Ticagrelor_Central_Sleep_Apnea<br/><i>Monitor for central sleep apnea on ticagrelor</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Central_Sleep_Apnea enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Polysomnography("Order_Polysomnography<br/><i>Order polysomnography (sleep study)</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Polysomnography action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_CDAD{"Monitor_PPI_CDAD<br/><i>Monitor for C. difficile-associated diarrhea on pantoprazole</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_CDAD enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Stool_C_Difficile_Test("Order_Stool_C_Difficile_Test<br/><i>Order stool C. difficile toxin test</i>")
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Stool_C_Difficile_Test action
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Hypomagnesemia{"Monitor_PPI_Hypomagnesemia<br/><i>Monitor serum magnesium on pantoprazole</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Hypomagnesemia enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_PPI_Hypomagnesemia(("Tests_Ordering_Recommendations_PPI_Hypomagnesemia<br/><i>Which tests to order for suspected hypomagnesemia?</i>"))
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_PPI_Hypomagnesemia decision
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Bone_Fracture{"Monitor_PPI_Bone_Fracture<br/><i>Review fracture and osteoporosis risk during long-term pantoprazole</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Bone_Fracture enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Interstitial_Nephritis{"Monitor_PPI_Interstitial_Nephritis<br/><i>Monitor for acute tubulointerstitial nephritis on pantoprazole</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Interstitial_Nephritis enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_PPI_Interstitial_Nephritis(("Tests_Ordering_Recommendations_PPI_Interstitial_Nephritis<br/><i>Which tests to order for suspected acute tubulointerstitial nephritis?</i>"))
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_PPI_Interstitial_Nephritis decision
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Cutaneous_Lupus{"Monitor_PPI_Cutaneous_Lupus<br/><i>Monitor for cutaneous or systemic lupus erythematosus on pantoprazole</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Cutaneous_Lupus enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Severe_Cutaneous_Reactions{"Monitor_PPI_Severe_Cutaneous_Reactions<br/><i>Monitor for severe cutaneous adverse reactions on pantoprazole</i>"}
+            class ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Severe_Cutaneous_Reactions enquiry
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Bleeding
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Bleeding --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_Bleeding
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Drug_Interactions
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Drug_Interactions --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Serum_Digoxin
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Spinal_Epidural_Hematoma
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Perioperative_Interruption
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Renal_Function
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Renal_Function --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Serum_Creatinine
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_TTP
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_TTP --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_TTP
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_CYP2C19_Poor_Metabolizer
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_CYP2C19_Poor_Metabolizer --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_CYP2C19_Genotype
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Antiplatelet_Hypersensitivity
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Dyspnea
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Bradyarrhythmia
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Bradyarrhythmia --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_ECG
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Central_Sleep_Apnea
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_Ticagrelor_Central_Sleep_Apnea --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Polysomnography
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_CDAD
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_CDAD --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Order_Stool_C_Difficile_Test
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Hypomagnesemia
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Hypomagnesemia --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_PPI_Hypomagnesemia
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Bone_Fracture
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Interstitial_Nephritis
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Interstitial_Nephritis --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Tests_Ordering_Recommendations_PPI_Interstitial_Nephritis
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Cutaneous_Lupus
+            ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Display_Potential_ADEs --> ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State__Monitor_PPI_Severe_Cutaneous_Reactions
+        end
+        style ccd_antithrombotic_monitoring__Monitoring_Plan__Monitor_Undesired_State fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+    end
+    style ccd_antithrombotic_monitoring__Monitoring_Plan fill:#FFDCD9,stroke:#E55344,stroke-width:2px
+    ccd_antithrombotic_monitoring__Get_Antithrombotic_Data --> ccd_antithrombotic_monitoring__Antithrombotic_Regimen_Decision
+    ccd_antithrombotic_monitoring__Antithrombotic_Regimen_Decision --> ccd_antithrombotic_monitoring__Antithrombotic_Therapy
+    ccd_antithrombotic_monitoring__Antithrombotic_Therapy --> ccd_antithrombotic_monitoring__Monitoring_Plan
+    classDef action fill:#E4FAFA,stroke:#008585,stroke-width:2px,color:#000
+    classDef enquiry fill:#E6FFE6,stroke:#009700,stroke-width:2px,color:#000
+    classDef decision fill:#FFFFFF,stroke:#B40F78,stroke-width:2px,color:#000
+    classDef plan fill:#FFDCD9,stroke:#E55344,stroke-width:2px,color:#000
+    classDef keystone fill:#FEFBED,stroke:#D9AB0A,stroke-width:2px,color:#000
+    classDef candidate fill:#F8A2D3,stroke:#B40F78,stroke-dasharray:3 3,color:#000
+    classDef data fill:#F1F3F4,stroke:#5F6368,stroke-dasharray:2 2,color:#000
+    classDef missing fill:#FCE8E6,stroke:#D93025,stroke-width:2px,color:#000
+    classDef optional stroke-dasharray:6 4
+    classDef terminal stroke-width:4px

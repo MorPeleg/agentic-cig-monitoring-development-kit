@@ -13,9 +13,9 @@ Set a text property with `set_attribute(selector, attribute, value)`. Set a cond
 | Composer property | Composer's description | `.pf` attribute |
 |---|---|---|
 | Name | "The internal name for this component" | the block name, e.g. `action :: 'Monitor_X'` (identifier; `rename` changes it) |
-| Caption | "A human-readable caption" | `caption` |
+| Caption | "A human-readable caption" | `caption` (one line, except a Markdown list such as `Display_Potential_ADEs`, `ADEMonitoringEnquiry.md`) |
 | Description | "A short descriptive string" | `description` |
-| **Ontology coding** | "Term in a controlled vocabulary or ontology corresponding to" the task | metaprop `ontology.coding=SNOMED:<id>` (+ `ontology.label`); Composer hides the key in its metaprops editor and shows it here |
+| **Ontology coding** | "Term in a controlled vocabulary or ontology corresponding to" the task | metaprop `ontology.coding=SNOMED:<id>` (an ordered test: `LOINC:<code>`) (+ `ontology.label`); Composer hides the key in its metaprops editor and shows it here |
 | Metaproperties | "The task's metaproperties" | `metaprops` |
 
 **Control properties.** "Properties concerned with control and data flow."
@@ -58,7 +58,7 @@ Composer: "the two are alternative ways to stop cycling and behaviour is undefin
 | Decision argument | Caption (rationale and evidence grade), Description, Ontology coding, Metaproperties | | argument `caption`, `description`, `metaprops` (`source`/`quote`) |
 | Plan | Termination condition | | `terminate :: <expr>` |
 | Plan | Abort condition | | `abort :: <expr>` |
-| Enquiry | Sources | the data items it asks for | `source :: '<data item>'` (`add_source`), optional `mandatory :: yes \| no` |
+| Enquiry | Sources | the data items it asks for | `source :: '<data item>'` (`add_source`), optional `mandatory :: yes \| no`. An Enquiry has no procedure: an ADE Enquiry states its order in its description (`ADEMonitoringEnquiry.md`) |
 
 ## Data items
 

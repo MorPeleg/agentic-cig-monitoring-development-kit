@@ -65,12 +65,17 @@ The same JSON the `export_json` tool returns. Every field is always present (`nu
 | `h.data(name?)` | the data item with that exact name (or `null`); with no argument, all data items |
 | `h.meta(t, key, all?)` | `t.metaprops[key]` or `null`; with `all = true`, the values of a repeatable key (`key`, `key.1`, `key.2`, …) as an array in number order |
 | `h.goal(t)` | `{ verb, noun_phrase }` from `goal.verb` / `goal.noun_phrase` as written (each `null` if absent) |
-| `h.monitoringActions()` | actions whose `goal.verb` is `order` (trimmed, case-insensitive, as in `check_cig.mjs`) |
+| `h.monitoringTasks()` | the monitoring tasks, as in `check_cig.mjs`: actions whose `goal.verb` is `order` (trimmed, case-insensitive) except the ADE display (`role=ade_display`) and test-order (`role=test_order`) actions, plus the ADE Enquiries (`goal.verb=order` with a `ServiceRequest` block) |
+| `h.monitoringActions()` | the same as `h.monitoringTasks()` (kept for older query files; it includes the ADE Enquiries) |
+| `h.monitorEnquiries()` | the ADE Enquiries only |
+| `h.adeDisplay()` | the ADE display action(s), each with `items`: the list items of its Markdown caption |
+| `h.findingsOf(enquiry)` | the data item objects an Enquiry asks for (its sources) |
+| `h.testSteps(enquiry?)` | the test steps (`Order_<Test>` actions, `Tests_Ordering_Recommendations_<ADE>` decisions), optionally of one ADE Enquiry, as `{ name, kind, ordered_for, precondition, choice_mode, tests: [{ name, coding, label }] }` |
 | `h.therapyActions()` | actions whose `goal.verb` is `achieve` or `avoid` (trimmed, case-insensitive) |
 | `h.children(plan)` | the tasks run by the plan's components, one level |
 | `h.descendants(plan)` | every task below the plan, all levels |
 | `h.after(plan, name)` | names of the plan's components that wait for `name` (direct successors only) |
-| `h.monitorsOf(taskName)` | monitoring actions whose `monitored_target` contains `taskName` as a whole word |
+| `h.monitorsOf(taskName)` | monitoring tasks whose `monitored_target` contains `taskName` as a whole word |
 
 Task and data item names are matched exactly and case-sensitively. A misspelt name makes `h.task` return `null`; reading a field of it throws, and the CQ FAILs with the error shown.
 
@@ -83,20 +88,38 @@ Task and data item names are matched exactly and case-sensitively. A misspelt na
 
 #### Query patterns
 
-The names below are placeholders (`Prescribe_Drug`, `Monitor_<Harm>`, `threshold_measure`, …); use the names the approved proposal fixes. `cig/examples/ici-irae-monitoring.cqs.mjs` is a complete, runnable query file for the structural example.
+The names below are placeholders (`Prescribe_Drug`, `Monitor_<Harm>`, `threshold_measure`, …); use the names the approved proposal fixes. `cig/examples/ccd-antithrombotic-monitoring.cqs.mjs` is a complete, runnable query file for the structural example.
 
-**Membership of a plan.** Which ADEs are monitored?
+**Membership of a plan.** Which ADEs are monitored? (ADE monitors are Enquiries; `skills/cig-monitoring/references/ADEMonitoringEnquiry.md`.)
 
 ```js
 {
   id: "CQ7",
   question: "Which adverse drug effects are monitored?",
-  query: (g, h) => h.children("Monitor_Undesired_State").filter((t) => t.kind === "action").map((t) => t.name),
+  query: (g, h) => h.children("Monitor_Undesired_State").filter((t) => t.kind === "enquiry").map((t) => t.name),
   expect: (rows) => ["Monitor_Harm_A", "Monitor_Harm_B"].every((n) => rows.includes(n)),   // the approved ADE monitors
 }
 ```
 
 Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
+
+**Findings and tests of an ADE.** What is asked, and which tests are ordered when a finding is positive?
+
+```js
+{
+  id: "CQ10",
+  question: "For <harm>, which findings are collected and which tests are ordered?",
+  query: (g, h) => [{
+    name: "Monitor_<Harm>",
+    findings: h.findingsOf("Monitor_<Harm>").map((d) => ({ name: d.name, type: d.type, coding: d.metaprops["ontology.coding"] })),
+    steps: h.testSteps("Monitor_<Harm>"),
+  }],
+  expect: (rows) =>
+    rows[0].findings.length > 0 && rows[0].findings.every((f) => /^SNOMED:/.test(f.coding || "")) &&
+    rows[0].steps.length === 1 && rows[0].steps[0].precondition &&
+    rows[0].steps[0].tests.every((t) => /^LOINC:\d+-\d$/.test(t.coding || "")),
+}
+```
 
 **Goal of a task.** What State Achievement goal does a protective therapy recommendation have?
 
@@ -117,7 +140,7 @@ Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
 ```js
 {
   id: "CQ4",
-  question: "Which monitoring actions trace to the drug prescription?",
+  question: "Which monitoring tasks trace to the drug prescription?",
   query: (g, h) => h.monitorsOf("Prescribe_Drug").map((m) => ({ name: m.name, category: h.meta(m, "category") })),
   expect: (rows) => ["action_completion", "desired_outcome", "undesired_ade"].every((c) => rows.some((r) => r.category === c)),
 }
@@ -135,14 +158,14 @@ Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
 }
 ```
 
-**Actions gated by a precondition.** Which monitors apply only to a sub-population, and is the gating fact actually asked?
+**Monitors gated by a precondition.** Which monitors apply only to a sub-population, and is the gating fact actually asked?
 
 ```js
 {
   id: "CQ8",
-  question: "Which monitoring actions are gated by a precondition, and on which Enquiry data?",
+  question: "Which monitoring tasks are gated by a precondition, and on which Enquiry data?",
   query: (g, h) =>
-    h.monitoringActions().filter((t) => t.precondition).map((t) => ({
+    h.monitoringTasks().filter((t) => t.precondition).map((t) => ({
       name: t.name,
       precondition: t.precondition,
       data: (t.precondition.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).map((n) => h.data(n)).filter(Boolean),

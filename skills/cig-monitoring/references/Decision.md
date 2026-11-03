@@ -77,10 +77,20 @@ end decision.
 - The Decision component runs after the Enquiry: `add_task(..., after: ["Get_Eligibility_Data"])` → `schedule_constraint :: completed('Get_Eligibility_Data')` (see `TopLevelPlan.md`).
 - The Therapy Plan is gated on the result by its native Precondition: `precondition :: result_of(Eligibility_Decision) = Eligible` (`result_set(D) includes C` for a `multiple` decision).
 
+## Test-ordering Decisions (Monitor Undesired ADEs)
+
+When an ADE monitor recommends two or more tests, its Enquiry is followed by a Decision `Tests_Ordering_Recommendations_<ADE>` (`ADEMonitoringEnquiry.md`): `choice_mode :: multiple`, metaprops `role=test_ordering` and `ordered_for=Monitor_<ADE>`, a precondition that is true when at least one of the Enquiry's findings is positive, and one candidate per test, named after the test, with its **LOINC** coding (`ontology.coding=LOINC:<code>` + `ontology.label`, from `loinc_search`) and an argument `for,true()` (a real condition only when the source restricts the test). Every listed test is recommended and the clinician selects which to order. The proposal lists these Decisions in a ```` ```cig-test-decisions ```` block.
+
 ## Structural example
 
-In `cig/examples/ici-irae-monitoring.pf`, `Pretreatment_Decision` has two candidates, each with a caption, a description and one `for` argument whose condition is an expression over the Enquiry's boolean data items, whose description states that the rule is assistant-proposed, and whose metaprops quote the passages it rests on. Use it to see how a Decision is populated; its clinical rule is not a template. Never emit a Decision whose candidates have no arguments or criteria.
+In `cig/examples/ccd-antithrombotic-monitoring.pf`, `Antithrombotic_Regimen_Decision` chooses among nine regimen candidates (e.g. `Aspirin_Monotherapy`, `DAPT`, `Aspirin_plus_Vorapaxar`, `DOAC_Monotherapy`), each with a caption, a description and one or more arguments over the Enquiry's typed data items. Each argument's caption cites the recommendation with its class and level of evidence, and its metaprops carry the `source` + `quote` it rests on. It shows all three argument kinds:
+
+- `for`: `Arg_Aspirin_SAPT`, "Rec 1 [1, A]", `requires_oral_anticoagulation = false and pci_within_12_months = false and acs_within_12_months = false and cabg_within_12_months = false and aspirin_intolerance = false`.
+- `against`: a Class 3 No Benefit recommendation, `Arg_DAPT_No_Benefit`, "Rec 7 [3: No benefit, A]", `pci_within_12_months = false and acs_within_12_months = false and cabg_within_12_months = false`.
+- `excluding`: a Class 3 Harm recommendation, `Arg_Vorapaxar_Harm`, "Rec 8 [3: Harm, A]", `prior_stroke_or_tia = true or prior_ich = true`.
+
+The rule stays the default `netsupport() > 0`, so several candidates can be recommended at once and the clinician commits one; the Decision's description says so. A second Decision, `P2Y12_Agent_Decision`, is nested in the therapy plan (`TherapyPlan.md`) with its own precondition on the first Decision's result; its assistant-proposed arguments say so in their captions, and a label contraindication (ticagrelor after intracranial hemorrhage) and Rec 9 [3: Harm] (prasugrel after stroke, TIA or ICH) are `excluding` arguments. Use it to see how a Decision is populated; its clinical rules are not a template. Never emit a Decision whose candidates have no arguments or criteria.
 
 ## Related patterns
 
-- `Enquiry.md` (produces the data the criteria reference), `TopLevelPlan.md`, `TaskProperties.md`.
+- `Enquiry.md` (produces the data the criteria reference), `ADEMonitoringEnquiry.md` (test-ordering Decisions), `TopLevelPlan.md`, `TaskProperties.md`.

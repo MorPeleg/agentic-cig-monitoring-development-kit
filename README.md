@@ -2,7 +2,7 @@
 
 Build computer-interpretable clinical guidelines (CIGs) with AI assistance in Cursor or Claude Code. You install the required tools, put your guideline sources in the right place, and tell the agent what you want. The agent handles scope, proposals, PROforma formalization, and checks.
 
-**Primary use case — CIG monitoring:** this kit formalizes a clinical guideline as an **executable PROforma guideline** (a PROforma 1.9 `.pf` file, the format Deontics Composer and PROforma engines run). It focuses on monitoring completion of therapy recommendations (Action Enactment goals) and monitoring desired/undesired effects of therapy (State Achievement goals). For CIG tasks the agent follows the **`cig-monitoring`** skill, reads the guidelines you put in `projects/<project_dir>/resources/`, and builds a PROforma Top-Level Plan (Enquiry → Decision → Therapy Plan → Monitoring Plan). See `cig/know-how/README.md` for the domain know-how and `cig/examples/ici-irae-monitoring.pf` for a worked example of the structure (its clinical content, immune checkpoint inhibitor toxicity, is not a template for which monitors to model).
+**Primary use case — CIG monitoring:** this kit formalizes a clinical guideline as an **executable PROforma guideline** (a PROforma 1.9 `.pf` file, the format Deontics Composer and PROforma engines run). It focuses on monitoring completion of therapy recommendations (Action Enactment goals) and monitoring desired/undesired effects of therapy (State Achievement goals). For CIG tasks the agent follows the **`cig-monitoring`** skill, reads the guidelines you put in `projects/<project_dir>/resources/`, and builds a PROforma Top-Level Plan (Enquiry → Decision → Therapy Plan → Monitoring Plan). See `cig/know-how/README.md` for the domain know-how and `cig/examples/ccd-antithrombotic-monitoring.pf` for a worked example of the structure (its clinical content, antiplatelet and oral anticoagulant therapy in chronic coronary disease, is not a template for which monitors to model).
 
 ## Architecture
 
@@ -63,19 +63,19 @@ Install these before starting:
 ## How a CIG is built
 
 1. **Scope and CQs**: the agent agrees with you on the population, therapy and the competency questions (CQs) the CIG must answer.
-2. **Extraction**: therapy recommendations, goals, monitoring, ADEs and the data each condition depends on, each with its citation and the verbatim passage it comes from.
-3. **Proposal**: `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md`, an executable spec with canonical task names, data items, conditions written as PROforma expressions, and a `cig-actions` list. Nothing is built until you approve it.
-4. **Formalization**: the `cig-formalizer` subagent builds `projects/<project_dir>/guideline/<name>.pf` from the approved proposal with the proforma tools. Every task uses Composer's native task properties first (caption, description, procedure, precondition, Ontology coding; see [`TaskProperties.md`](skills/cig-monitoring/references/TaskProperties.md)); a monitoring action's order is an HL7 FHIR `ServiceRequest` (`ServiceRequest.*` metaprops, repeated in the goal's noun phrase and stated in the native `procedure`), and each cited source carries a short verbatim `quote`. A coding pass then sets Composer's Ontology coding (`ontology.coding=SNOMED:<id>`) on actions and data items with the `snomed_search` tool (EBI OLS4, SNOMED CT only). The task contract is [`skills/cig-monitoring/references/MetapropsSyntax.md`](skills/cig-monitoring/references/MetapropsSyntax.md). The formalizer keeps the file lint-clean and draws a Mermaid diagram of it.
-5. **Blocking review**: `scripts/check_cig.mjs` (structure, the native-field and metaprops contract, the `ServiceRequest` order agreeing across its keys, the goal's noun phrase and `procedure`, quoted citations, ontology coding format, executable preconditions, approved action set, regressions, and the coding-only freeze) plus the reviewer's source- and quote-fidelity judgment, and `scripts/run_cqs.mjs` (one query per CQ). The build is done only when both pass with zero FAILs.
+2. **Extraction**: therapy recommendations, goals, monitoring, ADEs and the data each condition depends on, each with its citation and the verbatim passage it comes from. Package inserts you did not provide are fetched into `projects/<project_dir>/resources/` with `scripts/fetch_package_insert.mjs` (openFDA, DailyMed fallback).
+3. **Proposal**: `projects/<project_dir>/plans/PROPOSAL-<timestamp>.md`, an executable spec with canonical task names, data items, conditions written as PROforma expressions, a `cig-actions` list and a `cig-test-decisions` list. Nothing is built until you approve it.
+4. **Formalization**: the `cig-formalizer` subagent builds `projects/<project_dir>/guideline/<name>.pf` from the approved proposal with the proforma tools. Every task uses Composer's native task properties first (caption, description, procedure, precondition, Ontology coding; see [`TaskProperties.md`](skills/cig-monitoring/references/TaskProperties.md)); a monitoring action's order is an HL7 FHIR `ServiceRequest` (`ServiceRequest.*` metaprops, repeated in the goal's noun phrase and stated in the native `procedure`), and each cited source carries a short verbatim `quote`. ADE monitors are Enquiries whose data items are the symptoms and exam findings, each followed by a test-order Action or test-ordering Decision ([`ADEMonitoringEnquiry.md`](skills/cig-monitoring/references/ADEMonitoringEnquiry.md)). A coding pass then sets Composer's Ontology coding on monitoring tasks, actions and data items (`ontology.coding=SNOMED:<id>`, with the `snomed_search` tool: EBI OLS4, SNOMED CT only) and on ordered tests (`ontology.coding=LOINC:<code>`, with `loinc_search`: NLM Clinical Tables). The task contract is [`skills/cig-monitoring/references/MetapropsSyntax.md`](skills/cig-monitoring/references/MetapropsSyntax.md). The formalizer keeps the file lint-clean and draws a Mermaid diagram of it.
+5. **Blocking review**: `scripts/check_cig.mjs` (structure, the native-field and metaprops contract, the `ServiceRequest` order agreeing across its keys, the goal's noun phrase and `procedure`, quoted citations, ontology coding format, executable preconditions, the ADE Enquiry pattern and its LOINC-coded test steps, approved action set, regressions, and the coding-only freeze) plus the reviewer's source- and quote-fidelity judgment, and `scripts/run_cqs.mjs` (one query per CQ). The build is done only when both pass with zero FAILs.
 
-Each build also produces `guideline/<name>.html` with the **proforma** skill's `scripts/build_report.mjs`: a self-contained viewer (one HTML file, nothing fetched) laid out like a guideline editor: task tree, plan canvas (stored task positions, scheduling arrows, decision branches; pan, zoom, double-click a plan to open it), properties panel, and data, decision, lint and source views. Open [`cig/examples/ici-irae-monitoring.html`](cig/examples/ici-irae-monitoring.html) to see it.
+Each build also produces `guideline/<name>.html` with the **proforma** skill's `scripts/build_report.mjs`: a self-contained viewer (one HTML file, nothing fetched) laid out like a guideline editor: task tree, plan canvas (stored task positions, scheduling arrows, decision branches; pan, zoom, double-click a plan to open it), properties panel, and data, decision, lint and source views. Open [`cig/examples/ccd-antithrombotic-monitoring.html`](cig/examples/ccd-antithrombotic-monitoring.html) to see it.
 
-You can run the gates yourself on the worked example (see [`cig/examples/README.md`](cig/examples/README.md)):
+You can run the gates yourself on the worked example (see [`cig/examples/README.md`](cig/examples/README.md)). Both pass with zero FAILs against the example's latest approved proposal (`check_cig.mjs` also prints WARNs for the drug-gated monitor preconditions, a convention approved during the build):
 
 ```bash
-node scripts/check_cig.mjs cig/examples/ici-irae-monitoring.pf
-node scripts/run_cqs.mjs cig/examples/ici-irae-monitoring.pf cig/examples/ici-irae-monitoring.cqs.mjs
-node .claude/skills/proforma/scripts/build_report.mjs cig/examples/ici-irae-monitoring.pf   # path as installed by capa for Claude Code
+node scripts/check_cig.mjs cig/examples/ccd-antithrombotic-monitoring.pf --proposal cig/examples/ccd-antithrombotic-monitoring-build/PROPOSAL-20261030-191149.md
+node scripts/run_cqs.mjs cig/examples/ccd-antithrombotic-monitoring.pf cig/examples/ccd-antithrombotic-monitoring.cqs.mjs --proposal cig/examples/ccd-antithrombotic-monitoring-build/PROPOSAL-20261030-191149.md
+node .claude/skills/proforma/scripts/build_report.mjs cig/examples/ccd-antithrombotic-monitoring.pf   # path as installed by capa for Claude Code
 ```
 
 The scripts find the `proforma` CLI automatically (`PROFORMA_BIN`, a global `npm install -g proforma-mcp`, a `proforma` binary on PATH, or a private install of the pinned version).
@@ -106,12 +106,12 @@ agentic-cig-monitoring-development-kit/
 │   ├── examples/       # Structural example CIG (.pf), viewer (.html), diagram (.mmd), CQ queries (.cqs.mjs) and build record; see examples/README.md
 │   └── know-how/       # CIG monitoring domain know-how
 ├── projects/           # One directory per CIG project (not tracked by git)
-│   └── <project_dir>/  # e.g. ici-irae-monitoring
+│   └── <project_dir>/  # e.g. ccd-antiplatelet-monitoring
 │       ├── guideline/  # <name>.pf, <name>.html viewer, <name>.mmd, baseline/ snapshots
 │       ├── plans/      # Proposals made by the agent
 │       ├── cqs/        # cq-queries.mjs
 │       ├── reviews/    # Step 7 reports
 │       └── resources/  # Resources to give to the agent (PDFs, CSVs, etc.)
-├── scripts/            # check_cig.mjs, run_cqs.mjs, migrate_metaprops.mjs, owl2pf.mjs
+├── scripts/            # check_cig.mjs, run_cqs.mjs, fetch_package_insert.mjs, migrate_metaprops.mjs, owl2pf.mjs
 └── skills/             # Agent skills (cig-monitoring, cig-formalization, proforma-editor, cig-monitoring-review, cq-verification)
 ```

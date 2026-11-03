@@ -5,10 +5,10 @@
 ## PROforma elements
 
 - Task: `action` in the Therapy Plan
-- Native properties (`TaskProperties.md`): `caption`, `description` (the recommendation and why it was modelled, with its citations), `procedure` when there is something concrete to do (dose and titration, minutes of activity, grams of protein), a `precondition` when the source scopes it, and the Ontology coding
+- Native properties (`cig/know-how/proforma/TaskProperties.md`): `caption`, `description` (the recommendation and why it was modelled, with its citations), `procedure` when there is something concrete to do (dose and titration, minutes of activity, grams of protein), a `precondition` when the source scopes it, and the Ontology coding
 - Goal: metaprops keys `goal.verb` and `goal.noun_phrase` on the action (optional `goal.evidence_grade`). There is no separate Goal object, so each task has exactly one goal.
 - `goal.verb` is one of: `diagnose, treat, prevent_primary, prevent_secondary, prevent, avoid, start, stop, order, achieve`. State Achievement Goals use **`achieve`** or **`avoid`**.
-- Provenance: at least one `source.N` + `quote.N` pair (the verbatim passage the recommendation was modelled from), and the Ontology coding of the procedure or substance (`ontology.coding=SNOMED:<id>` + `ontology.label`, found with `snomed_search`). The gate fails a therapy action without a goal, caption, description or source (and a source without a quote); it warns on a missing procedure or coding.
+- Provenance: at least one `source.N` + `quote.N` pair (the verbatim passage the recommendation was modelled from), and the Ontology coding of the procedure or substance (`ontology.coding=SCT:<id> [<term>]`, found with `snomed_search`, on the action's component in the therapy plan; `cig/know-how/proforma/Ontology.md`). The gate fails a therapy action without a goal, caption, description or source (and a source without a quote); it warns on a missing procedure or coding.
 
 ## Tool calls
 
@@ -17,13 +17,17 @@ Every call also takes `file`. Set all keys in one `set_attribute` call (it repla
 ```
 # Desired state (achieve)
 set_attribute(selector: "Prescribe_Drug", attribute: "metaprops",
-              value: "goal.verb=achieve\ngoal.noun_phrase=<the guideline's treatment target>\nsource=...\nquote=...\nontology.coding=SNOMED:<id>\nontology.label=<substance>")
+              value: "goal.verb=achieve\ngoal.noun_phrase=<the guideline's treatment target>\nsource=...\nquote=...")
+set_attribute(selector: "Therapy_Plan/component:Prescribe_Drug", attribute: "metaprops",
+              value: "ontology.coding=SCT:<id> [<substance>]")
 
 # Undesired state (avoid), with its native properties
 set_attribute(selector: "Prescribe_Protective_Measure", attribute: "description", value: "Prescribes <the measure> to minimize <the harm of therapy> (<guideline> Rec <n>).")
 set_attribute(selector: "Prescribe_Protective_Measure", attribute: "procedure", value: "<what to do, how often>")
 set_attribute(selector: "Prescribe_Protective_Measure", attribute: "metaprops",
-              value: "goal.verb=avoid\ngoal.noun_phrase=<the harm of therapy the guideline recommends preventing>\nsource=...\nquote=...\nontology.coding=SNOMED:<id>\nontology.label=<procedure>")
+              value: "goal.verb=avoid\ngoal.noun_phrase=<the harm of therapy the guideline recommends preventing>\nsource=...\nquote=...")
+set_attribute(selector: "Therapy_Plan/component:Prescribe_Protective_Measure", attribute: "metaprops",
+              value: "ontology.coding=SCT:<id> [<procedure>]")
 ```
 
 ## `.pf` text
@@ -34,8 +38,6 @@ action  :: 'Prescribe_Protective_Measure' ;
      description :: 'Prescribes <the measure> to minimize <the harm of therapy> (<guideline> Rec <n>).' ;
      metaprops :: 'goal.noun_phrase=<the harm of therapy the guideline recommends preventing>
 goal.verb=avoid
-ontology.coding=SNOMED\\:<id>
-ontology.label=<procedure>
 quote=p.<page>, Rec <n>\\: "<verbatim clause>"
 source=<Guideline name and year>, Rec <n> (p.<page>)
 ' ;
@@ -58,4 +60,4 @@ In `cig/examples/ccd-antithrombotic-monitoring.pf`, the root plan carries the `t
 
 ## Related patterns
 
-- `ActionComponent.md`, `TherapyPlan.md`, `ActionEnactmentGoal.md`, `TaskProperties.md`.
+- `ActionComponent.md`, `TherapyPlan.md`, `ActionEnactmentGoal.md`, `cig/know-how/proforma/TaskProperties.md`.

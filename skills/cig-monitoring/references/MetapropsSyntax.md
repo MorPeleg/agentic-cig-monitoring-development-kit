@@ -6,7 +6,7 @@ This is the **single, authoritative contract** for what a monitoring task (an `a
 
 ## Native fields first
 
-Deontics Composer shows a task's **native properties** in its property sheet (see `TaskProperties.md`): caption, description, procedure, precondition and the other conditions, and the **Ontology coding**. Use them for what they are for. Keep `metaprops` for the goal, the HL7 FHIR `ServiceRequest` order and provenance, which have no native property. Write every value with the proforma tools (`set_attribute`), never by hand.
+Deontics Composer shows a task's **native properties** in its property sheet (see `cig/know-how/proforma/TaskProperties.md`): caption, description, procedure, precondition and the other conditions, and the **Ontology coding**. Use them for what they are for. Keep `metaprops` for the goal, the HL7 FHIR `ServiceRequest` order and provenance, which have no native property. Write every value with the proforma tools (`set_attribute`), never by hand.
 
 | Content | Native property / key | Monitoring task | Therapy action |
 |---|---|---|---|
@@ -14,7 +14,7 @@ Deontics Composer shows a task's **native properties** in its property sheet (se
 | What is monitored and why it was modelled | `description` | required (an ADE Enquiry: ends with the order, below) | required |
 | The instruction to carry out | `procedure` | required on an Action: the order (below); an Enquiry has none | recommended: dose, titration, how to deliver |
 | Population gate | `precondition` | when `applies_when` is a sub-population | when the source scopes it |
-| Clinical concept | **Ontology coding**: metaprop `ontology.coding=SNOMED:<id>` + `ontology.label` | coding pass (WARN until set) | coding pass (WARN until set) |
+| Clinical concept | **Ontology coding**: metaprop `ontology.coding=SCT:<id> [<caption>]` on the task's **component** in its parent plan (`cig/know-how/proforma/Ontology.md`) | coding pass (WARN until set) | coding pass (WARN until set) |
 | Why it exists, verbatim | `source.N` + `quote.N` metaprops | at least one quote required | at least one quote required |
 
 The tasks around an ADE Enquiry (the `Display_Potential_ADEs` Action, the finding data items, the `Order_<Test>` Action and the `Tests_Ordering_Recommendations_<ADE>` Decision) have their own, smaller contract: see "ADE Enquiry pattern" below and `ADEMonitoringEnquiry.md`.
@@ -72,7 +72,7 @@ A monitoring action's goal is to have something done: an Action Enactment goal, 
 17. `monitoring_frequency_basis`: the justification for `ServiceRequest.occurrenceTiming`.
 18. `trigger`: what prompts urgent or same-day assessment; `none` for routine surveillance.
 19. `cq`: the competency-question id(s) this action supports.
-20. `ontology.coding` / `ontology.label`: Composer's Ontology coding (below), added by the coding pass.
+20. Not on the task definition: Composer's Ontology coding (`ontology.coding`, below) is added by the coding pass to the task's **component** in its parent plan, and there is no `ontology.label` key.
 
 The native `description` of a monitoring action states what is monitored and why it was modelled: `Monitors <monitored_target>. <literature_basis>.` An ADE Enquiry appends the order: `Monitors <monitored_target>. <literature_basis>. Order: <code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.`
 
@@ -81,10 +81,10 @@ The native `description` of a monitoring action states what is monitored and why
 The full pattern is `ADEMonitoringEnquiry.md`; the contract of each element:
 
 - **ADE Enquiry** (`Monitor_<ADE>`, `enquiry`): every required key above, unchanged, plus at least one data item source.
-- **Finding data item** (a source of an ADE Enquiry): a `caption` (the question as asked), a real type (`boolean`, or `real`/`integer` with a `unit`), and **required** Ontology coding `ontology.coding=SNOMED:<id>` + `ontology.label`; `source` + `quote` recommended.
+- **Finding data item** (a source of an ADE Enquiry): a `caption` (the question as asked), a real type (`boolean`, or `real`/`integer` with a `unit`), and **required** Ontology coding `ontology.coding=SCT:<id> [<caption>]` in its own metaprops; `source` + `quote` recommended.
 - **`Display_Potential_ADEs`** (`action`): `role=ade_display`, `goal.verb=order`, `goal.noun_phrase=display of the potential adverse drug effects monitored for this therapy`; a multi-line Markdown `caption` with one list item per ADE Enquiry. No `ServiceRequest.*` block and no source.
-- **`Order_<Test>`** (`action`): `role=test_order`, `ordered_for=Monitor_<ADE>`, `goal.verb=order`, `goal.noun_phrase=<test name>`, **required** `ontology.coding=LOINC:<LOINC_NUM>` + `ontology.label=<LONG_COMMON_NAME>`; `caption`, `description`, `procedure`; a `precondition` over the Enquiry's findings; optional `source.N` + `quote.N`.
-- **`Tests_Ordering_Recommendations_<ADE>`** (`decision`, `choice_mode :: multiple`): `role=test_ordering`, `ordered_for=Monitor_<ADE>`; a `precondition` over the Enquiry's findings; one candidate per test with **required** `ontology.coding=LOINC:<LOINC_NUM>` + `ontology.label` and at least one argument (`for,true()` unless the source restricts the test).
+- **`Order_<Test>`** (`action`): `role=test_order`, `ordered_for=Monitor_<ADE>`, `goal.verb=order`, `goal.noun_phrase=<test name>`, **required** `ontology.coding=LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` on its component; `caption`, `description`, `procedure`; a `precondition` over the Enquiry's findings; optional `source.N` + `quote.N`.
+- **`Tests_Ordering_Recommendations_<ADE>`** (`decision`, `choice_mode :: multiple`): `role=test_ordering`, `ordered_for=Monitor_<ADE>`; a `precondition` over the Enquiry's findings; one candidate per test with **required** `ontology.coding=LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` in the candidate's metaprops and at least one argument (`for,true()` unless the source restricts the test).
 
 ## Therapy actions
 
@@ -94,27 +94,30 @@ A therapy action carries:
 - a `description` (the recommendation and why it was modelled, with its citations);
 - a `procedure` when there is something concrete to do (dose and titration, minutes of activity, grams of protein);
 - at least one `source.N` + `quote.N` pair;
-- the Ontology coding of the procedure or substance.
+- the Ontology coding of the procedure or substance, on its component;
+- `rxnorm.coding` + `rxnorm.label` on the task definition when it prescribes one drug (below).
 
 ## Data items, candidates and arguments
 
-- **Data items:** `caption`, `description`, `type`, `unit`, `range`, `derivation` and the Ontology coding are native (see `TaskProperties.md`). Add the Ontology coding of the observable or finding a data item records. Add a `source` + `quote` when the item comes from a specific passage, e.g. a contraindication.
+- **Data items:** `caption`, `description`, `type`, `unit`, `range`, `derivation` and the Ontology coding are native (see `cig/know-how/proforma/Data.md`). Add the Ontology coding of the observable or finding a data item records. Add a `source` + `quote` when the item comes from a specific passage, e.g. a contraindication.
 - **Decision candidates and arguments:** `caption`, `description` and the Ontology coding are native. Argument captions hold the rationale and any evidence grade (`[I, A]`). Put the `source` + `quote` the criterion came from in the argument's metaprops. Leave structural options such as `Eligible` / `Not_Eligible` uncoded rather than forcing a poor match.
 
 ## Ontology coding
 
-Composer stores its native "Ontology coding" property as the metaprop **`ontology.coding`**, written `SCHEME:code`. This kit uses SNOMED CT for clinical concepts (`ontology.coding=SNOMED:197456007`) and LOINC for ordered tests (`ontology.coding=LOINC:718-7`). Composer's metaprops editor hides the key and shows the term as a property of its own. Add **`ontology.label`** with the concept's preferred term (e.g. `Acute pancreatitis (disorder)`, `Hemoglobin [Mass/volume] in Blood`).
+Composer stores its native "Ontology coding" property as the metaprop **`ontology.coding`**, with the value `<prefix>:<code> [<caption>]` (Composer's "Deontics code"; the full contract is `cig/know-how/proforma/Ontology.md`). The prefix is three characters: this kit uses `SCT` (SNOMED CT) for clinical concepts, e.g. `ontology.coding=SCT:197456007 [Acute pancreatitis (disorder)]`, and `LNC` (LOINC) for ordered tests, e.g. `ontology.coding=LNC:718-7 [Hemoglobin [Mass/volume] in Blood]`. The bracketed caption is required: Composer shows any other value (such as `SNOMED:197456007`) as an empty field. There is no separate `ontology.label`. Composer's metaprops editor hides the key and shows the term in the Ontology field.
 
-- **Finding codes:** use the **`snomed_search`** tool (EBI OLS4, restricted to SNOMED CT by `ontologyId=snomed`). The result's `shortForm` is `SNOMED_<id>` and its IRI `http://snomed.info/id/<id>`. Record `SNOMED:<id>` and the label exactly as returned.
-- **Test codes:** use the **`loinc_search`** tool (NLM Clinical Tables). Each result row starts with `LOINC_NUM` and `LONG_COMMON_NAME`; record `LOINC:<LOINC_NUM>` and `ontology.label=<LONG_COMMON_NAME>` exactly as returned. Search the test and its specimen (e.g. `magnesium serum`), and prefer the quantitative test the label names over a panel.
-- **Drug codes (RxNorm):** a therapy action that prescribes a specific drug also carries **`rxnorm.coding=RXNORM:<rxcui>`** + **`rxnorm.label`** for the drug ingredient, found with the **`rxnorm_search`** tool (NLM RxNav) and recorded exactly as returned (e.g. `rxnorm.coding=RXNORM:32968`, `rxnorm.label=clopidogrel`). This is in addition to the SNOMED CT `ontology.coding`, which remains Composer's native Ontology coding. A drug-class action (e.g. any DOAC, NSAIDs to avoid) has no single ingredient and carries no RxNorm code.
+**Where it goes.** A task's coding (a monitoring Action or ADE Enquiry, a therapy Action, an `Order_<Test>` Action) is written on its **component** in the parent plan, `set_attribute(selector: "<parent plan>/component:<task>", attribute: "metaprops", value: "ontology.coding=SCT:<id> [<caption>]")`, keeping any key the component already holds; Composer does not read it on the task definition, which keeps the keys of this contract. A data item and a candidate carry it in their own metaprops, together with their `source` and `quote`.
+
+- **Finding codes:** use the **`snomed_search`** tool (EBI OLS4, restricted to SNOMED CT by `ontologyId=snomed`). The result's `shortForm` is `SNOMED_<id>` and its IRI `http://snomed.info/id/<id>`. Record `SCT:<id> [<label>]` with the id and label exactly as returned.
+- **Test codes:** use the **`loinc_search`** tool (NLM Clinical Tables). Each result row starts with `LOINC_NUM` and `LONG_COMMON_NAME`; record `LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` exactly as returned. Search the test and its specimen (e.g. `magnesium serum`), and prefer the quantitative test the label names over a panel.
+- **Drug codes (RxNorm):** Composer has no RxNorm provider, so a therapy action that prescribes a specific drug carries the ingredient as a separate, plain metaprop on its task definition, **`rxnorm.coding=RXNORM:<rxcui>`** + **`rxnorm.label`**, found with the **`rxnorm_search`** tool (NLM RxNav) and recorded exactly as returned (e.g. `rxnorm.coding=RXNORM:32968`, `rxnorm.label=clopidogrel`). Composer shows these as ordinary metaproperties. This is in addition to the SNOMED CT `ontology.coding` on the action's component, which remains Composer's native Ontology coding. A drug-class action (e.g. any DOAC, NSAIDs to avoid) has no single ingredient and carries no RxNorm code.
 - **What to code:** what the element is about:
   - the disorder, finding or measurement a monitor watches (SNOMED CT);
   - the procedure or substance a therapy action delivers (SNOMED CT);
   - the observable or finding a data item records (SNOMED CT; required on the findings of an ADE Enquiry);
   - the test an `Order_<Test>` Action or a test-ordering candidate orders (LOINC; required).
 - **One concept per element:** pick the closest single concept. Record a narrower or broader choice in `assistant_invention` (monitors) or the description.
-- **Gate:** it fails a malformed coding (not `SCHEME:code`, a SNOMED id that is not 6–18 digits, a LOINC code that is not `<1–7 digits>-<check digit>`, or an `rxnorm.coding` that is not `RXNORM:<digits>` with an `rxnorm.label`), a finding of an ADE Enquiry without SNOMED CT coding, and a test step without LOINC coding. It warns when a monitoring or therapy action has none.
+- **Gate:** it fails a malformed coding (not `<SCT|LNC|IC0|IC9>:<code> [<caption>]`, including the kit's older `SNOMED:<id>` / `LOINC:<code>` form; a SNOMED id that is not 6–18 digits; a LOINC code that is not `<1–7 digits>-<check digit>`; or an `rxnorm.coding` that is not `RXNORM:<digits>` with an `rxnorm.label`), an `ontology.coding` on a task definition, a finding of an ADE Enquiry without SNOMED CT coding, and a test step without LOINC coding. It warns when a monitoring or therapy action's component has none, and when an `ontology.label` is still present. `node scripts/migrate_metaprops.mjs <guideline.pf>` converts an older guideline.
 
 ## Source quotes
 
@@ -156,7 +159,7 @@ A monitoring task (Action or ADE Enquiry) FAILS review if any of these hold:
   - A `source` value contains no citation token (no PMID/PMC/DOI, and no named guideline, label or instrument).
   - The action cites sources but quotes none.
   - A `quote.N` has no matching `source.N`, or holds no text in double quotes.
-- **Coding:** `ontology.coding` is malformed.
+- **Coding:** `ontology.coding` is not in Composer's form, or sits on the task definition instead of the component.
 - **Provenance values:**
   - `assistant_invention` is neither `none` nor a descriptive phrase.
   - `provenance_type`, `source_kind`, `guideline_status`, `category` or `monitoring_stance` is outside the controlled vocab.
@@ -185,7 +188,7 @@ check_expression(expression: "on_interacting_medication = true")
 
 ## Worked value (labeled ADE — acute pancreatitis)
 
-These are the three calls for one monitoring action (every call also takes `file`). The metaprops are shown in the sorted order Composer stores; order does not matter when you write them.
+These are the four calls for one monitoring action (every call also takes `file`). The metaprops are shown in the sorted order Composer stores; order does not matter when you write them.
 
 ```
 set_attribute(selector: "Monitor_Pancreatitis", attribute: "description",
@@ -193,6 +196,9 @@ set_attribute(selector: "Monitor_Pancreatitis", attribute: "description",
 set_attribute(selector: "Monitor_Pancreatitis", attribute: "procedure",
   value: "Acute pancreatitis symptom review with triggered serum lipase, each follow-up visit, with testing on symptoms. Patient: stop the drug and contact your clinician for severe or persistent abdominal pain that may spread to the back, with or without vomiting. Clinician: if pancreatitis is suspected, discontinue the drug, measure serum lipase and initiate appropriate management.")
 set_attribute(selector: "Monitor_Pancreatitis", attribute: "metaprops", value: <the lines below>)
+# coding pass: the Ontology coding on the action's component in its parent plan
+set_attribute(selector: "Monitor_Undesired_State/component:Monitor_Pancreatitis", attribute: "metaprops",
+  value: "ontology.coding=SCT:197456007 [Acute pancreatitis (disorder)]")
 ```
 
 ```
@@ -214,8 +220,6 @@ literature_basis=the label says to observe patients carefully for signs and symp
 monitored_target=acute pancreatitis as a labeled adverse effect of the drug (Prescribe_Drug)
 monitoring_frequency_basis=symptom-triggered because pancreatitis presents acutely
 monitoring_stance=symptom_triggered_only
-ontology.coding=SNOMED:197456007
-ontology.label=Acute pancreatitis (disorder)
 provenance_type=package_insert_specified
 quote=§5.2: "If pancreatitis is suspected, discontinue ... and initiate appropriate management."
 source=<Drug> US Prescribing Information, §5.2 Acute Pancreatitis
@@ -223,11 +227,11 @@ source_kind=package_insert
 trigger=severe persistent abdominal pain prompts drug discontinuation and lipase testing
 ```
 
-A **coding-only patch** reads this map, adds or changes only `ontology.coding` and `ontology.label`, and writes the whole map back. Names, captions, descriptions, procedures, the `ServiceRequest.*` block, the `source`/`quote` strings and the Decision candidates stay unchanged; `check_cig.mjs --coding-patch` enforces this against the snapshot.
+A **coding-only patch** reads the component's (or data item's, or candidate's) map, adds or changes only `ontology.coding` (removing a leftover `ontology.label`), and writes the whole map back. Names, captions, descriptions, procedures, the `ServiceRequest.*` block, the `source`/`quote` strings and the Decision candidates stay unchanged; `check_cig.mjs --coding-patch` enforces this against the snapshot.
 
 ## Related
 
-- `TaskProperties.md`: Composer's native task, candidate and data-item properties.
+- `cig/know-how/proforma/TaskProperties.md`: Composer's native task and candidate properties; `cig/know-how/proforma/Data.md`: data items; `cig/know-how/proforma/Ontology.md`: the ontology coding contract.
 - `ADEMonitoringEnquiry.md`: ADE monitors as Enquiries with coded findings and LOINC-coded test steps.
 - `ActionEnactmentGoal.md`: the goal side, plus the opt-in case-report source-quality rule.
 - `MonitoringPlan.md`: where the actions live.

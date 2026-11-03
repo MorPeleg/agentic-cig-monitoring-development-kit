@@ -12,13 +12,14 @@
 // task (Actions and ADE Enquiries), the ADE Enquiry pattern and its test steps
 // (skills/cig-monitoring/references/ADEMonitoringEnquiry.md), executable
 // preconditions, the approved action set (cig-actions, cig-test-decisions),
-// baseline regressions and the coding-patch freeze. Exit code 0 = PASS, 1 = FAIL, 2 = usage/input error.
+// baseline regressions and the coding-patch freeze, and Composer's ontology coding form and
+// location (cig/know-how/proforma/Ontology.md). Exit code 0 = PASS, 1 = FAIL, 2 = usage/input error.
 // The judgment phases (case-report harm, source fidelity, label coverage) are
 // added to the report by the reviewer.
 
 import fs from "node:fs";
 import path from "node:path";
-import { exportGuideline, inCp1252, lintGuideline, metaValues } from "./lib/proforma.mjs";
+import { CODING_SYSTEMS, componentsOfTask, exportGuideline, inCp1252, lintGuideline, metaValues, parseCoding, taskCoding } from "./lib/proforma.mjs";
 
 // ------------------------------------------------------------------ args
 
@@ -95,12 +96,12 @@ const REQUIRED = [
 ];
 // the HL7 FHIR ServiceRequest block of a monitoring order (keys and goal.noun_phrase)
 const SR_FIELDS = ["intent", "code", "occurrenceTiming", "patientInstruction", "performerInstruction"];
-// Composer's native "Ontology coding" property (metaprop ontology.coding, SCHEME:code) and its
-// preferred term. These are the only keys a coding-only run may add or change.
+// Composer's native "Ontology coding" (cig/know-how/proforma/Ontology.md): metaprop
+// ontology.coding = "<SCT|LNC|IC0|IC9>:<code> [<caption>]", on data items and candidates in their
+// own metaprops and on tasks in their COMPONENT in the parent plan. ontology.label is the kit's
+// older separate caption key. These are the only keys a coding-only run may add or change.
 const ONTOLOGY_KEYS = /^ontology\.(coding|label)$/;
-const CODING = /^[A-Za-z][A-Za-z0-9_-]*:[A-Za-z0-9][A-Za-z0-9.-]*$/;
-const SNOMED_CODE = /^\d{6,18}$/;
-const LOINC_CODE = /^\d{1,7}-\d$/;
+const MIGRATE = "convert with node scripts/migrate_metaprops.mjs <guideline.pf>";
 // roles of the ADE Enquiry pattern (ADEMonitoringEnquiry.md); these tasks have their own rules
 const ROLE_DISPLAY = "ade_display";
 const ROLE_TEST_ORDER = "test_order";
@@ -278,8 +279,11 @@ for (const d of g.data) {
 
 // ontology coding (Composer's native field) on every element that can carry it, and quotes
 // wherever a citation is given
+// Tasks carry their coding on their component(s) in the parent plan; a task definition holds
+// only the plain rxnorm.coding metaprop (Composer has no RxNorm provider).
 const codedElements = [
-  ...tasks.map((t) => [t.name, t.metaprops]),
+  ...tasks.map((t) => [t.name, t.metaprops, true]),
+  ...tasks.flatMap((p) => (p.components || []).map((c) => [`${p.name}/component:${c.name}`, c.metaprops])),
   ...g.data.map((d) => [d.name, d.metaprops]),
   ...tasks.flatMap((t) =>
     t.candidates.flatMap((c) => [
@@ -301,13 +305,23 @@ function codingProblems(mp) {
   const rx = rxnormProblems(mp);
   if (rx.length) return rx;
   const v = (mp?.["ontology.coding"] || "").trim();
-  if (!v) return mp?.["ontology.label"] ? ["ontology.label without ontology.coding"] : [];
-  if (!CODING.test(v)) return [`ontology.coding must be SCHEME:code (e.g. SNOMED:197456007), is "${v}"`];
-  const [scheme, code] = v.split(":");
-  if (/^SNOMED(CT)?$/i.test(scheme) && !SNOMED_CODE.test(code)) return [`ontology.coding ${v} is not a SNOMED CT concept id (6-18 digits)`];
-  if (/^LOINC$/i.test(scheme) && !LOINC_CODE.test(code)) return [`ontology.coding ${v} is not a LOINC code (LOINC:<1-7 digits>-<check digit>)`];
+  if (!v) return [];
+  const c = parseCoding(v);
+  if (!c) {
+    const old = /^(SNOMED|LOINC|ICD)/i.test(v) || !/\[.+\]$/.test(v);
+    const fix = !old ? "" : (mp["ontology.label"] || "").trim() ? `; ${MIGRATE}` : "; re-code it with snomed_search / loinc_search (there is no ontology.label to take the caption from)";
+    return [`ontology.coding "${v}" is not Composer's form <SCT|LNC|IC0|IC9>:<code> [<caption>] (e.g. SCT:271807003 [Eruption of skin (disorder)]), so Composer shows an empty Ontology field${fix}`];
+  }
+  const sys = CODING_SYSTEMS[c.system];
+  if (!sys.code.test(c.code)) return [`ontology.coding ${v}: ${c.code} is not ${sys.codeHint}`];
   return [];
 }
+// the system a Composer coding names (SCT, LNC, ...), or null
+const systemOf = (v) => parseCoding(v)?.system ?? null;
+// a task's coding as Composer reads it: from its component in the parent plan
+const codingOfTask = (t) => taskCoding(g, t.name);
+// why a task has no coding on its component: it may sit on the definition (the older form)
+const onDefinition = (t) => ((t.metaprops["ontology.coding"] || "").trim() ? ` (it is on the task definition; ${MIGRATE})` : "");
 // An element that cites sources must quote at least one of them verbatim (FAIL); a citation
 // without its own quote is a WARN, since some cited works (e.g. an instrument's validation
 // paper) are not among the provided sources.
@@ -334,10 +348,21 @@ function quoteProblems(mp) {
   }
   return out;
 }
-for (const [where, mp] of codedElements) {
-  for (const p of codingProblems(mp)) fail("annotation", where, p);
-  if (mp?.["ontology.coding"] && !mp["ontology.label"]) warn("annotation", where, "ontology.coding without ontology.label (the term's preferred name)");
+for (const [where, mp, definition] of codedElements) {
+  // (a coding on a task definition is reported once, below, as misplaced)
+  const { ["ontology.coding"]: _misplaced, ...rest } = mp || {};
+  for (const p of codingProblems(definition ? rest : mp)) fail("annotation", where, p);
+  if (mp?.["ontology.label"]) {
+    warn("annotation", where, `ontology.label is redundant; the caption is inside ontology.coding ("<prefix>:<code> [<caption>]")${parseCoding(mp["ontology.coding"]) ? "; remove it" : `; ${MIGRATE}`}`);
+  }
   for (const p of quoteProblems(mp)) (p.level === "FAIL" ? fail : warn)("annotation", where, p.message);
+}
+// a task's coding belongs on its component: Composer ignores ontology.coding on a task definition
+for (const t of tasks) {
+  if (!(t.metaprops["ontology.coding"] || "").trim()) continue;
+  const comps = componentsOfTask(g, t.name);
+  const at = comps.length ? `its component (${comps.map((c) => c.selector).join(", ")})` : "nowhere (the root plan has no parent component; leave it uncoded)";
+  fail("annotation", t.name, `ontology.coding on the task definition, where Composer does not read it; a task's coding is read from ${at}; ${comps.length ? MIGRATE : "remove it"}`);
 }
 if (!g.metadata.title) fail("annotation", "metadata", "no metadata title");
 if (g.metadata.desc && HAND_COUNT.test(g.metadata.desc)) {
@@ -405,7 +430,7 @@ for (const t of therapy) {
   for (const s of sources) {
     if (s.trim().length < 6 || !CITATION.test(s)) fail("therapy", t.name, `source without a citation token (PMID/DOI or a named guideline/label/instrument): ${s}`);
   }
-  if (!t.metaprops["ontology.coding"]) warn("therapy", t.name, "no ontology.coding (SNOMED CT concept for the procedure or substance)");
+  if (!codingOfTask(t)) warn("therapy", t.name, `no ontology.coding on its component (SNOMED CT concept for the procedure or substance)${onDefinition(t)}`);
 }
 
 // monitoring tasks (Actions and ADE Enquiries): the metaprops contract
@@ -501,9 +526,11 @@ for (const t of monitors) {
   }
   ok("quotes");
 
-  // ontology coding: optional (added by the coding pass), but checked when present
-  row.checks.coding = !codingProblems(m).length;
-  if (!m["ontology.coding"]) warn("metaprops", t.name, "no ontology.coding (SNOMED CT concept for the monitored condition or measurement); run the coding pass");
+  // ontology coding: optional (added by the coding pass), but checked when present; it lives on
+  // the task's component in the parent plan, not on the definition
+  const tc = codingOfTask(t);
+  row.checks.coding = !m["ontology.coding"] && !codingProblems(m).length && !(tc && codingProblems({ "ontology.coding": tc }).length);
+  if (!tc) warn("metaprops", t.name, `no ontology.coding on its component (SNOMED CT concept for the monitored condition or measurement)${onDefinition(t) || "; run the coding pass"}`);
 
   // controlled vocabularies
   for (const [k, vocab] of Object.entries(VOCAB)) {
@@ -633,7 +660,7 @@ for (const p of adePlans) {
   if (items.length !== adeMonitors.length) {
     fail("ade", d.t.name, `caption lists ${items.length} ADE(s) but ${p.name} holds ${adeMonitors.length} ADE monitor(s); one Markdown list item per ADE Enquiry, one per line`);
   }
-  const monTokens = adeMonitors.map((c) => ({ name: c.t.name, tok: new Set([...tokens(c.t.name), ...tokens(c.t.caption), ...tokens(c.t.metaprops["ontology.label"])]) }));
+  const monTokens = adeMonitors.map((c) => ({ name: c.t.name, tok: new Set([...tokens(c.t.name), ...tokens(c.t.caption), ...tokens(parseCoding(codingOfTask(c.t))?.caption)]) }));
   const overlaps = (a, b) => [...a].some((x) => b.has(x));
   for (const it of items) {
     if (!monTokens.some((m) => overlaps(tokens(it), m.tok))) warn("ade", d.t.name, `list item "${it}" does not obviously name any ADE Enquiry of ${p.name}; check the list against the Enquiries`);
@@ -655,8 +682,8 @@ for (const e of adeEnquiries) {
   for (const dn of findingsOf(e)) {
     const d = g.data.find((x) => x.name === dn);
     const v = (d?.metaprops?.["ontology.coding"] || "").trim();
-    if (!v) fail("ade", dn, `data item asked by the ADE Enquiry ${e} has no ontology.coding (SNOMED:<id> + ontology.label, via snomed_search)`);
-    else if (!/^SNOMED(CT)?:/i.test(v)) fail("ade", dn, `data item asked by the ADE Enquiry ${e} is coded ${v}; findings are coded in SNOMED CT (SNOMED:<id>)`);
+    if (!v) fail("ade", dn, `data item asked by the ADE Enquiry ${e} has no ontology.coding (SCT:<id> [<caption>], via snomed_search)`);
+    else if (systemOf(v) !== "SCT") fail("ade", dn, `data item asked by the ADE Enquiry ${e} is coded ${v}; findings are coded in SNOMED CT (SCT:<id> [<caption>])${parseCoding(v) ? "" : `; ${MIGRATE}`}`);
   }
 }
 // test steps: Order_<Test> Actions and Tests_Ordering_Recommendations_<ADE> Decisions
@@ -684,17 +711,17 @@ for (const t of [...testOrders, ...testDecisions]) {
     if (!(t.description || "").trim()) fail("ade", t.name, "test-order Action without a description (why the test is ordered and for which ADE)");
     if (!(t.procedure || "").trim()) fail("ade", t.name, "test-order Action without a procedure (Order <test> when <finding condition>)");
     if (!/^Order_/.test(t.name)) warn("ade", t.name, "a test-order Action is canonically named Order_<Test>");
-    const v = (t.metaprops["ontology.coding"] || "").trim();
-    if (!v) fail("ade", t.name, "test-order Action without a LOINC ontology.coding (LOINC:<code> + ontology.label, via loinc_search)");
-    else if (!/^LOINC:/i.test(v)) fail("ade", t.name, `test-order Action is coded ${v}; tests are coded in LOINC (LOINC:<code>)`);
+    const v = (codingOfTask(t) || "").trim();
+    if (!v) fail("ade", t.name, `test-order Action without a LOINC ontology.coding on its component (LNC:<code> [<caption>], via loinc_search)${onDefinition(t)}`);
+    else if (systemOf(v) !== "LNC") fail("ade", t.name, `test-order Action is coded ${v}; tests are coded in LOINC (LNC:<code> [<caption>])${parseCoding(v) ? "" : `; ${MIGRATE}`}`);
   } else {
     if ((t.choice_mode || "").trim().toLowerCase() !== "multiple") fail("ade", t.name, `test-ordering Decision needs choice_mode multiple (is ${t.choice_mode || "single"})`);
     if (!/^Tests_Ordering_Recommendations_/.test(t.name)) warn("ade", t.name, "a test-ordering Decision is canonically named Tests_Ordering_Recommendations_<ADE>");
     if (t.candidates.length === 1) warn("ade", t.name, "test-ordering Decision with a single candidate; one test is an Order_<Test> Action");
     for (const c of t.candidates) {
       const v = (c.metaprops?.["ontology.coding"] || "").trim();
-      if (!v) fail("ade", `${t.name}/${c.name}`, "test candidate without a LOINC ontology.coding (LOINC:<code> + ontology.label, via loinc_search)");
-      else if (!/^LOINC:/i.test(v)) fail("ade", `${t.name}/${c.name}`, `test candidate is coded ${v}; tests are coded in LOINC (LOINC:<code>)`);
+      if (!v) fail("ade", `${t.name}/${c.name}`, "test candidate without a LOINC ontology.coding (LNC:<code> [<caption>], via loinc_search)");
+      else if (systemOf(v) !== "LNC") fail("ade", `${t.name}/${c.name}`, `test candidate is coded ${v}; tests are coded in LOINC (LNC:<code> [<caption>])${parseCoding(v) ? "" : `; ${MIGRATE}`}`);
     }
   }
 }
@@ -780,7 +807,9 @@ if (base) {
       for (const f of ["kind", "caption", "description", "precondition", "procedure"]) {
         if ((t[f] ?? null) !== (b[f] ?? null)) fail("codingPatch", t.name, `${f} changed in a coding-only run`);
       }
-      if (JSON.stringify(t.components) !== JSON.stringify(b.components)) fail("codingPatch", t.name, "plan components/scheduling changed");
+      // a component's ontology keys may change (that is where a task's coding lives)
+      const comps = (x) => JSON.stringify((x.components || []).map((c) => ({ ...c, metaprops: stripCoding(c.metaprops) })));
+      if (comps(t) !== comps(b)) fail("codingPatch", t.name, "plan components/scheduling changed");
       if (JSON.stringify(uncoded(t.candidates)) !== JSON.stringify(uncoded(b.candidates))) fail("codingPatch", t.name, "decision candidates/arguments changed");
       if (JSON.stringify(t.sources) !== JSON.stringify(b.sources)) fail("codingPatch", t.name, "enquiry sources changed");
       const keys = new Set([...Object.keys(t.metaprops), ...Object.keys(b.metaprops)]);

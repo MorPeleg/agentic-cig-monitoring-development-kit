@@ -4,10 +4,10 @@
 
 ## PROforma elements
 
-Composer's native decision, candidate and argument properties are listed in `TaskProperties.md`. The ones this pattern uses:
+Composer's native decision, candidate and argument properties are listed in `TaskProperties.md` (a Decision is a Task and has all the common task properties). The ones this pattern uses:
 
 - Task: `decision`, with the common task properties (Caption, Description, **Precondition** when the decision applies only to some patients) and its kind-specific **Choice mode** (`choice_mode :: single | multiple`), **Support mode** (`support_mode :: symbolic` default `| numeric`) and **Preselect candidates**
-- `candidate`: name, **Caption**, **Description**, **Ontology coding** (only when a real concept fits), `recommendation`, optional `priority`
+- `candidate`: name, **Caption**, **Description**, **Ontology coding** (only when a real concept fits; `ontology.coding=<prefix>:<code> [<caption>]` in the candidate's own metaprops, `Ontology.md`), `recommendation`, optional `priority`
 - `argument :: <support>,<condition>` on a candidate, with optional `argument_name`, a **Caption** that holds the rationale and any evidence grade (e.g. `[I, A]`), a **Description**, and `metaprops` with the `source` + `quote` the criterion came from. Symbolic support: `for` (+1), `against` (−1), `confirming` (+1000), `excluding` (−1000)
 - `recommendation` — the rule that recommends the candidate; default `netsupport() > 0` (the candidate's net support)
 - Leave structural options such as `Eligible` / `Not_Eligible` uncoded rather than forcing a poor SNOMED match.
@@ -74,12 +74,12 @@ end decision.
 
 ## Sequencing and gating
 
-- The Decision component runs after the Enquiry: `add_task(..., after: ["Get_Eligibility_Data"])` → `schedule_constraint :: completed('Get_Eligibility_Data')` (see `TopLevelPlan.md`).
+- The Decision component runs after the Enquiry: `add_task(..., after: ["Get_Eligibility_Data"])` → `schedule_constraint :: completed('Get_Eligibility_Data')` (see `skills/cig-monitoring/references/TopLevelPlan.md`).
 - The Therapy Plan is gated on the result by its native Precondition: `precondition :: result_of(Eligibility_Decision) = Eligible` (`result_set(D) includes C` for a `multiple` decision).
 
 ## Test-ordering Decisions (Monitor Undesired ADEs)
 
-When an ADE monitor recommends two or more tests, its Enquiry is followed by a Decision `Tests_Ordering_Recommendations_<ADE>` (`ADEMonitoringEnquiry.md`): `choice_mode :: multiple`, metaprops `role=test_ordering` and `ordered_for=Monitor_<ADE>`, a precondition that is true when at least one of the Enquiry's findings is positive, and one candidate per test, named after the test, with its **LOINC** coding (`ontology.coding=LOINC:<code>` + `ontology.label`, from `loinc_search`) and an argument `for,true()` (a real condition only when the source restricts the test). Every listed test is recommended and the clinician selects which to order. The proposal lists these Decisions in a ```` ```cig-test-decisions ```` block.
+When an ADE monitor recommends two or more tests, its Enquiry is followed by a Decision `Tests_Ordering_Recommendations_<ADE>` (`skills/cig-monitoring/references/ADEMonitoringEnquiry.md`): `choice_mode :: multiple`, metaprops `role=test_ordering` and `ordered_for=Monitor_<ADE>`, a precondition that is true when at least one of the Enquiry's findings is positive, and one candidate per test, named after the test, with its **LOINC** coding in the candidate's metaprops (`ontology.coding=LNC:<code> [<caption>]`, from `loinc_search`) and an argument `for,true()` (a real condition only when the source restricts the test). Every listed test is recommended and the clinician selects which to order. The proposal lists these Decisions in a ```` ```cig-test-decisions ```` block.
 
 ## Structural example
 
@@ -89,8 +89,8 @@ In `cig/examples/ccd-antithrombotic-monitoring.pf`, `Antithrombotic_Regimen_Deci
 - `against`: a Class 3 No Benefit recommendation, `Arg_DAPT_No_Benefit`, "Rec 7 [3: No benefit, A]", `pci_within_12_months = false and acs_within_12_months = false and cabg_within_12_months = false`.
 - `excluding`: a Class 3 Harm recommendation, `Arg_Vorapaxar_Harm`, "Rec 8 [3: Harm, A]", `prior_stroke_or_tia = true or prior_ich = true`.
 
-The rule stays the default `netsupport() > 0`, so several candidates can be recommended at once and the clinician commits one; the Decision's description says so. A second Decision, `P2Y12_Agent_Decision`, is nested in the therapy plan (`TherapyPlan.md`) with its own precondition on the first Decision's result; its assistant-proposed arguments say so in their captions, and a label contraindication (ticagrelor after intracranial hemorrhage) and Rec 9 [3: Harm] (prasugrel after stroke, TIA or ICH) are `excluding` arguments. Use it to see how a Decision is populated; its clinical rules are not a template. Never emit a Decision whose candidates have no arguments or criteria.
+The rule stays the default `netsupport() > 0`, so several candidates can be recommended at once and the clinician commits one; the Decision's description says so. A second Decision, `P2Y12_Agent_Decision`, is nested in the therapy plan (`skills/cig-monitoring/references/TherapyPlan.md`) with its own precondition on the first Decision's result; its assistant-proposed arguments say so in their captions, and a label contraindication (ticagrelor after intracranial hemorrhage) and Rec 9 [3: Harm] (prasugrel after stroke, TIA or ICH) are `excluding` arguments. Use it to see how a Decision is populated; its clinical rules are not a template. Never emit a Decision whose candidates have no arguments or criteria.
 
 ## Related patterns
 
-- `Enquiry.md` (produces the data the criteria reference), `ADEMonitoringEnquiry.md` (test-ordering Decisions), `TopLevelPlan.md`, `TaskProperties.md`.
+- `Enquiry.md` (produces the data the criteria reference), `TaskProperties.md`, `Ontology.md`; in `skills/cig-monitoring/references/`: `ADEMonitoringEnquiry.md` (test-ordering Decisions), `TopLevelPlan.md`.

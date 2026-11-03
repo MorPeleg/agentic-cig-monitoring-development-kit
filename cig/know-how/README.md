@@ -94,3 +94,14 @@ For each therapy goal defined in the previous step, and for each desired and und
 > **Example:** order `body weight measurement via BIA scale`.
 >
 > *(The order is recorded as an HL7 FHIR `ServiceRequest`: the `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction` and `ServiceRequest.performerInstruction` metaprops, repeated in the goal's noun phrase and stated in the action's native `procedure`.)*
+
+## PROforma modelling know-how
+
+The know-how above says *what* to model. How each PROforma construct is represented in a Deontics Composer guideline (`.pf`), with its native properties and the tool calls that set them, is in [`proforma/`](proforma/):
+
+- [`TaskProperties.md`](proforma/TaskProperties.md): the properties every task has (Plan, Action, Enquiry and Decision are all Tasks), and the ones each kind adds.
+- [`Data.md`](proforma/Data.md): data items (type, caption, unit, range, default value, derivation, dynamic, ontology coding, source quotes).
+- [`Ontology.md`](proforma/Ontology.md): Composer's ontology coding (`SCT:<id> [<caption>]`, `LNC:<code> [<caption>]`) and where each element carries it.
+- [`Enquiry.md`](proforma/Enquiry.md) and [`Decision.md`](proforma/Decision.md): populating an Enquiry's data items and a Decision's candidates and arguments.
+
+The monitoring design patterns (Top-Level Plan, Therapy Plan, Monitoring Plan, goals, the metaprops contract, ADE Enquiries) are in `skills/cig-monitoring/references/`.

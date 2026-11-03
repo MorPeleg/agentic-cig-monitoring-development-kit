@@ -107,13 +107,14 @@ truth.
 ## Task properties
 
 Composer's property sheet gives every task, candidate and data item a set of
-**native properties**; `skills/cig-monitoring/references/TaskProperties.md`
-lists each one with the `.pf` attribute it is stored as and the call that
+**native properties**; `cig/know-how/proforma/TaskProperties.md` (data items:
+`cig/know-how/proforma/Data.md`) lists each one with the `.pf` attribute it is stored as and the call that
 sets it. In short:
 
 - **All tasks:** Caption (`caption`), Description (`description`),
-  **Ontology coding** (metaprop `ontology.coding` + `ontology.label`),
-  Metaproperties (`metaprops`); the control properties **Precondition**
+  **Ontology coding** (metaprop `ontology.coding=<SCT|LNC>:<code> [<caption>]`
+  on the task's **component** in its parent plan; see
+  `cig/know-how/proforma/Ontology.md`), Metaproperties (`metaprops`); the control properties **Precondition**
   (`precondition`), Wait condition (`wait_condition`), Postcondition
   (`postcondition`), Event trigger (`trigger`), Context (`context`); on the
   component, scheduling (`schedule_constraint`), the repeat properties
@@ -145,9 +146,13 @@ set_attribute(file, selector: "Monitor_<Harm>", attribute: "procedure",
 set_attribute(file, selector: "Monitor_<Harm>", attribute: "metaprops",
               value: "goal.verb=order\ngoal.noun_phrase=ServiceRequest.intent = order; ServiceRequest.code = <code>; ServiceRequest.occurrenceTiming = <timing>; ServiceRequest.patientInstruction = ...; ServiceRequest.performerInstruction = ...\nServiceRequest.intent=order\nServiceRequest.code=<code>\nServiceRequest.occurrenceTiming=<timing>\nServiceRequest.patientInstruction=...\nServiceRequest.performerInstruction=...\n...\nsource.1=...\nquote.1=§<n>: \"...\"\ncq=CQ7")
 
+# a task's Ontology coding goes on its component in the parent plan
+set_attribute(file, selector: "Monitor_Undesired_State/component:Monitor_<Harm>", attribute: "metaprops",
+              value: "ontology.coding=SCT:<id> [<preferred term, as returned by snomed_search>]")
+
 # metaprops on a data item or a decision argument (Ontology coding, source + quote)
 set_attribute(file, selector: "threshold_measure", attribute: "metaprops",
-              value: "ontology.coding=SNOMED:<id>\nontology.label=<preferred term, as returned by snomed_search>")
+              value: "ontology.coding=SCT:<id> [<preferred term, as returned by snomed_search>]")
 set_attribute(file, selector: "Eligibility_Decision/candidate:Eligible/argument:Arg_Eligible", attribute: "metaprops",
               value: "source=...\nquote=...")
 
@@ -191,11 +196,19 @@ add_source(file, task: "Get_Eligibility_Data", data: "on_interacting_medication"
   escaped by the writer (the file shows `\\=` / `\\:` inside the quoted atom);
   the tools and `export_json` read them back unescaped. A literal backslash in a
   value is consumed as an escape — do not use one.
-- **Composer's "Ontology coding" field is the metaprop `ontology.coding`**
-  (`SCHEME:code`, e.g. `SNOMED:197456007`); Composer hides the key in its
-  metaprops editor and shows the term as a field. Add `ontology.label` with
-  the preferred term. Find codes with the kit's `snomed_search` tool, and
-  LOINC codes for ordered tests (`LOINC:718-7`) with `loinc_search`.
+- **Composer's "Ontology coding" field is the metaprop `ontology.coding`**,
+  with the value `<prefix>:<code> [<caption>]`: a three-character provider
+  prefix (`SCT` SNOMED CT, `LNC` LOINC, `IC0` ICD-10-CM, `IC9` ICD-9-CM) and a
+  bracketed caption, e.g. `SCT:197456007 [Acute pancreatitis (disorder)]`,
+  `LNC:718-7 [Hemoglobin [Mass/volume] in Blood]`. Composer shows any other
+  value (`SNOMED:197456007`, or a code without its caption) as an empty
+  field; there is no separate label key. Composer hides the key in its
+  metaprops editor and shows the term in the Ontology field. **A task's
+  coding is read from its component** (`<plan>/component:<task>`), not from
+  the task definition; a data item or candidate carries it in its own
+  metaprops. Find codes with the kit's `snomed_search` tool, and LOINC codes
+  for ordered tests with `loinc_search`. Full contract:
+  `cig/know-how/proforma/Ontology.md`.
 - **Composer (and every tool save) sorts metaprops keys**, so key order is not
   significant; the key set and values are.
 - **`set_attribute` replaces** an attribute. For metaprops that means the whole

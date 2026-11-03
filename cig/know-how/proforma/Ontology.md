@@ -2,6 +2,8 @@
 
 How a PROforma guideline records the clinical concept of a task, data item or candidate so that Deontics Composer shows it in its **Ontology** field. The contract below was read from Composer's own classes (the ontologies module, its BioPortal provider and the PROforma connector of the installed Composer) and from guidelines Composer itself saved. A value in any other form is kept in the file but Composer shows an **empty** Ontology field.
 
+The `ontology.coding` line in the `.pf` is what Composer **writes** when it saves a guideline. Composer **reads** each term from the `.deo` file of a Composer project, not from the `.pf`: open a kit guideline in Composer through the project that `scripts/export_composer_project.mjs` builds (see [Opening a guideline in Composer](#opening-a-guideline-in-composer)). A standalone `.pf` opens without its codes.
+
 ## The contract
 
 **Key.** The metaprop `ontology.coding`. Composer's metaproperties editor hides this key and shows its value in the element's **Ontology coding** field instead; every other metaprop stays visible in the metaproperties editor.
@@ -129,6 +131,22 @@ Composer shows these as ordinary metaproperties in the metaproperties editor (no
 - **Near matches.** When no concept fits exactly, take the closest broader concept and say in the element's description what it records instead (e.g. a data item for the indication for anticoagulation coded with "Long-term current use of anticoagulant (situation)"). When nothing fits, leave the element uncoded and say why; never invent a code or a caption.
 - **Structural elements** (e.g. `Eligible` / `Not_Eligible` candidates, a plan that only groups tasks) stay uncoded rather than forcing a poor match.
 - **Findings and tests.** In the ADE Enquiry pattern (`skills/cig-monitoring/references/ADEMonitoringEnquiry.md`), the findings an ADE Enquiry asks for are SNOMED CT (`SCT`) and the tests its test step orders are LOINC (`LNC`).
+
+## Opening a guideline in Composer
+
+Composer keeps an element's term in its Alium model, which it loads from the project's `.deo` file; on load it rewrites each element's `ontology.coding` from that term and **removes** the key when it holds no term. So:
+
+- **Open individual PROforma file** never reads a `.deo`: every code in the `.pf` is dropped on load.
+- A **project** keeps them: `<project>/project.metadata`, `<project>/proforma/<Name>.pf` and `<project>/proforma/<Name>.deo` (same basename). The `.pf` and the `.deo` are linked by the metaprop `ae.private.component.id=<id>` on every component, candidate, argument, data item and enquiry source (a source carries its data item's id). The `.deo` entry of each coded element holds the term in five keys: `ontology_coding_name`, `ontology_coding_code`, `ontology_coding_system` (SNOMED CT `2.16.840.1.113883.6.96`, LOINC `2.16.840.1.113883.6.1.` with Composer's trailing dot, ICD-10-CM `2.16.840.1.113883.6.90`, ICD-9-CM `2.16.840.1.113883.6.42`), `ontology_system_prefix` (`SCT`/`LNC`/`IC0`/`IC9`) and `ontology_coding_caption`.
+- Composer maps each component to its `.deo` task by id and also requires the same name, type and **caption**; the caption it compares and shows is the **component's**, not the task definition's. One mismatch makes Composer rebuild the whole task model, and every task loses its term.
+
+Build the project with:
+
+```bash
+node scripts/export_composer_project.mjs projects/<project_dir>/guideline/<name>.pf projects/<project_dir>/composer-project --name <name> [--display-name "..."] [--force]
+```
+
+It copies the guideline to `proforma/<name>.pf` (the source `.pf` is not changed) and, through the proforma CLI, adds the ids and gives each component its task's caption and description, then writes the `.deo` from that copy (one task per component, one claim per candidate, one rule per argument, one data entry per data item, with the term keys from each `ontology.coding`) and `project.metadata`. Ids already in the `.pf`, or in an earlier export at the same path, are reused, so re-exporting with `--force` gives the same files. Open the output folder in Composer as a project. Edit the kit's guideline, not the exported copy, and re-export.
 
 ## Checking
 

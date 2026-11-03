@@ -70,6 +70,8 @@ Install these before starting:
 
 Each build also produces `guideline/<name>.html` with the **proforma** skill's `scripts/build_report.mjs`: a self-contained viewer (one HTML file, nothing fetched) laid out like a guideline editor: task tree, plan canvas (stored task positions, scheduling arrows, decision branches; pan, zoom, double-click a plan to open it), properties panel, and data, decision, lint and source views. Open [`cig/examples/ccd-antithrombotic-monitoring.html`](cig/examples/ccd-antithrombotic-monitoring.html) to see it.
 
+To open a guideline in Deontics Composer with its ontology codes and task captions, export it as a Composer project with `node scripts/export_composer_project.mjs <guideline.pf> <outDir> [--name <Name>] [--display-name "..."] [--force]` and open `<outDir>` as a project (a standalone `.pf` loses its codes; see [`Ontology.md`](cig/know-how/proforma/Ontology.md#opening-a-guideline-in-composer)).
+
 You can run the gates yourself on the worked example (see [`cig/examples/README.md`](cig/examples/README.md)). Both pass with zero FAILs against the example's latest approved proposal (`check_cig.mjs` also prints WARNs for the drug-gated monitor preconditions, a convention approved during the build):
 
 ```bash
@@ -112,6 +114,6 @@ agentic-cig-monitoring-development-kit/
 │       ├── cqs/        # cq-queries.mjs
 │       ├── reviews/    # Step 7 reports
 │       └── resources/  # Resources to give to the agent (PDFs, CSVs, etc.)
-├── scripts/            # check_cig.mjs, run_cqs.mjs, fetch_package_insert.mjs, migrate_metaprops.mjs, owl2pf.mjs
+├── scripts/            # check_cig.mjs, run_cqs.mjs, fetch_package_insert.mjs, migrate_metaprops.mjs, owl2pf.mjs, export_composer_project.mjs
 └── skills/             # Agent skills (cig-monitoring, cig-formalization, proforma-editor, cig-monitoring-review, cq-verification)
 ```

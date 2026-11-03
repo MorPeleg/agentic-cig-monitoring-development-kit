@@ -370,8 +370,13 @@ omitted from the listings for brevity. Through capa the tool ids are
     the proposal does not explain; run once with `include_info: true` and
     confirm every PF-X060 "treated as text literal" is an intended literal, not
     a misspelt data item), `to_mermaid(output: "<abs>/guideline/<name>.mmd")`,
-    `node <proforma skill>/scripts/build_report.mjs <guideline.pf>` (writes the
-    self-contained `guideline/<name>.html` viewer), then the *End-of-Step-6 determinism check*. Fix any failure before handing
+    `node scripts/export_composer_project.mjs <guideline.pf> projects/<project_dir>/composer-project --name <name> --force`
+    (the Deontics Composer project: Composer reads every ontology term from the
+    project's `.deo`, so a standalone `.pf` opens without its codes; see
+    `cig/know-how/proforma/Ontology.md`),
+    `node <proforma skill>/scripts/build_report.mjs <guideline.pf> --attach-dir projects/<project_dir>/composer-project --attach-name <name>-composer-project.zip`
+    (writes the self-contained `guideline/<name>.html` viewer, with a Download
+    Composer project button), then the *End-of-Step-6 determinism check*. Fix any failure before handing
     off to Step 7.
 
 ## The fixed per-action bundle

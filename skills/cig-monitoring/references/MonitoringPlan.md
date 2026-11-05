@@ -10,7 +10,7 @@ The three sub-plans are parallel: they are all components of the Monitoring Plan
 
 ## PROforma elements
 
-- Tasks: `plan` (monitoring plan and its three sub-plans), `action` (monitoring actions in Monitor Actions and Monitor Desired Outcome States), and in Monitor Undesired ADEs the **ADE Enquiry pattern** (`ADEMonitoringEnquiry.md`): an `action` that displays the ADEs, one `enquiry` per ADE and its test step (`action` or `decision`)
+- Tasks: `plan` (monitoring plan and its three sub-plans), `action` (monitoring actions in Monitor Actions and Monitor Desired Outcome States), and in Monitor Undesired ADEs the **ADE Enquiry pattern** (`ADEMonitoringEnquiry.md`): an `action` that displays the ADEs, one `enquiry` per ADE and its test step (`action` or `decision`), or, when the sources name no test, its suspected-ADE alert `action`
 - Native task properties (`cig/know-how/proforma/TaskProperties.md`) on each monitoring task: Caption, Description, procedure (the order; an Enquiry has none, so its description carries the order), **Precondition** (for a sub-population), **Ontology coding** (the disorder, finding or measurement watched), and when the guideline needs them Wait condition, Event trigger or the component's repeat properties
 - Tools: `add_task` (no `after` between the sub-plans), `set_attribute` (description, procedure, metaprops, precondition), `add_data_item`, `add_source`, `add_candidate`, `add_argument`, `check_expression`, `snomed_search` and `loinc_search` (the coding pass)
 
@@ -60,13 +60,13 @@ end plan.
 
 ## Operationalizing the Undesired-ADE sub-plan (required)
 
-Each monitoring task in **Monitor Undesired ADEs** must be **operationalized**, not just named, and made executable with the **ADE Enquiry pattern** (`ADEMonitoringEnquiry.md`): the plan starts with `Display_Potential_ADEs` (its caption a Markdown list of the ADEs); each ADE monitor is an **Enquiry** whose data items are the symptoms and bedside findings; a test step (`Order_<Test>` Action or `Tests_Ordering_Recommendations_<ADE>` Decision) after it orders the tests when a finding is positive. For every harm:
+Each monitoring task in **Monitor Undesired ADEs** must be **operationalized**, not just named, and made executable with the **ADE Enquiry pattern** (`ADEMonitoringEnquiry.md`): the plan starts with `Display_Potential_ADEs` (its caption a Markdown list of the ADEs); each ADE monitor is an **Enquiry** whose data items are the symptoms and bedside findings; a test step (`Order_<Test>` Action or `Tests_Ordering_Recommendations_<ADE>` Decision) after it orders the tests when a finding is positive (`a = "yes" or ...`), and an ADE whose sources name no test gets a `suspected_<ade>` item and an `Alert_Further_Examination_<ADE>` Action instead. For every harm:
 
 1. Map the harm/syndrome to **observable manifestations** (the symptoms, signs or lab changes by which it presents). The symptoms and exam findings become the Enquiry's data items (SNOMED CT coded); the lab and imaging tests become its test step (LOINC coded).
 2. Choose an **instrument**: patient symptom report, named lab test, validated questionnaire, or clinician exam.
 3. Set a **frequency** with justification, and an **urgent trigger** for same-day assessment (`MonitoringFrequency.md`).
 4. **Document provenance in the Enquiry's metaprops** (full contract in `MetapropsSyntax.md`): `source` / `source.1..n` (cite each) with `quote` / `quote.1..n` (the verbatim passage of each), `knowledge_origin`, `guideline_status`, `literature_basis`, `assistant_invention` (separate source-based from self-designed), `monitoring_frequency_basis`, `trigger`, and the `ServiceRequest.*` block (repeated in `goal.noun_phrase` and stated in the Enquiry's `description`, since an Enquiry has no procedure) — plus `monitored_target` naming the therapy task the monitor traces to (**traceability**: a reviewer can see which monitoring task each source drove).
-5. If the source limits the harm to a sub-population, set `applies_when` accordingly and add an executable `precondition` over an eligibility/baseline Enquiry data item (e.g. `Monitor_<Harm>` → `on_interacting_medication = true`).
+5. If the source limits the harm to a sub-population, set `applies_when` accordingly and add an executable `precondition` over an eligibility/baseline Enquiry data item (e.g. `Monitor_<Harm>` → `on_interacting_medication = "yes"`).
 6. **Code the harm** in the coding pass: `ontology.coding=SCT:<id> [<term>]` for the disorder or finding, found with `snomed_search`, on the Enquiry's component in `Monitor_Undesired_State`; code each finding data item with `snomed_search` and each ordered test with `loinc_search` (`LNC:<code> [<term>]`). Value form and locations: `cig/know-how/proforma/Ontology.md`.
 
 **Case-report sources are opt-in.** Do not build them unless the user (or approved proposal) includes them. When used, they must document a harm *caused by/occurring during* the drug — not merely that symptoms resolve after stopping it (see the source-quality rule in `ActionEnactmentGoal.md`).
@@ -80,7 +80,7 @@ plan Monitoring_Plan
   plan Monitor_Actions            4 Actions: Monitor_Antithrombotic_Adherence, Monitor_Regimen_Duration,
                                   Monitor_NSAID_Avoidance, Monitor_PPI_Continued_Need
   plan Monitor_Desired_State      1 Action: Monitor_Ischemic_Events (the absence of ischemic events, the achieve goal of every drug action)
-  plan Monitor_Undesired_State    Display_Potential_ADEs, then 17 ADE Enquiries with their test steps (ADEMonitoringEnquiry.md)
+  plan Monitor_Undesired_State    Display_Potential_ADEs, then 17 ADE Enquiries, each with its test step or suspected-ADE alert (ADEMonitoringEnquiry.md)
 ```
 
 It shows the two kinds of scoped monitor:

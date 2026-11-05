@@ -9,8 +9,11 @@
 // skills/cig-monitoring-review/SKILL.md that need no clinical judgment:
 // structure and scope, the monitoring metaprops contract
 // (skills/cig-monitoring/references/MetapropsSyntax.md) on every monitoring
-// task (Actions and ADE Enquiries), the ADE Enquiry pattern and its test steps
-// (skills/cig-monitoring/references/ADEMonitoringEnquiry.md), executable
+// task (Actions and ADE Enquiries), the ADE Enquiry pattern and its test steps or
+// suspected-ADE alerts (skills/cig-monitoring/references/ADEMonitoringEnquiry.md),
+// the runnable-data rules (yes/no text items, no boolean, mandatory sources only for
+// plan-gating items, default values, component caption and description equal to the
+// definition's, no check-due items; cig/know-how/proforma/Data.md), executable
 // preconditions, the approved action set (cig-actions, cig-test-decisions),
 // baseline regressions and the coding-patch freeze, and Composer's ontology coding form and
 // location (cig/know-how/proforma/Ontology.md). Exit code 0 = PASS, 1 = FAIL, 2 = usage/input error.
@@ -106,6 +109,10 @@ const MIGRATE = "convert with node scripts/migrate_metaprops.mjs <guideline.pf>"
 const ROLE_DISPLAY = "ade_display";
 const ROLE_TEST_ORDER = "test_order";
 const ROLE_TEST_DECISION = "test_ordering";
+// the suspected-ADE alert of an ADE Enquiry with no test step; a monitoring Action with the full contract
+const ROLE_ALERT = "ade_alert";
+const ALERT_PREFIX = "Alert_Further_Examination_";
+const SUSPECTED_PREFIX = "suspected_";
 const ADE_PLAN = "Monitor_Undesired_State";
 // keys of an intermediate contract that held the order outside the ServiceRequest block
 const ORDER_KEYS = /^order\./;
@@ -113,9 +120,11 @@ const ORDER_KEYS = /^order\./;
 const QUOTED = /"[^"]{3,}"|“[^”]{3,}”/;
 const QUOTE_MAX_WORDS = 40;
 const PLACEHOLDERS = new Set(["", "o", "p", "s", "i", "t", "x", "tbd", "todo", "xxx", "...", "n/a", "na", "none?", "?"]);
-const CADENCE = /baseline|visit|daily|weekly|monthly|quarterly|annual|yearly|q\d|every|escalat|event|symptom|trigger|onset|dose|day|week|month|year|hour/i;
+const CADENCE = /baseline|visit|daily|weekly|monthly|quarterly|annual|yearly|q\d|every|escalat|event|symptom|trigger|onset|dose|day|week|month|year|hour|suspect/i;
 const ROUTINE = /baseline|daily|weekly|monthly|quarterly|annual|yearly|\bq\d|every \d/i;
-const TRIGGERED = /triggered|on symptoms|if symptom|symptom-triggered|when symptomatic|testing on symptom|urgent|same-day/i;
+const TRIGGERED = /triggered|on symptoms|if symptom|symptom-triggered|when symptomatic|testing on symptom|urgent|same-day|suspected/i;
+// a data item that records when a check is due, not a finding (R5)
+const DUE_ITEM = /_due$/i;
 const CITATION = /PMID|PMC\d|doi|10\.\d{4,}\/|guideline|label|prescribing information|insert|standards|CPG|recommendation|NICE|WHO|ADA|AGA|ESMO|instrument|questionnaire|scale|§|\b(19|20)\d\d\b/i;
 const HAND_COUNT = /\b\d+\s+(?:\w+\s+){0,2}(?:actions?|monitors?|monitoring items?|tasks?)\b/i;
 
@@ -190,6 +199,8 @@ const hasServiceRequest = (t) => Object.keys(t.metaprops || {}).some((k) => k.st
 const displayActions = actions.filter((t) => role(t) === ROLE_DISPLAY);
 const testOrders = actions.filter((t) => role(t) === ROLE_TEST_ORDER);
 const testDecisions = tasks.filter((t) => t.kind === "decision" && role(t) === ROLE_TEST_DECISION);
+// suspected-ADE alerts are monitoring Actions (full contract) that follow an ADE Enquiry
+const alertActions = actions.filter((t) => role(t) === ROLE_ALERT);
 const monitorActions = actions.filter((t) => verb(t) === "order" && ![ROLE_DISPLAY, ROLE_TEST_ORDER].includes(role(t)));
 const monitorEnquiries = tasks.filter((t) => t.kind === "enquiry" && verb(t) === "order" && hasServiceRequest(t));
 const monitors = [...monitorActions, ...monitorEnquiries];
@@ -419,6 +430,106 @@ for (const d of g.data) {
   if (names.length) fail("structure", d.name, `derivation uses unknown name(s) ${names.join(", ")}`);
 }
 
+// runnable data (cig/know-how/proforma/Data.md): the guideline must run in the Deontics engine,
+// which has no boolean type, blocks an Enquiry while a mandatory value is missing, and shows
+// the component's caption and description rather than the definition's.
+// the data items an expression reads (quoted text stripped first)
+function dataRead(expr) {
+  const text = String(expr || "").replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''");
+  return [...new Set((text.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter((n) => dataNames.has(n)))];
+}
+// a range value as conditions compare it: "yes||Yes" -> yes
+const rangeValue = (v) => String(v).trim().replace(/^(["'])([\s\S]*)\1$/, "$2").split("||")[0].trim();
+const dataByName = new Map(g.data.map((d) => [d.name, d]));
+const allConditions = [
+  ...tasks.flatMap((t) => conditionsOf(t).filter(([, e]) => e).map(([where, e]) => [t.name, where, e])),
+  ...g.data.filter((d) => d.derivation).map((d) => [d.name, "derivation", d.derivation]),
+];
+// R1: no boolean; yes/no items are text with the yes/no range, compared with "yes" / "no"
+for (const d of g.data) {
+  if ((d.type || "").toLowerCase() === "boolean") {
+    fail("runnable", d.name, `data item is boolean, which Composer and the Deontics engine do not have; make it type text with range "yes||yes","no||no" and compare it with = "yes" / = "no"`);
+  }
+}
+const yesNoCompared = new Map(); // item -> [task where the comparison is]
+for (const [owner, where, expr] of allConditions) {
+  const text = String(expr);
+  for (const m of text.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|<>|!=)\s*"(yes|no)"|"(yes|no)"\s*(?:=|<>|!=)\s*([A-Za-z_][A-Za-z0-9_]*)\b/gi)) {
+    const n = m[1] || m[4];
+    if (dataNames.has(n)) yesNoCompared.set(n, [...new Set([...(yesNoCompared.get(n) || []), owner])]);
+  }
+  const stripped = text.replace(/"(?:[^"\\]|\\.)*"/g, '""');
+  for (const m of stripped.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|<>|!=)\s*(true|false)\b|\b(true|false)\s*(?:=|<>|!=)\s*([A-Za-z_][A-Za-z0-9_]*)\b/gi)) {
+    const n = m[1] || m[4];
+    if (dataNames.has(n)) fail("runnable", owner, `${where} compares ${n} with ${m[2] || m[3]}; a yes/no data item is text, compared with = "yes" / = "no"`);
+  }
+  for (const m of stripped.matchAll(/\bnot\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)/gi)) {
+    if (dataNames.has(m[1])) fail("runnable", owner, `${where} negates ${m[1]} with not(); a yes/no data item is compared with = "no"`);
+  }
+}
+for (const [n, owners] of yesNoCompared) {
+  const d = dataByName.get(n);
+  if ((d.type || "").toLowerCase() === "boolean") continue; // already a FAIL above
+  const values = new Set((d.range || []).map(rangeValue).map((v) => v.toLowerCase()));
+  if ((d.type || "").toLowerCase() !== "text" || !values.has("yes") || !values.has("no")) {
+    fail("runnable", n, `compared with "yes"/"no" (in ${owners.join(", ")}) but is ${d.type || "untyped"}${(d.range || []).length ? ` with range ${(d.range || []).join(",")}` : " with no range"}; a yes/no item is type text with range "yes||yes","no||no"`);
+  }
+}
+// R2: mandatory sources only for plan-gating items (read by a plan's precondition), each with a default
+const planGating = new Map(); // item -> plans whose precondition reads it
+for (const p of tasks.filter((x) => x.kind === "plan" && x.precondition)) {
+  for (const n of dataRead(p.precondition)) planGating.set(n, [...(planGating.get(n) || []), p.name]);
+}
+const mandatoryItems = new Set();
+for (const t of tasks.filter((x) => x.kind === "enquiry")) {
+  for (const s of t.sources || []) {
+    // a source with no mandatory line is mandatory (Composer's parser default)
+    if (s.mandatory === false) continue;
+    mandatoryItems.add(s.data);
+    if (!planGating.has(s.data)) {
+      fail("runnable", `${t.name}/source:${s.data}`, `mandatory source (no "mandatory :: no" line means mandatory) but no plan precondition reads ${s.data}; the engine will not complete ${t.name} while it is missing: add the source with mandatory false (only plan-gating items stay mandatory)`);
+    }
+  }
+}
+for (const n of mandatoryItems) {
+  const d = dataByName.get(n);
+  if (d && !String(d.default_value ?? "").trim()) {
+    fail("runnable", n, `mandatory data item without a default_value; give it one that meets the precondition of ${(planGating.get(n) || ["its plan"]).join(", ")} so a test run goes forward, and say in its description that the clinician must confirm it`);
+  }
+}
+// R3: a default value on every Enquiry data item (derived items have none)
+for (const d of g.data) {
+  if (!d.asked_by.some((e) => byName.get(e)?.kind === "enquiry") || d.derivation || mandatoryItems.has(d.name)) continue;
+  if (!String(d.default_value ?? "").trim()) {
+    warn("runnable", d.name, `Enquiry data item without a default_value ("no" for a finding or suspected_ item, a normal value for a bedside measurement, a main-path value for a baseline item)`);
+  }
+}
+// R4: Composer shows the component's caption and description, so they equal the definition's
+const norm = (s) => String(s ?? "").replace(/\r\n/g, "\n").trim();
+for (const p of tasks) {
+  for (const c of p.components || []) {
+    const def = byName.get(c.task);
+    if (!def) continue;
+    const sel = `${p.name}/component:${c.name}`;
+    for (const attr of ["caption", "description"]) {
+      const onComp = norm(c[attr]);
+      const onDef = norm(def[attr]);
+      if (!onComp && !onDef) {
+        if (attr === "caption") fail("runnable", sel, `neither ${c.task} nor its component has a caption`);
+        continue;
+      }
+      if (!onComp) fail("runnable", sel, `component without a ${attr}; Composer shows the component's, so copy the task definition's ${attr} onto it (set --selector ${sel} --attribute ${attr})`);
+      else if (onComp !== onDef) fail("runnable", sel, `component ${attr} differs from the task definition's; they must be the same text`);
+    }
+  }
+}
+// R5: data items record findings, not when a check is due
+for (const d of g.data) {
+  if (DUE_ITEM.test(d.name)) {
+    fail("runnable", d.name, `scheduling data item (*_due / *_check_due); a scheduled test stays in the order (ServiceRequest.occurrenceTiming and the description), and a test step reads only its Enquiry's findings`);
+  }
+}
+
 // therapy actions: goal, native fields, and the source passage the recommendation came from
 for (const t of therapy) {
   if (!(t.metaprops["goal.noun_phrase"] || "").trim()) fail("therapy", t.name, "State Achievement goal without goal.noun_phrase");
@@ -546,8 +657,12 @@ for (const t of monitors) {
 
   // traceability: monitored_target names an existing task
   const target = m.monitored_target || "";
-  const traced = therapyTargets.some((x) => new RegExp(`(^|[^A-Za-z0-9_])${x}([^A-Za-z0-9_]|$)`).test(target));
-  if (target && !traced) {
+  const names = (x) => new RegExp(`(^|[^A-Za-z0-9_])${x}([^A-Za-z0-9_]|$)`).test(target);
+  // a suspected-ADE alert traces to its ADE Enquiry, which traces to the therapy task
+  const traced = role(t) === ROLE_ALERT ? monitorEnquiries.some((e) => names(e.name)) : therapyTargets.some(names);
+  if (target && !traced && role(t) === ROLE_ALERT) {
+    bad("traceability", "suspected-ADE alert whose monitored_target names no ADE Enquiry (Monitor_<ADE>) of this guideline");
+  } else if (target && !traced) {
     if (therapyTargets.length) bad("traceability", "monitored_target names no therapy action (goal achieve/avoid) or therapy plan of this guideline");
     else warn("metaprops", t.name, "no therapy action or plan in this guideline (e.g. ADE-only scope): the reviewer must confirm monitored_target against the approved proposal");
   }
@@ -562,7 +677,7 @@ for (const t of monitors) {
       if (!refs.length) bad("appliesWhen", `precondition "${t.precondition}" uses no data item`);
       else if (!refs.some((n) => askedData.has(n))) bad("appliesWhen", `precondition data (${refs.join(", ")}) is not asked by any Enquiry`);
     }
-  } else if (t.precondition && applies === "all_patients_on_therapy") {
+  } else if (t.precondition && applies === "all_patients_on_therapy" && role(t) !== ROLE_ALERT) {
     warn("metaprops", t.name, `precondition "${t.precondition}" on an action that applies to all patients on therapy`);
   }
   ok("appliesWhen");
@@ -628,7 +743,7 @@ const LIST_ITEM = /^\s*(?:\d+[.)]|[*+-])\s+(.+?)\s*$/;
 for (const p of adePlans) {
   const comps = componentsOf(p);
   const enq = comps.filter((c) => monitorEnquiries.includes(c.t));
-  const actMon = comps.filter((c) => monitorActions.includes(c.t));
+  const actMon = comps.filter((c) => monitorActions.includes(c.t) && !alertActions.includes(c.t));
   enq.forEach((c) => adeEnquiries.add(c.t.name));
   for (const c of actMon) {
     fail("ade", c.t.name, `ADE monitor in ${p.name} is an Action (category=${c.t.metaprops.category || "unset"}); model it as an Enquiry of the same name whose data items are the symptoms and exam findings, followed by its test step (ADEMonitoringEnquiry.md)`);
@@ -641,6 +756,9 @@ for (const p of adePlans) {
   }
   for (const c of comps.filter((cc) => cc.t.kind === "action" && /^Order_/.test(cc.t.name) && !testOrders.includes(cc.t))) {
     fail("ade", c.t.name, `Order_ Action in ${p.name} without role=${ROLE_TEST_ORDER}; a test order needs that role (and ordered_for)`);
+  }
+  for (const c of comps.filter((cc) => cc.t.kind === "action" && cc.t.name.startsWith(ALERT_PREFIX) && !alertActions.includes(cc.t))) {
+    fail("ade", c.t.name, `${ALERT_PREFIX} Action in ${p.name} without role=${ROLE_ALERT}; a suspected-ADE alert needs that role and the full monitor contract`);
   }
   const adeMonitors = [...enq, ...actMon];
   if (!adeMonitors.length) continue;
@@ -701,9 +819,14 @@ for (const t of [...testOrders, ...testDecisions]) {
     else if (!where.component.after.includes(target)) fail("ade", t.name, `${kindName} is not scheduled after ${target} (add_task(after: ["${target}"]))`);
     const pre = (t.precondition || "").trim();
     const asked = new Set(findingsOf(target));
-    const reads = (pre.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter((n) => asked.has(n));
+    const read = dataRead(pre);
+    const reads = read.filter((n) => asked.has(n));
+    const foreign = read.filter((n) => !asked.has(n));
     if (!pre) fail("ade", t.name, `${kindName} without a precondition (it runs only when at least one finding of ${target} is positive)`);
     else if (!reads.length) fail("ade", t.name, `precondition "${pre}" reads no data item that ${target} asks for`);
+    if (foreign.length) {
+      fail("ade", t.name, `precondition reads ${foreign.join(", ")}, which ${target} does not ask for; a test step reads only its Enquiry's findings (a scheduled test stays in ServiceRequest.occurrenceTiming, not a data item)`);
+    }
   }
   if (t.kind === "action") {
     if (verb(t) !== "order") fail("ade", t.name, `test-order Action needs goal.verb=order (is ${verb(t) || "unset"})`);
@@ -727,6 +850,50 @@ for (const t of [...testOrders, ...testDecisions]) {
 }
 for (const [e, steps] of stepsFor) {
   if (steps.length > 1) fail("ade", e, `has ${steps.length} test steps (${steps.join(", ")}); at most one per ADE (an Order_ Action for one test, a Decision for two or more)`);
+}
+// suspected-ADE alerts (ADEMonitoringEnquiry.md section 4): an ADE Enquiry whose sources name no
+// test asks for suspected_<ade> and is followed by Alert_Further_Examination_<ADE>, gated on it
+const adeSuffix = (enqName) => enqName.replace(/^Monitor_/, "");
+const suspectedName = (enqName) => SUSPECTED_PREFIX + adeSuffix(enqName).toLowerCase();
+const alertsFor = new Map();
+for (const t of alertActions) {
+  const target = (t.metaprops.monitored_target || "").trim();
+  const named = monitorEnquiries.filter((e) => new RegExp(`(^|[^A-Za-z0-9_])${e.name}([^A-Za-z0-9_]|$)`).test(target));
+  const byConvention = t.name.startsWith(ALERT_PREFIX) ? monitorEnquiries.find((e) => adeSuffix(e.name) === t.name.slice(ALERT_PREFIX.length)) : null;
+  const enq = named.length === 1 ? named[0] : byConvention || named[0];
+  if (!enq) {
+    fail("ade", t.name, `suspected-ADE alert that follows no ADE Enquiry (monitored_target names none, and its name is not ${ALERT_PREFIX}<ADE> of a Monitor_<ADE> Enquiry)`);
+    continue;
+  }
+  alertsFor.set(enq.name, [...(alertsFor.get(enq.name) || []), t.name]);
+  if (t.name !== ALERT_PREFIX + adeSuffix(enq.name)) warn("ade", t.name, `the alert of ${enq.name} is canonically named ${ALERT_PREFIX}${adeSuffix(enq.name)}`);
+  const where = componentIn(t.name);
+  const enqWhere = componentIn(enq.name);
+  if (!where || !enqWhere || where.plan !== enqWhere.plan) fail("ade", t.name, `suspected-ADE alert is not in the same plan as ${enq.name}`);
+  else if (!where.component.after.includes(enq.name)) fail("ade", t.name, `suspected-ADE alert is not scheduled after ${enq.name} (add_task(after: ["${enq.name}"]))`);
+  const pre = (t.precondition || "").trim();
+  const asked = new Set(findingsOf(enq.name));
+  const gates = dataRead(pre).filter((n) => n.startsWith(SUSPECTED_PREFIX) && asked.has(n));
+  if (!pre) fail("ade", t.name, `suspected-ADE alert without a precondition; gate it on ${suspectedName(enq.name)} = "yes"`);
+  else if (!gates.length) fail("ade", t.name, `precondition "${pre}" is not gated on a ${SUSPECTED_PREFIX} item that ${enq.name} asks for; gate it on ${suspectedName(enq.name)} = "yes"`);
+  else if (!gates.some((n) => new RegExp(`\\b${n}\\s*=\\s*"yes"`).test(pre))) fail("ade", t.name, `precondition "${pre}" does not test ${gates.join(", ")} = "yes"`);
+}
+for (const e of adeEnquiries) {
+  const steps = stepsFor.get(e) || [];
+  const alerts = alertsFor.get(e) || [];
+  const suspected = findingsOf(e).filter((n) => n.startsWith(SUSPECTED_PREFIX));
+  if (alerts.length > 1) fail("ade", e, `has ${alerts.length} suspected-ADE alerts (${alerts.join(", ")}); one per ADE`);
+  if (steps.length && alerts.length) warn("ade", e, `has both a test step (${steps.join(", ")}) and a suspected-ADE alert (${alerts.join(", ")}); the alert is for an ADE whose sources name no test`);
+  if (steps.length) continue;
+  if (!alerts.length && !suspected.length) {
+    fail("ade", e, `ADE Enquiry with neither a test step nor a suspected-ADE alert; when its sources name no test, ask for ${suspectedName(e)} and add ${ALERT_PREFIX}${adeSuffix(e)} (role=${ROLE_ALERT}) after it, gated on ${suspectedName(e)} = "yes"`);
+  } else if (!alerts.length) {
+    fail("ade", e, `asks for ${suspected.join(", ")} but has no ${ALERT_PREFIX}${adeSuffix(e)} Action (role=${ROLE_ALERT}) after it`);
+  } else if (!suspected.length) {
+    fail("ade", e, `has the alert ${alerts.join(", ")} but asks for no ${SUSPECTED_PREFIX} item; add ${suspectedName(e)} (yes/no text, default "no") as a non-mandatory source`);
+  } else if (!suspected.includes(suspectedName(e))) {
+    warn("ade", e, `its suspected-ADE item is canonically named ${suspectedName(e)} (is ${suspected.join(", ")})`);
+  }
 }
 
 // approved action set: every Action and every monitoring Enquiry (cig-actions), and the test
@@ -837,6 +1004,7 @@ const result = {
     monitoring_actions: monitorActions.length,
     monitoring_enquiries: monitorEnquiries.length,
     test_steps: testOrders.length + testDecisions.length,
+    ade_alerts: alertActions.length,
     therapy_actions: therapy.length,
     data_items: g.data.length,
     fails: fails.length,
@@ -850,7 +1018,7 @@ if (opts.json) console.log(JSON.stringify(result, null, 2));
 else {
   console.log(`${verdict}: ${opts.file}`);
   const c = result.counts;
-  const enq = c.monitoring_enquiries ? ` (${c.monitoring_actions} actions, ${c.monitoring_enquiries} ADE enquiries; ${c.test_steps} test steps)` : "";
+  const enq = c.monitoring_enquiries ? ` (${c.monitoring_actions} actions, ${c.monitoring_enquiries} ADE enquiries; ${c.test_steps} test steps, ${c.ade_alerts} alerts)` : "";
   console.log(`  ${c.monitoring_tasks} monitoring${enq} + ${c.therapy_actions} therapy actions, ${c.data_items} data items; ${c.fails} FAIL, ${c.warnings} WARN`);
   for (const f of findings) console.log(`  ${f.level} [${f.area}] ${f.where}: ${f.message}`);
 }
@@ -877,12 +1045,13 @@ if (opts.report) {
     }
   };
   section("Structure, scope and lint", ["lint", "structure", "annotation", "therapy"]);
+  section("Runnable data and components", ["runnable"]);
   section("Metaprops value quality", ["metaprops"]);
   section("ADE Enquiries and test steps", ["ade"]);
   section("Approved action set and baseline", ["proposal", "baseline"]);
   if (opts.codingPatch) section("Coding-only freeze", ["codingPatch"]);
   L.push("## Judgment phases (reviewer)", "");
-  L.push("To be completed by the reviewer (see `skills/cig-monitoring-review/SKILL.md`): case-report harm judgment, source fidelity (applicability, negative recommendations, label monitoring instructions), label coverage, whether each `monitored_target` names both what is monitored and the goal it traces to, whether each ADE Enquiry's data items are faithful to its metaprops, and whether each test step orders the right tests with the right LOINC codes.", "");
+  L.push("To be completed by the reviewer (see `skills/cig-monitoring-review/SKILL.md`): case-report harm judgment, source fidelity (applicability, negative recommendations, label monitoring instructions), label coverage, whether each `monitored_target` names both what is monitored and the goal it traces to, whether each ADE Enquiry's data items are faithful to its metaprops, whether each test step orders the right tests with the right LOINC codes, whether each suspected-ADE alert stands for an ADE whose sources name no test, and whether the default values run the guideline along its main path.", "");
   L.push("## Fix list", "");
   if (!fails.length) L.push("Nothing to fix from the deterministic gate.");
   else for (const f of fails) L.push(`- [ ] \`${f.where}\`: ${f.message}`);

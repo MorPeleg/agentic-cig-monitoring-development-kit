@@ -55,7 +55,9 @@ skills:
         create_guideline; canonical names; fixed per-action bundle of native
         fields (caption, description, procedure, precondition) and metaprops
         (ServiceRequest.*, goal, provenance, source.N + quote.N); ADE monitors
-        as Enquiries with SNOMED CT coded findings and a LOINC coded test step;
+        as Enquiries with SNOMED CT coded findings and a LOINC coded test step
+        or a suspected-ADE alert; runnable data items (yes/no text, defaults,
+        non-mandatory sources except plan-gating ones; component captions);
         executable preconditions; a coding pass with snomed_search and
         loinc_search; ontology.coding in Composer's form SCT:<id> [<caption>]
         on task components, data items and candidates). Coding-only requests use
@@ -150,8 +152,8 @@ skills:
         metaprops contract, the ServiceRequest order agreeing across its keys,
         goal.noun_phrase and procedure, source quotes, ontology coding,
         executable preconditions, the approved action set, baseline regressions,
-        the coding-only freeze, the ADE Enquiry pattern and its LOINC coded test
-        steps), then the reviewer's judgment phases (case-report harm and scope,
+        the coding-only freeze, the runnable-data rules, the ADE Enquiry pattern
+        and its LOINC coded test steps or suspected-ADE alerts), then the reviewer's judgment phases (case-report harm and scope,
         source and quote fidelity, label coverage, ADE findings and tests) in
         the same report. Rejects placeholders like source=s.
       requires:
@@ -221,7 +223,18 @@ agents:
         populate the Enquiry's data items and the Decision's candidates+criteria
         (see cig/know-how/proforma/Enquiry.md and cig/know-how/proforma/Decision.md). Conditions are
         executable PROforma expressions over data items the Enquiry collects,
-        never sentences. Fill Composer's native task properties first
+        never sentences. Data items must run in the Deontics engine
+        (cig/know-how/proforma/Data.md): no boolean type (a yes/no item is text
+        with range "yes||yes","no||no", compared with = "yes" / = "no", never =
+        true, = false or not()); every Enquiry source is mandatory :: no
+        (add_source mandatory false) except a plan-gating item that a plan's
+        precondition reads; every Enquiry data item has a default_value
+        ("no" for findings and suspected_ items, a normal value for bedside
+        measurements, a main-path value for baseline items, and for a
+        plan-gating item a value that meets the plan's precondition); every
+        component carries the same caption and description as its task
+        definition (Composer shows the component's); no *_check_due / *_due
+        data items. Fill Composer's native task properties first
         (cig/know-how/proforma/TaskProperties.md): caption,
         description (what is monitored or recommended and why it was modelled),
         procedure, and the precondition and ontology coding wherever they apply.
@@ -257,10 +270,14 @@ agents:
         name with the same metaprops contract (its description carries the
         order, since an Enquiry has no procedure) whose data items are the
         symptoms and bedside exam findings; after it, gated on at least one
-        positive finding, one test step: an Order_<Test> Action
+        positive finding (a = "yes" or b = "yes" ..., reading only that
+        Enquiry's findings), one test step: an Order_<Test> Action
         (role=test_order) for one test or a Tests_Ordering_Recommendations_<ADE>
         Decision (role=test_ordering, choice_mode multiple, one candidate per
-        test) for two or more. Monitor_Actions and Monitor_Desired_State
+        test) for two or more; an ADE whose sources name no test instead asks
+        for suspected_<ade> and is followed by an
+        Alert_Further_Examination_<ADE> Action (role=ade_alert, the full
+        monitor contract, precondition suspected_<ade> = "yes"). Monitor_Actions and Monitor_Desired_State
         monitors stay Actions. Code monitoring tasks, therapy actions and data
         items with Composer's Ontology coding, ontology.coding=SCT:<id>
         [<caption>] found with snomed_search, and every ordered test (Order_
@@ -274,7 +291,8 @@ agents:
         (cig/know-how/proforma/Ontology.md). A population-scoped task carries
         an executable precondition over an Enquiry data item. Case-report
         sources are opt-in. The proposal fixes canonical names, lists every
-        Action and every monitoring Enquiry in a ```cig-actions block and every
+        Action (including every Alert_Further_Examination_<ADE>) and every
+        monitoring Enquiry in a ```cig-actions block and every
         test-ordering Decision in a ```cig-test-decisions block. Step 6 is a
         DETERMINISTIC emit: delegate it to the cig-formalizer subagent, which
         treats the approved proposal as the single source of truth. Full
@@ -403,8 +421,18 @@ subagents:
       metaprops and the order in its description, its symptom and exam data
       items, and its test step (Order_<Test> Action or
       Tests_Ordering_Recommendations_<ADE> Decision) after it, gated on a
-      positive finding. The built Action + monitoring-Enquiry set equals
-      `cig-actions` and the test Decisions equal `cig-test-decisions`.
+      positive finding (a = "yes" or ..., reading only the Enquiry's
+      findings), or, when the sources name no test, the suspected_<ade> item
+      and the Alert_Further_Examination_<ADE> Action (role=ade_alert, full
+      monitor contract) gated on suspected_<ade> = "yes". The built Action +
+      monitoring-Enquiry set equals `cig-actions` and the test Decisions
+      equal `cig-test-decisions`.
+      Runnable data (`cig/know-how/proforma/Data.md`): no boolean data items
+      (yes/no items are text with range "yes||yes","no||no", compared with
+      = "yes" / = "no"); add every Enquiry source with mandatory false except
+      the plan-gating items a plan's precondition reads; give every Enquiry
+      data item the default_value the proposal fixes; copy every task's
+      caption and description onto its component; no *_check_due items.
       Finish with the coding pass: look up each monitoring task's monitored
       condition or measurement, each therapy action's procedure or substance
       and each data item's observable or finding with snomed_search, and set
@@ -490,7 +518,16 @@ subagents:
             Enquiry whose data items are not the symptoms and findings its
             metaprops name or lack SNOMED CT coding, a test step that orders
             the wrong tests, lacks LOINC coding (or carries a wrong code), or
-            is not gated on the Enquiry's findings;
+            is not gated on the Enquiry's findings alone, an ADE Enquiry with
+            neither a test step nor a suspected_<ade> item and an
+            Alert_Further_Examination_<ADE> Action, or an alert not gated on
+            its suspected_ item;
+          * data the Deontics engine cannot run: a boolean data item, a
+            condition comparing a data item with true / false, a yes/no item
+            without the yes/no range, a mandatory source no plan precondition
+            reads, a mandatory item without a default_value, a *_due data
+            item, or a component whose caption or description is missing or
+            differs from its task definition's;
           * CODING-ONLY DRIFT: on a coding-patch run, any change to task names,
             captions, descriptions, procedures, Decision candidates,
             goal.noun_phrase, ServiceRequest.* values, or source/quote strings (only

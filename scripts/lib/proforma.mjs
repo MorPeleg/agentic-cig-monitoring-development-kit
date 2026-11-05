@@ -2,7 +2,8 @@
 //
 // Resolution order: PROFORMA_BIN (a native binary or bin/proforma.js), a global
 // npm install of proforma-mcp, a native `proforma` on PATH, then a private npm
-// install of the pinned version in ~/.cache/proforma-mcp/<version>.
+// install of the pinned version in ~/.cache/proforma-mcp/<version>. A global or
+// PATH install is used only when it is the pinned version.
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -25,12 +26,12 @@ function resolveCli() {
   }
   for (const r of roots) {
     const js = path.join(r, "proforma-mcp", "bin", "proforma.js");
-    if (fs.existsSync(js) && supportsExport(asCmd(js))) return asCmd(js);
+    if (fs.existsSync(js) && isPinned(asCmd(js))) return asCmd(js);
   }
   const exe = process.platform === "win32" ? "proforma.exe" : "proforma";
   for (const dir of (process.env.PATH || "").split(path.delimiter)) {
     const f = dir && path.join(dir, exe);
-    if (f && fs.existsSync(f) && fs.statSync(f).isFile() && supportsExport(asCmd(f))) return asCmd(f);
+    if (f && fs.existsSync(f) && fs.statSync(f).isFile() && isPinned(asCmd(f))) return asCmd(f);
   }
   const cache = path.join(os.homedir(), ".cache", "proforma-mcp", PROFORMA_MCP_VERSION);
   const js = path.join(cache, "node_modules", "proforma-mcp", "bin", "proforma.js");
@@ -51,6 +52,12 @@ function resolveCli() {
     }
   }
   return asCmd(js);
+}
+
+// A global or PATH install of another version is skipped, so the gate runs the pinned CLI.
+function isPinned(cli) {
+  const r = spawnSync(cli.cmd, [...cli.pre, "--version"], { encoding: "utf8" });
+  return r.status === 0 && r.stdout.trim().split(/s+/).pop() === PROFORMA_MCP_VERSION;
 }
 
 // Older installs (< 0.2.0) have no `export` command; skip them.

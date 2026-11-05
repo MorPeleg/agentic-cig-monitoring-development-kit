@@ -5,7 +5,7 @@ engine_version :: '1.9' ;
 
 metadata  :: 'ccd_antithrombotic_monitoring' ;
      title :: 'CCD Antithrombotic Therapy and Monitoring (2023 AHA/ACC CCD Guideline §4.3.1)' ;
-     desc :: 'PROforma CIG for antiplatelet and oral anticoagulant therapy in adults with chronic coronary disease, from section 4.3.1 of the 2023 AHA/ACC chronic coronary disease guideline and the US prescribing information of its drugs. It collects the patient data the regimen choice depends on, recommends an antithrombotic regimen and a P2Y12 inhibitor, delivers the drugs with NSAID avoidance and gastroprotection, and monitors completion of the recommendations, the desired reduction of ischemic events and the adverse drug effects. The task set is the one fixed by the approved proposal.' ;
+     desc :: 'PROforma CIG for antiplatelet and oral anticoagulant therapy in adults with chronic coronary disease, from section 4.3.1 of the 2023 AHA/ACC chronic coronary disease guideline and the US prescribing information of its drugs. It collects the patient data the regimen choice depends on, recommends an antithrombotic regimen and a P2Y12 inhibitor, delivers the drugs with NSAID avoidance and gastroprotection, and monitors completion of the recommendations, the desired reduction of ischemic events and the adverse drug effects, with a test step or a further-examination alert after each adverse-effect enquiry. The task set is the one fixed by the approved proposal.' ;
      version :: '1.0' ;
      author :: 'Antonio Zaitoun' ;
 end metadata.
@@ -20,17 +20,25 @@ plan  :: 'ccd_antithrombotic_monitoring' ;
 goal.verb=treat
 ' ;
      component :: 'Get_Antithrombotic_Data' ;
+          caption :: 'Collect the patient data for antithrombotic regimen selection' ;
+          description :: 'Collects the patient data that the regimen and P2Y12-agent decisions, the therapy-plan gate and the population-scoped monitors read (§4.3.1 Recs 1-16, Figure 9 and the label contraindications). Also collected for the clinician at baseline (no condition reads them): hemoglobin, platelet count, serum creatinine and Cockcroft-Gault creatinine clearance, body weight, serum magnesium, the CYP2C19 genotype if known, and the current medication list. Body weight and creatinine clearance set the doses written in the procedures.' ;
           task_definition :: 'Get_Antithrombotic_Data' ;
           ltwh :: 40,40,0,0;
      component :: 'Antithrombotic_Regimen_Decision' ;
+          caption :: 'Choose the antithrombotic regimen' ;
+          description :: 'Chooses the antithrombotic regimen for a patient with CCD along the Figure 9 pathways and §4.3.1 Recs 1-16. Single choice with the default recommendation netsupport() > 0: several candidates can be recommended at once (for example the 2a/2b add-on options after MI) and the clinician commits one. Section 4.3.1 defers bare-metal stents to the 2016 AHA/ACC DAPT guideline, so no candidate is recommended for PCI with high bleeding risk and a bare-metal stent.' ;
           task_definition :: 'Antithrombotic_Regimen_Decision' ;
           schedule_constraint :: completed('Get_Antithrombotic_Data') ;
           ltwh :: 40,140,0,0;
      component :: 'Antithrombotic_Therapy' ;
+          caption :: 'Antithrombotic therapy (when there is no active pathological bleeding)' ;
+          description :: 'Delivers the chosen antithrombotic regimen: NSAID-avoidance advice first, then the P2Y12-agent decision and the drug actions, each gated by the regimen it belongs to. The whole plan is skipped when there is active pathological bleeding, which every antithrombotic label contraindicates.' ;
           task_definition :: 'Antithrombotic_Therapy' ;
           schedule_constraint :: completed('Antithrombotic_Regimen_Decision') ;
           ltwh :: 40,240,0,0;
      component :: 'Monitoring_Plan' ;
+          caption :: 'Monitor antithrombotic therapy' ;
+          description :: 'Monitors completion of the antithrombotic recommendations, the desired outcome and the adverse drug effects, in three parallel sub-plans.' ;
           task_definition :: 'Monitoring_Plan' ;
           schedule_constraint :: completed('Antithrombotic_Therapy') ;
           ltwh :: 40,340,0,0;
@@ -41,32 +49,45 @@ enquiry  :: 'Get_Antithrombotic_Data' ;
      description :: 'Collects the patient data that the regimen and P2Y12-agent decisions, the therapy-plan gate and the population-scoped monitors read (§4.3.1 Recs 1-16, Figure 9 and the label contraindications). Also collected for the clinician at baseline (no condition reads them): hemoglobin, platelet count, serum creatinine and Cockcroft-Gault creatinine clearance, body weight, serum magnesium, the CYP2C19 genotype if known, and the current medication list. Body weight and creatinine clearance set the doses written in the procedures.' ;
      source :: 'acs_within_12_months' ;
           data_definition :: 'acs_within_12_months' ;
+          mandatory :: no ;
      source :: 'active_pathological_bleeding' ;
           data_definition :: 'active_pathological_bleeding' ;
      source :: 'age_years' ;
           data_definition :: 'age_years' ;
+          mandatory :: no ;
      source :: 'aspirin_intolerance' ;
           data_definition :: 'aspirin_intolerance' ;
+          mandatory :: no ;
      source :: 'cabg_within_12_months' ;
           data_definition :: 'cabg_within_12_months' ;
+          mandatory :: no ;
      source :: 'des_implanted' ;
           data_definition :: 'des_implanted' ;
+          mandatory :: no ;
      source :: 'high_bleeding_risk' ;
           data_definition :: 'high_bleeding_risk' ;
+          mandatory :: no ;
      source :: 'high_thrombotic_risk' ;
           data_definition :: 'high_thrombotic_risk' ;
+          mandatory :: no ;
      source :: 'on_digoxin_or_diuretic' ;
           data_definition :: 'on_digoxin_or_diuretic' ;
+          mandatory :: no ;
      source :: 'pci_within_12_months' ;
           data_definition :: 'pci_within_12_months' ;
+          mandatory :: no ;
      source :: 'previous_mi' ;
           data_definition :: 'previous_mi' ;
+          mandatory :: no ;
      source :: 'prior_ich' ;
           data_definition :: 'prior_ich' ;
+          mandatory :: no ;
      source :: 'prior_stroke_or_tia' ;
           data_definition :: 'prior_stroke_or_tia' ;
+          mandatory :: no ;
      source :: 'requires_oral_anticoagulation' ;
           data_definition :: 'requires_oral_anticoagulation' ;
+          mandatory :: no ;
 end enquiry.
 
 decision  :: 'Antithrombotic_Regimen_Decision' ;
@@ -75,7 +96,7 @@ decision  :: 'Antithrombotic_Regimen_Decision' ;
      candidate :: 'Aspirin_Monotherapy' ;
           caption :: 'Aspirin 81 mg monotherapy' ;
           description :: 'Rec 1 and Figure 9: no indication for oral anticoagulation and no PCI, ACS or CABG in the past 12 months, with aspirin tolerated.' ;
-          argument :: for,requires_oral_anticoagulation = false and pci_within_12_months = false and acs_within_12_months = false and cabg_within_12_months = false and aspirin_intolerance = false attributes
+          argument :: for,requires_oral_anticoagulation = "no" and pci_within_12_months = "no" and acs_within_12_months = "no" and cabg_within_12_months = "no" and aspirin_intolerance = "no" attributes
                argument_name :: 'Arg_Aspirin_SAPT' ;
                caption :: 'Rec 1 [1, A]; Figure 9: no oral anticoagulant indication, no PCI, ACS or CABG in the past 12 months, aspirin tolerated' ;
                metaprops :: 'quote.1=p.e50, Rec 1\\: "low-dose aspirin 81 mg (75-100 mg) is recommended to reduce atherosclerotic events"
@@ -89,7 +110,7 @@ source.2=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.000000000000
      candidate :: 'Clopidogrel_Monotherapy' ;
           caption :: 'Clopidogrel 75 mg monotherapy' ;
           description :: 'Supportive text 1: clopidogrel as the alternative single antiplatelet when aspirin is not tolerated.' ;
-          argument :: for,requires_oral_anticoagulation = false and pci_within_12_months = false and acs_within_12_months = false and aspirin_intolerance = true attributes
+          argument :: for,requires_oral_anticoagulation = "no" and pci_within_12_months = "no" and acs_within_12_months = "no" and aspirin_intolerance = "yes" attributes
                argument_name :: 'Arg_Clopidogrel_SAPT' ;
                caption :: 'Supportive text 1 [no COR/LOE]: aspirin not tolerated, no oral anticoagulant indication, no PCI or ACS in the past 12 months' ;
                metaprops :: 'quote=p.e51, text 1\\: "As an alternative to low-dose aspirin, clopidogrel may be used in individuals who cannot tolerate aspirin therapy"
@@ -101,7 +122,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
      candidate :: 'DAPT' ;
           caption :: 'DAPT (aspirin plus a P2Y12 inhibitor)' ;
           description :: 'Rec 2 (6 months after PCI, then single antiplatelet therapy), Figure 9 (to 12 months after ACS) and Rec 6 (after CABG). Rec 7 argues against it without recent ACS, PCI or CABG.' ;
-          argument :: for,requires_oral_anticoagulation = false and pci_within_12_months = true and high_bleeding_risk = false attributes
+          argument :: for,requires_oral_anticoagulation = "no" and pci_within_12_months = "yes" and high_bleeding_risk = "no" attributes
                argument_name :: 'Arg_DAPT_PCI' ;
                caption :: 'Rec 2 [1, A]: PCI in the past 12 months without high bleeding risk' ;
                metaprops :: 'quote=p.e50, Rec 2\\: "dual antiplatelet therapy (DAPT) consisting of aspirin and clopidogrel for 6 months post PCI followed by single antiplatelet therapy (SAPT) is indicated"
@@ -109,7 +130,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
 ' ;
           end attributes
           ;
-          argument :: for,requires_oral_anticoagulation = false and acs_within_12_months = true attributes
+          argument :: for,requires_oral_anticoagulation = "no" and acs_within_12_months = "yes" attributes
                argument_name :: 'Arg_DAPT_ACS' ;
                caption :: 'Figure 9 [figure pathway, no COR/LOE for the first 12 months]: ACS in the past 12 months' ;
                metaprops :: 'quote=p.e51, Figure 9 (figure labels)\\: "Prior ACS with or without PCI ... DAPT ... DAPT for 12\\u201336 mo"
@@ -117,7 +138,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
 ' ;
           end attributes
           ;
-          argument :: for,requires_oral_anticoagulation = false and cabg_within_12_months = true attributes
+          argument :: for,requires_oral_anticoagulation = "no" and cabg_within_12_months = "yes" attributes
                argument_name :: 'Arg_DAPT_CABG' ;
                caption :: 'Rec 6 [2b, B-R]: CABG in the past 12 months' ;
                metaprops :: 'quote=p.e50, Rec 6\\: "the use of DAPT after CABG may be useful to reduce the incidence of saphenous vein graft occlusion"
@@ -125,7 +146,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
 ' ;
           end attributes
           ;
-          argument :: against,pci_within_12_months = false and acs_within_12_months = false and cabg_within_12_months = false attributes
+          argument :: against,pci_within_12_months = "no" and acs_within_12_months = "no" and cabg_within_12_months = "no" attributes
                argument_name :: 'Arg_DAPT_No_Benefit' ;
                caption :: 'Rec 7 [3: No benefit, A]: no PCI, ACS or CABG in the past 12 months' ;
                metaprops :: 'quote=p.e50, Rec 7\\: "the addition of clopidogrel to aspirin therapy is not useful to reduce MACE"
@@ -137,7 +158,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
      candidate :: 'Short_DAPT_then_P2Y12_Monotherapy' ;
           caption :: 'DAPT for 1 to 3 months, then P2Y12 inhibitor monotherapy' ;
           description :: 'Rec 3 and Figure 9: after PCI with a drug-eluting stent at high bleeding risk, 1 to 3 months of DAPT, then P2Y12 inhibitor monotherapy for at least 12 months.' ;
-          argument :: for,requires_oral_anticoagulation = false and pci_within_12_months = true and des_implanted = true and high_bleeding_risk = true attributes
+          argument :: for,requires_oral_anticoagulation = "no" and pci_within_12_months = "yes" and des_implanted = "yes" and high_bleeding_risk = "yes" attributes
                argument_name :: 'Arg_Short_DAPT' ;
                caption :: 'Rec 3 [2a, A]: PCI with a drug-eluting stent at high bleeding risk' ;
                metaprops :: 'quote=p.e50, Rec 3\\: "P2Y12 inhibitor monotherapy for at least 12 months is reasonable to reduce bleeding risk"
@@ -149,7 +170,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
      candidate :: 'Extended_DAPT' ;
           caption :: 'Extended DAPT beyond 12 months (up to 3 years)' ;
           description :: 'Rec 4: after a previous MI at low bleeding risk, DAPT beyond 12 months for up to 3 years.' ;
-          argument :: for,requires_oral_anticoagulation = false and previous_mi = true and high_bleeding_risk = false attributes
+          argument :: for,requires_oral_anticoagulation = "no" and previous_mi = "yes" and high_bleeding_risk = "no" attributes
                argument_name :: 'Arg_Extended_DAPT' ;
                caption :: 'Rec 4 [2b, A]: previous MI, not at high bleeding risk' ;
                metaprops :: 'quote=p.e50, Rec 4\\: "extended DAPT beyond 12 months for a period of up to 3 years may be reasonable to reduce MACE"
@@ -161,7 +182,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
      candidate :: 'Aspirin_plus_Vorapaxar' ;
           caption :: 'Aspirin plus vorapaxar' ;
           description :: 'Rec 5: vorapaxar added to aspirin after a previous MI without stroke, TIA or ICH; Rec 8 excludes it after stroke, TIA or ICH.' ;
-          argument :: for,requires_oral_anticoagulation = false and previous_mi = true and prior_stroke_or_tia = false and prior_ich = false attributes
+          argument :: for,requires_oral_anticoagulation = "no" and previous_mi = "yes" and prior_stroke_or_tia = "no" and prior_ich = "no" attributes
                argument_name :: 'Arg_Vorapaxar' ;
                caption :: 'Rec 5 [2b, B-R]: previous MI without stroke, TIA or ICH' ;
                metaprops :: 'quote=p.e50, Rec 5\\: "vorapaxar may be added to aspirin therapy to reduce MACE"
@@ -169,7 +190,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
 ' ;
           end attributes
           ;
-          argument :: excluding,prior_stroke_or_tia = true or prior_ich = true attributes
+          argument :: excluding,prior_stroke_or_tia = "yes" or prior_ich = "yes" attributes
                argument_name :: 'Arg_Vorapaxar_Harm' ;
                caption :: 'Rec 8 [3: Harm, A]; ZONTIVITY §4.1: previous stroke, TIA or ICH' ;
                metaprops :: 'quote.1=p.e50, Rec 8\\: "vorapaxar should not be added to DAPT because of increased risk of major bleeding and ICH"
@@ -183,7 +204,7 @@ source.2=ZONTIVITY (vorapaxar) US Prescribing Information 2022, \\u00A74.1
      candidate :: 'Aspirin_plus_Low_Dose_Rivaroxaban' ;
           caption :: 'Aspirin 81 mg plus rivaroxaban 2.5 mg twice daily' ;
           description :: 'Rec 15: high thrombotic risk with low or moderate bleeding risk, no oral anticoagulant indication and no recent PCI or ACS.' ;
-          argument :: for,requires_oral_anticoagulation = false and pci_within_12_months = false and acs_within_12_months = false and high_thrombotic_risk = true and high_bleeding_risk = false attributes
+          argument :: for,requires_oral_anticoagulation = "no" and pci_within_12_months = "no" and acs_within_12_months = "no" and high_thrombotic_risk = "yes" and high_bleeding_risk = "no" attributes
                argument_name :: 'Arg_Low_Dose_Rivaroxaban' ;
                caption :: 'Rec 15 [2a, B-R]: high thrombotic risk, not at high bleeding risk, no PCI or ACS in the past 12 months' ;
                metaprops :: 'quote=p.e50, Rec 15\\: "the addition of low-dose rivaroxaban 2.5 mg twice daily to aspirin 81 mg daily is reasonable for long-term reduction of risk for MACE"
@@ -195,7 +216,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
      candidate :: 'DOAC_plus_Antiplatelet' ;
           caption :: 'DOAC plus antiplatelet therapy after PCI or ACS' ;
           description :: 'Recs 11 and 12 and Figure 9: an oral anticoagulant indication with PCI or ACS in the past 12 months; DOAC with aspirin and clopidogrel for 1 to 4 weeks (up to 1 month), then DOAC plus clopidogrel to 6 months, then DOAC alone (Rec 13). Recent ACS is an acute indication for antiplatelet therapy (Rec 14).' ;
-          argument :: for,requires_oral_anticoagulation = true and (pci_within_12_months = true or acs_within_12_months = true) attributes
+          argument :: for,requires_oral_anticoagulation = "yes" and (pci_within_12_months = "yes" or acs_within_12_months = "yes") attributes
                argument_name :: 'Arg_DOAC_PCI' ;
                caption :: 'Rec 11 [1, B-R], Rec 12 [2a, B-R], Rec 14 [2b, C-LD]: oral anticoagulant indication with PCI or ACS in the past 12 months' ;
                metaprops :: 'quote.1=p.e50, Rec 11\\: "DAPT for 1 to 4 weeks followed by clopidogrel alone for 6 months should be administered in addition to DOAC"
@@ -211,7 +232,7 @@ source.3=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.000000000000
      candidate :: 'DOAC_Monotherapy' ;
           caption :: 'DOAC monotherapy' ;
           description :: 'Recs 13 and 14: an oral anticoagulant indication with no PCI or ACS in the past 12 months.' ;
-          argument :: for,requires_oral_anticoagulation = true and pci_within_12_months = false and acs_within_12_months = false attributes
+          argument :: for,requires_oral_anticoagulation = "yes" and pci_within_12_months = "no" and acs_within_12_months = "no" attributes
                argument_name :: 'Arg_DOAC_Alone' ;
                caption :: 'Rec 13 [2b, B-R], Rec 14 [2b, C-LD]: oral anticoagulant indication without PCI or ACS in the past 12 months' ;
                metaprops :: 'quote.1=p.e50, Rec 13\\: "discontinuation of aspirin therapy with continuation of DOAC alone may be considered 1 year after PCI to reduce bleeding risk"
@@ -244,7 +265,7 @@ decision  :: 'P2Y12_Agent_Decision' ;
      candidate :: 'Clopidogrel' ;
           caption :: 'Clopidogrel 75 mg once daily' ;
           description :: 'The P2Y12 inhibitor §4.3.1 names for CCD after PCI (Rec 2) and with a DOAC (Rec 11).' ;
-          argument :: for,acs_within_12_months = false or requires_oral_anticoagulation = true or pci_within_12_months = true attributes
+          argument :: for,acs_within_12_months = "no" or requires_oral_anticoagulation = "yes" or pci_within_12_months = "yes" attributes
                argument_name :: 'Arg_Clopidogrel_CCD' ;
                caption :: 'Assistant-proposed from Rec 2 [1, A] and Rec 11 [1, B-R]: no ACS in the past 12 months, an oral anticoagulant indication, or PCI in the past 12 months' ;
                metaprops :: 'quote.1=p.e50, Rec 2\\: "dual antiplatelet therapy (DAPT) consisting of aspirin and clopidogrel for 6 months post PCI followed by single antiplatelet therapy (SAPT) is indicated"
@@ -254,7 +275,7 @@ source.2=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.000000000000
 ' ;
           end attributes
           ;
-          argument :: for,acs_within_12_months = true and pci_within_12_months = false and (previous_mi = false or prior_ich = true) attributes
+          argument :: for,acs_within_12_months = "yes" and pci_within_12_months = "no" and (previous_mi = "no" or prior_ich = "yes") attributes
                argument_name :: 'Arg_Clopidogrel_ACS_No_Alternative' ;
                caption :: '[assistant-proposed fallback] Figure 9 and Rec 2 [1, A]: ACS in the past 12 months without PCI, and no previous MI or a history of ICH' ;
                metaprops :: 'quote.1=p.e51, Figure 9 (figure labels)\\: "Prior ACS with or without PCI ... DAPT"
@@ -270,7 +291,7 @@ source.3=PLAVIX (clopidogrel) US Prescribing Information 2025, \\u00A71.1
      candidate :: 'Ticagrelor' ;
           caption :: 'Ticagrelor 60 mg twice daily' ;
           description :: 'Ticagrelor after MI, from the evidence behind Rec 4 (PEGASUS, 60 mg twice daily); not with an oral anticoagulant (Rec 11) and contraindicated after ICH (BRILINTA §4.1).' ;
-          argument :: for,previous_mi = true attributes
+          argument :: for,previous_mi = "yes" attributes
                argument_name :: 'Arg_Ticagrelor_Post_MI' ;
                caption :: 'Assistant-proposed from Rec 4 [2b, A] (PEGASUS, ticagrelor 60 mg): previous MI' ;
                metaprops :: 'quote.1=p.e50, Rec 4\\: "extended DAPT beyond 12 months for a period of up to 3 years may be reasonable to reduce MACE"
@@ -280,7 +301,7 @@ source.2=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.000000000000
 ' ;
           end attributes
           ;
-          argument :: against,requires_oral_anticoagulation = true attributes
+          argument :: against,requires_oral_anticoagulation = "yes" attributes
                argument_name :: 'Arg_Ticagrelor_With_OAC' ;
                caption :: 'Assistant-proposed from Rec 11 [1, B-R] (clopidogrel with a DOAC): oral anticoagulant indication' ;
                metaprops :: 'quote=p.e50, Rec 11\\: "DAPT for 1 to 4 weeks followed by clopidogrel alone for 6 months should be administered in addition to DOAC"
@@ -288,7 +309,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
 ' ;
           end attributes
           ;
-          argument :: excluding,prior_ich = true attributes
+          argument :: excluding,prior_ich = "yes" attributes
                argument_name :: 'Arg_Ticagrelor_ICH' ;
                caption :: 'BRILINTA §4.1 contraindication [label, no COR/LOE]: history of intracranial hemorrhage' ;
                metaprops :: 'quote=\\u00A74.1\\: "BRILINTA is contraindicated in patients with a history of intracranial hemorrhage (ICH) because of a high risk of recurrent ICH in this population"
@@ -300,7 +321,7 @@ source=BRILINTA (ticagrelor) US Prescribing Information 2026, \\u00A74.1
      candidate :: 'Prasugrel' ;
           caption :: 'Prasugrel 10 mg once daily' ;
           description :: 'Prasugrel only after ACS treated with PCI (its label indication); excluded after stroke, TIA or ICH (Rec 9, EFFIENT §4.2), argued against at age 75 or older (Boxed Warning) and with an oral anticoagulant (Rec 11).' ;
-          argument :: for,acs_within_12_months = true and pci_within_12_months = true attributes
+          argument :: for,acs_within_12_months = "yes" and pci_within_12_months = "yes" attributes
                argument_name :: 'Arg_Prasugrel_ACS_PCI' ;
                caption :: 'Assistant-proposed from the EFFIENT §1 indication [label, no COR/LOE]: ACS treated with PCI in the past 12 months' ;
                metaprops :: 'quote=\\u00A71.1\\: "indicated to reduce the rate of thrombotic CV events (including stent thrombosis) in patients with acute coronary syndrome (ACS) who are to be managed with percutaneous coronary intervention (PCI)"
@@ -316,7 +337,7 @@ source=EFFIENT (prasugrel) US Prescribing Information 2022, Boxed Warning
 ' ;
           end attributes
           ;
-          argument :: against,requires_oral_anticoagulation = true attributes
+          argument :: against,requires_oral_anticoagulation = "yes" attributes
                argument_name :: 'Arg_Prasugrel_With_OAC' ;
                caption :: 'Assistant-proposed from Rec 11 [1, B-R] (clopidogrel with a DOAC): oral anticoagulant indication' ;
                metaprops :: 'quote=p.e50, Rec 11\\: "DAPT for 1 to 4 weeks followed by clopidogrel alone for 6 months should be administered in addition to DOAC"
@@ -324,7 +345,7 @@ source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.00000000000011
 ' ;
           end attributes
           ;
-          argument :: excluding,prior_stroke_or_tia = true or prior_ich = true attributes
+          argument :: excluding,prior_stroke_or_tia = "yes" or prior_ich = "yes" attributes
                argument_name :: 'Arg_Prasugrel_Harm' ;
                caption :: 'Rec 9 [3: Harm, B-R]; EFFIENT §4.2: previous stroke, TIA or ICH' ;
                metaprops :: 'quote.1=p.e50, Rec 9\\: "prasugrel should not be used because of risk of significant or fatal bleeding"
@@ -476,23 +497,31 @@ end action.
 plan  :: 'Antithrombotic_Therapy' ;
      caption :: 'Antithrombotic therapy (when there is no active pathological bleeding)' ;
      description :: 'Delivers the chosen antithrombotic regimen: NSAID-avoidance advice first, then the P2Y12-agent decision and the drug actions, each gated by the regimen it belongs to. The whole plan is skipped when there is active pathological bleeding, which every antithrombotic label contraindicates.' ;
-     precondition ::active_pathological_bleeding = false;
+     precondition ::active_pathological_bleeding = "no";
      component :: 'Advise_Avoid_Chronic_NSAIDs' ;
+          caption :: 'Advise avoiding chronic NSAID use' ;
+          description :: 'Rec 10 [3: Harm, B-R]: in CCD, chronic NSAIDs should not be used because of increased cardiovascular and bleeding complications. Modelled as an advice step that always completes at the start of the therapy plan, so every drug action can follow it.' ;
           metaprops :: 'ontology.coding=SCT\\:372665008 [Non-steroidal anti-inflammatory agent (substance)]
 ' ;
           task_definition :: 'Advise_Avoid_Chronic_NSAIDs' ;
           ltwh :: 40,40,0,0;
      component :: 'P2Y12_Agent_Decision' ;
+          caption :: 'Choose the P2Y12 inhibitor' ;
+          description :: 'Chooses the P2Y12 inhibitor for every regimen that contains one besides clopidogrel monotherapy. Assistant-proposed rule (approved open question 2): clopidogrel after PCI or with a DOAC (Recs 2, 11), ticagrelor after MI (Rec 4 evidence, PEGASUS, 60 mg twice daily), prasugrel only after ACS treated with PCI (label indication), excluded after stroke, TIA or ICH (Rec 9) and argued against at age 75 or older. Single choice with the default recommendation netsupport() > 0.' ;
           task_definition :: 'P2Y12_Agent_Decision' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,140,0,0;
      component :: 'Prescribe_Aspirin' ;
+          caption :: 'Prescribe low-dose aspirin 81 mg once daily' ;
+          description :: 'Rec 1 [1, A] recommends low-dose aspirin 81 mg (75-100 mg) to reduce atherosclerotic events in CCD without an oral anticoagulant indication. Aspirin is also part of every DAPT, vorapaxar and low-dose rivaroxaban regimen and of the short triple therapy with a DOAC after PCI (Recs 2-4, 11, 12, 15), so it is delivered for every regimen that contains it.' ;
           metaprops :: 'ontology.coding=SCT\\:387458008 [Aspirin (substance)]
 ' ;
           task_definition :: 'Prescribe_Aspirin' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,240,0,0;
      component :: 'Prescribe_Clopidogrel' ;
+          caption :: 'Prescribe clopidogrel 75 mg once daily' ;
+          description :: 'Rec 2 [1, A] (DAPT with aspirin for 6 months after PCI, then single antiplatelet therapy), Rec 11 [1, B-R] (with a DOAC for 6 months after PCI) and supportive text 1 (alternative to aspirin when aspirin is not tolerated). Runs after both the NSAID advice and the P2Y12 decision, so it still runs on the clopidogrel-monotherapy path where that decision is discarded.' ;
           metaprops :: 'ontology.coding=SCT\\:386952008 [Clopidogrel (substance)]
 ' ;
           task_definition :: 'Prescribe_Clopidogrel' ;
@@ -500,6 +529,8 @@ plan  :: 'Antithrombotic_Therapy' ;
           schedule_constraint :: completed('P2Y12_Agent_Decision') ;
           ltwh :: 40,340,0,0;
      component :: 'Prescribe_Ticagrelor' ;
+          caption :: 'Prescribe ticagrelor 90 mg twice daily in the first year after ACS or MI, then 60 mg twice daily' ;
+          description :: 'Rec 4 [2b, A] allows extended DAPT beyond 12 months after MI for up to 3 years; its evidence (PEGASUS) used ticagrelor 60 mg twice daily, which reduced cardiovascular death, MI or stroke. Chosen by the assistant-proposed P2Y12 agent rule.' ;
           metaprops :: 'ontology.coding=SCT\\:698805004 [Ticagrelor (substance)]
 ' ;
           task_definition :: 'Prescribe_Ticagrelor' ;
@@ -507,6 +538,8 @@ plan  :: 'Antithrombotic_Therapy' ;
           schedule_constraint :: completed('P2Y12_Agent_Decision') ;
           ltwh :: 40,440,0,0;
      component :: 'Prescribe_Prasugrel' ;
+          caption :: 'Prescribe prasugrel 10 mg once daily after ACS treated with PCI' ;
+          description :: 'Prasugrel is indicated after ACS managed with PCI (EFFIENT label) and can serve as the P2Y12 inhibitor of DAPT or of P2Y12 monotherapy after short DAPT (Rec 3 [2a, A]); Rec 9 [3: Harm, B-R] forbids it after stroke, TIA or ICH. Chosen by the assistant-proposed P2Y12 agent rule.' ;
           metaprops :: 'ontology.coding=SCT\\:443129001 [Prasugrel (substance)]
 ' ;
           task_definition :: 'Prescribe_Prasugrel' ;
@@ -514,24 +547,32 @@ plan  :: 'Antithrombotic_Therapy' ;
           schedule_constraint :: completed('P2Y12_Agent_Decision') ;
           ltwh :: 40,540,0,0;
      component :: 'Prescribe_Vorapaxar' ;
+          caption :: 'Add vorapaxar 2.08 mg once daily to aspirin after MI' ;
+          description :: 'Rec 5 [2b, B-R]: after a previous MI without stroke, TIA or ICH, vorapaxar may be added to aspirin to reduce MACE; Rec 8 [3: Harm, A] forbids it after stroke, TIA or ICH.' ;
           metaprops :: 'ontology.coding=SCT\\:708718003 [Vorapaxar (substance)]
 ' ;
           task_definition :: 'Prescribe_Vorapaxar' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,640,0,0;
      component :: 'Prescribe_Low_Dose_Rivaroxaban' ;
+          caption :: 'Add rivaroxaban 2.5 mg twice daily to aspirin 81 mg' ;
+          description :: 'Rec 15 [2a, B-R]: at high ischemic and low or moderate bleeding risk, adding low-dose rivaroxaban 2.5 mg twice daily to aspirin 81 mg daily is reasonable for long-term MACE reduction.' ;
           metaprops :: 'ontology.coding=SCT\\:442031002 [Rivaroxaban (substance)]
 ' ;
           task_definition :: 'Prescribe_Low_Dose_Rivaroxaban' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,740,0,0;
      component :: 'Prescribe_DOAC' ;
+          caption :: 'Prescribe a DOAC at its labeled dose' ;
+          description :: 'Recs 11-14: in CCD with an oral anticoagulant indication a DOAC is given with short antiplatelet therapy after PCI (Rec 11, 12), alone 1 year after PCI (Rec 13) or alone without an acute antiplatelet indication (Rec 14). One class-level action because §4.3.1 does not choose the agent; doses follow the US labels and the procedure notes the guideline\'s trial doses (approved open questions 4 and 5). The SNOMED CT concept (anticoagulant therapy) is broader than DOAC, since no DOAC concept was returned.' ;
           metaprops :: 'ontology.coding=SCT\\:182764009 [Anticoagulant therapy (procedure)]
 ' ;
           task_definition :: 'Prescribe_DOAC' ;
           schedule_constraint :: completed('Advise_Avoid_Chronic_NSAIDs') ;
           ltwh :: 40,840,0,0;
      component :: 'Prescribe_PPI' ;
+          caption :: 'Prescribe pantoprazole 40 mg once daily for gastroprotection' ;
+          description :: 'Rec 16 [2a, B-R]: in CCD on DAPT a PPI can reduce gastrointestinal bleeding risk. Pantoprazole is the PPI because it has no clinically important interaction with clopidogrel; it is also given during DOAC plus antiplatelet therapy, which starts as triple therapy (approved open question 7, off-label for this indication).' ;
           metaprops :: 'ontology.coding=SCT\\:395821003 [Pantoprazole (substance)]
 ' ;
           task_definition :: 'Prescribe_PPI' ;
@@ -676,21 +717,29 @@ plan  :: 'Monitor_Actions' ;
      caption :: 'Monitor completion of the antithrombotic recommendations' ;
      description :: 'Action Enactment monitoring: adherence, regimen duration and step-down, NSAID avoidance and the continued need for the PPI.' ;
      component :: 'Monitor_Antithrombotic_Adherence' ;
+          caption :: 'Monitor adherence to the antithrombotic regimen (visit review with refill check)' ;
+          description :: 'Monitors completion of the prescribed antithrombotic regimen (Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban, Prescribe_DOAC). The DOAC labels warn that premature discontinuation increases thrombotic events and advise anticoagulant coverage, and the P2Y12 and vorapaxar labels tell clinicians to avoid lapses and patients not to stop without the prescriber.' ;
           metaprops :: 'ontology.coding=SCT\\:410122002 [Assessment of compliance with medication regimen (procedure)]
 ' ;
           task_definition :: 'Monitor_Antithrombotic_Adherence' ;
           ltwh :: 40,40,0,0;
      component :: 'Monitor_Regimen_Duration' ;
+          caption :: 'Review regimen duration and step-down against Figure 9 (1, 3, 6, 12 months, then yearly)' ;
+          description :: 'Monitors completion of the regimen durations chosen by Antithrombotic_Regimen_Decision and delivered by Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC. The guideline fixes the duration of each regimen (Figure 9, Recs 2, 3, 11 to 13) and says validated bleeding-risk scores help choose the duration, but gives no review schedule.' ;
           metaprops :: 'ontology.coding=SCT\\:182836005 [Review of medication (procedure)]
 ' ;
           task_definition :: 'Monitor_Regimen_Duration' ;
           ltwh :: 40,140,0,0;
      component :: 'Monitor_NSAID_Avoidance' ;
+          caption :: 'Check for chronic NSAID use at each visit' ;
+          description :: 'Monitors avoidance of chronic NSAIDs (avoid goal of Advise_Avoid_Chronic_NSAIDs). The guideline says chronic NSAIDs should not be used in CCD (3: Harm), and the antithrombotic labels add the bleeding interaction, but neither says how to check.' ;
           metaprops :: 'ontology.coding=SCT\\:430193006 [Medication reconciliation (procedure)]
 ' ;
           task_definition :: 'Monitor_NSAID_Avoidance' ;
           ltwh :: 40,240,0,0;
      component :: 'Monitor_PPI_Continued_Need' ;
+          caption :: 'Review the continued need for pantoprazole at each visit and step-down' ;
+          description :: 'Monitors delivery and timely stop of gastroprotection (avoid goal of Prescribe_PPI). The guideline supports a PPI while on DAPT, and the label asks for the shortest PPI duration appropriate to the condition.' ;
           metaprops :: 'ontology.coding=SCT\\:182836005 [Review of medication (procedure)]
 ' ;
           task_definition :: 'Monitor_PPI_Continued_Need' ;
@@ -735,6 +784,8 @@ plan  :: 'Monitor_Desired_State' ;
      caption :: 'Monitor the desired outcome (absence of ischemic events)' ;
      description :: 'State Achievement monitoring of the shared achieve goal of the antithrombotic drugs: fewer ischemic events and MACE.' ;
      component :: 'Monitor_Ischemic_Events' ;
+          caption :: 'Monitor for ischemic events (angina, MI, stroke or TIA, stent thrombosis)' ;
+          description :: 'Monitors MACE and atherosclerotic events (achieve goals of Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC). Every antithrombotic in §4.3.1 is recommended to reduce MACE or atherosclerotic events, so the desired outcome is the absence of ischemic events, and the vorapaxar and prasugrel labels require stopping the drug if a stroke, TIA or ICH occurs.' ;
           metaprops :: 'ontology.coding=SCT\\:405617006 [Cardiovascular event (event)]
 ' ;
           task_definition :: 'Monitor_Ischemic_Events' ;
@@ -810,22 +861,31 @@ trigger=bleeding symptoms, unexplained hypotension or a fall in hemoglobin
 ' ;
      source :: 'blood_in_stool' ;
           data_definition :: 'blood_in_stool' ;
+          mandatory :: no ;
      source :: 'diastolic_bp' ;
           data_definition :: 'diastolic_bp' ;
+          mandatory :: no ;
      source :: 'hematemesis' ;
           data_definition :: 'hematemesis' ;
+          mandatory :: no ;
      source :: 'hematuria' ;
           data_definition :: 'hematuria' ;
+          mandatory :: no ;
      source :: 'hemoptysis' ;
           data_definition :: 'hemoptysis' ;
+          mandatory :: no ;
      source :: 'sudden_severe_headache' ;
           data_definition :: 'sudden_severe_headache' ;
+          mandatory :: no ;
      source :: 'syncope' ;
           data_definition :: 'syncope' ;
+          mandatory :: no ;
      source :: 'systolic_bp' ;
           data_definition :: 'systolic_bp' ;
+          mandatory :: no ;
      source :: 'unusual_bleeding_or_bruising' ;
           data_definition :: 'unusual_bleeding_or_bruising' ;
+          mandatory :: no ;
 end enquiry.
 
 decision  :: 'Tests_Ordering_Recommendations_Bleeding' ;
@@ -834,7 +894,7 @@ decision  :: 'Tests_Ordering_Recommendations_Bleeding' ;
      metaprops :: 'ordered_for=Monitor_Bleeding
 role=test_ordering
 ' ;
-     precondition ::unusual_bleeding_or_bruising = true or hematuria = true or blood_in_stool = true or hematemesis = true or hemoptysis = true or syncope = true or sudden_severe_headache = true or systolic_bp < 90 or diastolic_bp < 60;
+     precondition ::unusual_bleeding_or_bruising = "yes" or hematuria = "yes" or blood_in_stool = "yes" or hematemesis = "yes" or hemoptysis = "yes" or syncope = "yes" or sudden_severe_headache = "yes" or systolic_bp < 90 or diastolic_bp < 60;
      choice_mode :: multiple ;
      candidate :: 'Hemoglobin' ;
           caption :: 'Hemoglobin' ;
@@ -901,18 +961,25 @@ trigger=start of a new interacting medicine
 ' ;
      source :: 'aspirin_dose_over_100_mg' ;
           data_definition :: 'aspirin_dose_over_100_mg' ;
+          mandatory :: no ;
      source :: 'new_medication_started' ;
           data_definition :: 'new_medication_started' ;
+          mandatory :: no ;
      source :: 'on_digoxin' ;
           data_definition :: 'on_digoxin' ;
+          mandatory :: no ;
      source :: 'on_omeprazole_or_esomeprazole' ;
           data_definition :: 'on_omeprazole_or_esomeprazole' ;
+          mandatory :: no ;
      source :: 'on_other_anticoagulant' ;
           data_definition :: 'on_other_anticoagulant' ;
+          mandatory :: no ;
      source :: 'on_ssri_or_snri' ;
           data_definition :: 'on_ssri_or_snri' ;
+          mandatory :: no ;
      source :: 'on_strong_cyp3a_or_pgp_modulator' ;
           data_definition :: 'on_strong_cyp3a_or_pgp_modulator' ;
+          mandatory :: no ;
 end enquiry.
 
 action  :: 'Order_Serum_Digoxin' ;
@@ -925,7 +992,7 @@ quote.1=\\u00A77.5\\: "monitor digoxin levels with initiation of or change in BR
 role=test_order
 source.1=BRILINTA (ticagrelor) US Prescribing Information 2026, \\u00A77.5 Digoxin
 ' ;
-     precondition ::on_digoxin = true and result_of(P2Y12_Agent_Decision) = Ticagrelor;
+     precondition ::on_digoxin = "yes" and result_of(P2Y12_Agent_Decision) = Ticagrelor;
      procedure :: 'Order serum digoxin level when the patient takes digoxin and ticagrelor is the chosen P2Y12 inhibitor (at initiation of or change in ticagrelor therapy).' ;
 end action.
 
@@ -963,15 +1030,57 @@ trigger=back pain, leg numbness or weakness, or bowel or bladder dysfunction aft
      precondition ::result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Low_Dose_Rivaroxaban or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet or result_of(Antithrombotic_Regimen_Decision) = DOAC_Monotherapy;
      source :: 'back_pain' ;
           data_definition :: 'back_pain' ;
+          mandatory :: no ;
      source :: 'bowel_or_bladder_dysfunction' ;
           data_definition :: 'bowel_or_bladder_dysfunction' ;
+          mandatory :: no ;
      source :: 'leg_numbness_or_tingling' ;
           data_definition :: 'leg_numbness_or_tingling' ;
+          mandatory :: no ;
      source :: 'leg_weakness' ;
           data_definition :: 'leg_weakness' ;
+          mandatory :: no ;
      source :: 'neuraxial_procedure_performed' ;
           data_definition :: 'neuraxial_procedure_performed' ;
+          mandatory :: no ;
+     source :: 'suspected_spinal_epidural_hematoma' ;
+          data_definition :: 'suspected_spinal_epidural_hematoma' ;
+          mandatory :: no ;
 end enquiry.
+
+action  :: 'Alert_Further_Examination_Spinal_Epidural_Hematoma' ;
+     caption :: 'Alert: further examination of spinal or epidural hematoma' ;
+     description :: 'Monitors suspected spinal or epidural hematoma recorded by Monitor_Spinal_Epidural_Hematoma (spinal or epidural hematoma as a boxed-warning adverse effect of Prescribe_DOAC and Prescribe_Low_Dose_Rivaroxaban). The DOAC Boxed Warning and labels ask for frequent monitoring for signs and symptoms of neurological impairment and urgent treatment when neurological compromise is noted, and name no laboratory or imaging test. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+     metaprops :: 'ServiceRequest.code=further clinical examination for suspected spinal or epidural hematoma
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=event-triggered, at the monitoring visit when spinal or epidural hematoma is suspected
+ServiceRequest.patientInstruction=attend the examination at once and report any new back pain, numbness, tingling or weakness of the legs, or bowel or bladder problems
+ServiceRequest.performerInstruction=examine the patient for spinal or epidural hematoma and decide on further work-up, treating urgently if neurological compromise is found (the sources name no specific test, so none is ordered)
+applies_when=all_patients_on_therapy
+assistant_invention=the alert step, its suspected_spinal_epidural_hematoma gate and the further-examination order, proposed from Mor Peleg\'s know-how of 4 Nov 2026 because the sources of Monitor_Spinal_Epidural_Hematoma name no laboratory or imaging test for spinal or epidural hematoma
+category=undesired_ade
+cq=CQ3, CQ5, CQ11
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= further clinical examination for suspected spinal or epidural hematoma; ServiceRequest.occurrenceTiming \\= event-triggered, at the monitoring visit when spinal or epidural hematoma is suspected; ServiceRequest.patientInstruction \\= attend the examination at once and report any new back pain, numbness, tingling or weakness of the legs, or bowel or bladder problems; ServiceRequest.performerInstruction \\= examine the patient for spinal or epidural hematoma and decide on further work-up, treating urgently if neurological compromise is found (the sources name no specific test, so none is ordered)
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=clinician examination
+knowledge_origin=Mor Peleg\'s know-how of 4 Nov 2026 (a suspected ADE whose sources name no test alerts the clinician to examine further), applied to the label passages of Monitor_Spinal_Epidural_Hematoma
+literature_basis=the DOAC Boxed Warning and labels ask for frequent monitoring for signs and symptoms of neurological impairment and urgent treatment when neurological compromise is noted, and name no laboratory or imaging test
+monitored_target=suspected spinal or epidural hematoma recorded by Monitor_Spinal_Epidural_Hematoma (spinal or epidural hematoma as a boxed-warning adverse effect of Prescribe_DOAC and Prescribe_Low_Dose_Rivaroxaban)
+monitoring_frequency_basis=event-driven, each time Monitor_Spinal_Epidural_Hematoma records a suspicion
+monitoring_stance=symptom_triggered_only
+provenance_type=assistant_completed_from_guidelines
+quote.1=Boxed Warning (B)\\: "Monitor patients frequently for signs and symptoms of neurological impairment. If neurological compromise is noted, urgent treatment is necessary"
+quote.2=\\u00A75.4\\: "Monitor patients frequently for signs and symptoms of neurological impairment (e.g., numbness or weakness of the legs, bowel, or bladder dysfunction)."
+role=ade_alert
+source.1=XARELTO (rivaroxaban) US Prescribing Information 2026, Boxed Warning (B)
+source.2=SAVAYSA (edoxaban) US Prescribing Information 2025, \\u00A75.4
+source_kind=package_insert
+trigger=suspected_spinal_epidural_hematoma recorded as yes by Monitor_Spinal_Epidural_Hematoma
+' ;
+     precondition ::(result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Low_Dose_Rivaroxaban or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet or result_of(Antithrombotic_Regimen_Decision) = DOAC_Monotherapy) and suspected_spinal_epidural_hematoma = "yes";
+     procedure :: 'Further clinical examination for suspected spinal or epidural hematoma, event-triggered, at the monitoring visit when spinal or epidural hematoma is suspected. Patient: attend the examination at once and report any new back pain, numbness, tingling or weakness of the legs, or bowel or bladder problems. Clinician: examine the patient for spinal or epidural hematoma and decide on further work-up, treating urgently if neurological compromise is found (the sources name no specific test, so none is ordered).' ;
+end action.
 
 enquiry  :: 'Monitor_Perioperative_Interruption' ;
      caption :: 'Plan antithrombotic interruption before surgery or invasive procedures' ;
@@ -1013,9 +1122,48 @@ trigger=a planned surgery, CABG or invasive procedure
      precondition ::result_of(Antithrombotic_Regimen_Decision) = Clopidogrel_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Vorapaxar or result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Low_Dose_Rivaroxaban or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet or result_of(Antithrombotic_Regimen_Decision) = DOAC_Monotherapy;
      source :: 'planned_surgery_or_invasive_procedure' ;
           data_definition :: 'planned_surgery_or_invasive_procedure' ;
+          mandatory :: no ;
+     source :: 'suspected_perioperative_interruption' ;
+          data_definition :: 'suspected_perioperative_interruption' ;
+          mandatory :: no ;
      source :: 'urgent_cabg_likely' ;
           data_definition :: 'urgent_cabg_likely' ;
+          mandatory :: no ;
 end enquiry.
+
+action  :: 'Alert_Further_Examination_Perioperative_Interruption' ;
+     caption :: 'Alert: further examination of perioperative bleeding or thrombosis' ;
+     description :: 'Monitors suspected perioperative bleeding or thrombosis recorded by Monitor_Perioperative_Interruption (surgical bleeding and thrombotic events around procedures for Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC). The labels ask to interrupt the antiplatelet or anticoagulant before surgery and to resume it as soon as hemostasis is achieved, and name no laboratory or imaging test for perioperative bleeding or thrombosis. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+     metaprops :: 'ServiceRequest.code=further clinical examination for suspected perioperative bleeding or thrombosis
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=event-triggered, at the monitoring visit when perioperative bleeding or thrombosis is suspected
+ServiceRequest.patientInstruction=attend the examination and report at once any bleeding, new chest pain, shortness of breath or stroke symptoms around the procedure
+ServiceRequest.performerInstruction=examine the patient for perioperative bleeding or thrombosis and decide on further work-up and on holding or resuming the antithrombotic per its label (the sources name no specific test, so none is ordered)
+applies_when=all_patients_on_therapy
+assistant_invention=the alert step, its suspected_perioperative_interruption gate and the further-examination order, proposed from Mor Peleg\'s know-how of 4 Nov 2026 because the sources of Monitor_Perioperative_Interruption name no laboratory or imaging test for perioperative bleeding or thrombosis
+category=undesired_ade
+cq=CQ3, CQ5, CQ11
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= further clinical examination for suspected perioperative bleeding or thrombosis; ServiceRequest.occurrenceTiming \\= event-triggered, at the monitoring visit when perioperative bleeding or thrombosis is suspected; ServiceRequest.patientInstruction \\= attend the examination and report at once any bleeding, new chest pain, shortness of breath or stroke symptoms around the procedure; ServiceRequest.performerInstruction \\= examine the patient for perioperative bleeding or thrombosis and decide on further work-up and on holding or resuming the antithrombotic per its label (the sources name no specific test, so none is ordered)
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=clinician examination
+knowledge_origin=Mor Peleg\'s know-how of 4 Nov 2026 (a suspected ADE whose sources name no test alerts the clinician to examine further), applied to the label passages of Monitor_Perioperative_Interruption
+literature_basis=the labels ask to interrupt the antiplatelet or anticoagulant before surgery and to resume it as soon as hemostasis is achieved, and name no laboratory or imaging test for perioperative bleeding or thrombosis
+monitored_target=suspected perioperative bleeding or thrombosis recorded by Monitor_Perioperative_Interruption (surgical bleeding and thrombotic events around procedures for Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC)
+monitoring_frequency_basis=event-driven, each time Monitor_Perioperative_Interruption records a suspicion
+monitoring_stance=symptom_triggered_only
+provenance_type=assistant_completed_from_guidelines
+quote.1=\\u00A75.3\\: "When possible, interrupt therapy with Plavix for five days prior to such surgery. Resume Plavix as soon as hemostasis is achieved."
+quote.2=\\u00A75.2\\: "When possible, interrupt therapy with BRILINTA for five days prior to surgery that has a major risk of bleeding."
+role=ade_alert
+source.1=PLAVIX (clopidogrel) US Prescribing Information 2025, \\u00A75.3
+source.2=BRILINTA (ticagrelor) US Prescribing Information 2026, \\u00A75.2
+source_kind=package_insert
+trigger=suspected_perioperative_interruption recorded as yes by Monitor_Perioperative_Interruption
+' ;
+     precondition ::(result_of(Antithrombotic_Regimen_Decision) = Clopidogrel_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Vorapaxar or result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Low_Dose_Rivaroxaban or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet or result_of(Antithrombotic_Regimen_Decision) = DOAC_Monotherapy) and suspected_perioperative_interruption = "yes";
+     procedure :: 'Further clinical examination for suspected perioperative bleeding or thrombosis, event-triggered, at the monitoring visit when perioperative bleeding or thrombosis is suspected. Patient: attend the examination and report at once any bleeding, new chest pain, shortness of breath or stroke symptoms around the procedure. Clinician: examine the patient for perioperative bleeding or thrombosis and decide on further work-up and on holding or resuming the antithrombotic per its label (the sources name no specific test, so none is ordered).' ;
+end action.
 
 enquiry  :: 'Monitor_Renal_Function' ;
      caption :: 'Monitor renal function (creatinine, Cockcroft-Gault CrCl) for anticoagulant dosing' ;
@@ -1051,14 +1199,16 @@ trigger=acute illness, dehydration or acute kidney injury
      precondition ::result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Low_Dose_Rivaroxaban or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet or result_of(Antithrombotic_Regimen_Decision) = DOAC_Monotherapy;
      source :: 'acute_illness' ;
           data_definition :: 'acute_illness' ;
+          mandatory :: no ;
      source :: 'dehydration' ;
           data_definition :: 'dehydration' ;
+          mandatory :: no ;
      source :: 'new_nephrotoxic_medication' ;
           data_definition :: 'new_nephrotoxic_medication' ;
-     source :: 'renal_function_check_due' ;
-          data_definition :: 'renal_function_check_due' ;
+          mandatory :: no ;
      source :: 'vomiting_or_diarrhea' ;
           data_definition :: 'vomiting_or_diarrhea' ;
+          mandatory :: no ;
 end enquiry.
 
 action  :: 'Order_Serum_Creatinine' ;
@@ -1071,8 +1221,8 @@ quote.1=\\u00A72.4\\: "Assess renal function prior to initiation of treatment wi
 role=test_order
 source.1=PRADAXA (dabigatran) Capsules US Prescribing Information 2025, \\u00A72.4
 ' ;
-     precondition ::renal_function_check_due = true or vomiting_or_diarrhea = true or dehydration = true or new_nephrotoxic_medication = true or acute_illness = true;
-     procedure :: 'Order serum creatinine for Cockcroft-Gault creatinine clearance when a renal function check is due (baseline before starting, then at least every 12 months) or there is vomiting or diarrhea, dehydration, a new nephrotoxic medicine or an acute illness.' ;
+     precondition ::vomiting_or_diarrhea = "yes" or dehydration = "yes" or new_nephrotoxic_medication = "yes" or acute_illness = "yes";
+     procedure :: 'Order serum creatinine for Cockcroft-Gault creatinine clearance when there is vomiting or diarrhea, dehydration, a new nephrotoxic medicine or an acute illness. The scheduled check (baseline before starting, then at least every 12 months) is part of the ServiceRequest.occurrenceTiming of Monitor_Renal_Function, not a data item.' ;
 end action.
 
 enquiry  :: 'Monitor_TTP' ;
@@ -1109,16 +1259,22 @@ trigger=purpura, jaundice, confusion or reduced urine output
      precondition ::result_of(Antithrombotic_Regimen_Decision) = Clopidogrel_Monotherapy or result_of(P2Y12_Agent_Decision) = Clopidogrel or result_of(P2Y12_Agent_Decision) = Prasugrel;
      source :: 'confusion' ;
           data_definition :: 'confusion' ;
+          mandatory :: no ;
      source :: 'extreme_fatigue' ;
           data_definition :: 'extreme_fatigue' ;
+          mandatory :: no ;
      source :: 'fever' ;
           data_definition :: 'fever' ;
+          mandatory :: no ;
      source :: 'jaundice' ;
           data_definition :: 'jaundice' ;
+          mandatory :: no ;
      source :: 'reduced_urine_output' ;
           data_definition :: 'reduced_urine_output' ;
+          mandatory :: no ;
      source :: 'unexplained_purpura' ;
           data_definition :: 'unexplained_purpura' ;
+          mandatory :: no ;
 end enquiry.
 
 decision  :: 'Tests_Ordering_Recommendations_TTP' ;
@@ -1129,7 +1285,7 @@ quote.1=\\u00A75.4\\: "It is characterized by thrombocytopenia, microangiopathic
 role=test_ordering
 source.1=PLAVIX (clopidogrel) US Prescribing Information 2025, \\u00A75.4
 ' ;
-     precondition ::unexplained_purpura = true or extreme_fatigue = true or jaundice = true or fever = true or confusion = true or reduced_urine_output = true;
+     precondition ::unexplained_purpura = "yes" or extreme_fatigue = "yes" or jaundice = "yes" or fever = "yes" or confusion = "yes" or reduced_urine_output = "yes";
      choice_mode :: multiple ;
      candidate :: 'Platelet_Count' ;
           caption :: 'Platelet count' ;
@@ -1205,8 +1361,10 @@ trigger=a known poor-metabolizer result or an ischemic event on clopidogrel
      precondition ::result_of(Antithrombotic_Regimen_Decision) = Clopidogrel_Monotherapy or result_of(P2Y12_Agent_Decision) = Clopidogrel;
      source :: 'cyp2c19_status' ;
           data_definition :: 'cyp2c19_status' ;
+          mandatory :: no ;
      source :: 'ischemic_event_on_clopidogrel' ;
           data_definition :: 'ischemic_event_on_clopidogrel' ;
+          mandatory :: no ;
 end enquiry.
 
 action  :: 'Order_CYP2C19_Genotype' ;
@@ -1219,7 +1377,7 @@ quote.1=Boxed Warning\\: "Tests are available to identify patients who are CYP2C
 role=test_order
 source.1=PLAVIX (clopidogrel) US Prescribing Information 2025, Boxed Warning
 ' ;
-     precondition ::ischemic_event_on_clopidogrel = true and cyp2c19_status = unknown;
+     precondition ::ischemic_event_on_clopidogrel = "yes" and cyp2c19_status = "unknown";
      procedure :: 'Order CYP2C19 genotype when an ischemic event occurs on clopidogrel and the CYP2C19 status is unknown.' ;
 end action.
 
@@ -1259,13 +1417,54 @@ trigger=hives, facial or throat swelling, wheezing or a widespread rash
      precondition ::result_of(Antithrombotic_Regimen_Decision) = Aspirin_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Clopidogrel_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Vorapaxar or result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Low_Dose_Rivaroxaban or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet;
      source :: 'facial_or_throat_swelling' ;
           data_definition :: 'facial_or_throat_swelling' ;
+          mandatory :: no ;
      source :: 'hives' ;
           data_definition :: 'hives' ;
+          mandatory :: no ;
+     source :: 'suspected_antiplatelet_hypersensitivity' ;
+          data_definition :: 'suspected_antiplatelet_hypersensitivity' ;
+          mandatory :: no ;
      source :: 'wheezing' ;
           data_definition :: 'wheezing' ;
+          mandatory :: no ;
      source :: 'widespread_rash' ;
           data_definition :: 'widespread_rash' ;
+          mandatory :: no ;
 end enquiry.
+
+action  :: 'Alert_Further_Examination_Antiplatelet_Hypersensitivity' ;
+     caption :: 'Alert: further examination of antiplatelet hypersensitivity reaction' ;
+     description :: 'Monitors suspected antiplatelet hypersensitivity reaction recorded by Monitor_Antiplatelet_Hypersensitivity (hypersensitivity reactions to Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Prasugrel and Prescribe_Ticagrelor). The clopidogrel and prasugrel labels report hypersensitivity including rash, angioedema or hematologic reaction, and the labels name no laboratory or imaging test to confirm it. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+     metaprops :: 'ServiceRequest.code=further clinical examination for suspected antiplatelet hypersensitivity reaction
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=event-triggered, at the monitoring visit when an antiplatelet hypersensitivity reaction is suspected
+ServiceRequest.patientInstruction=attend the examination and report any hives, swelling of the face, lips or throat, wheezing or a widespread rash
+ServiceRequest.performerInstruction=examine the patient for an antiplatelet hypersensitivity reaction and decide on further work-up, stopping the culprit drug and choosing an alternative antiplatelet if it is confirmed (the sources name no specific test, so none is ordered)
+applies_when=all_patients_on_therapy
+assistant_invention=the alert step, its suspected_antiplatelet_hypersensitivity gate and the further-examination order, proposed from Mor Peleg\'s know-how of 4 Nov 2026 because the sources of Monitor_Antiplatelet_Hypersensitivity name no laboratory or imaging test for antiplatelet hypersensitivity reaction
+category=undesired_ade
+cq=CQ3, CQ5, CQ11
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= further clinical examination for suspected antiplatelet hypersensitivity reaction; ServiceRequest.occurrenceTiming \\= event-triggered, at the monitoring visit when an antiplatelet hypersensitivity reaction is suspected; ServiceRequest.patientInstruction \\= attend the examination and report any hives, swelling of the face, lips or throat, wheezing or a widespread rash; ServiceRequest.performerInstruction \\= examine the patient for an antiplatelet hypersensitivity reaction and decide on further work-up, stopping the culprit drug and choosing an alternative antiplatelet if it is confirmed (the sources name no specific test, so none is ordered)
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=clinician examination
+knowledge_origin=Mor Peleg\'s know-how of 4 Nov 2026 (a suspected ADE whose sources name no test alerts the clinician to examine further), applied to the label passages of Monitor_Antiplatelet_Hypersensitivity
+literature_basis=the clopidogrel and prasugrel labels report hypersensitivity including rash, angioedema or hematologic reaction, and the labels name no laboratory or imaging test to confirm it
+monitored_target=suspected antiplatelet hypersensitivity reaction recorded by Monitor_Antiplatelet_Hypersensitivity (hypersensitivity reactions to Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Prasugrel and Prescribe_Ticagrelor)
+monitoring_frequency_basis=event-driven, each time Monitor_Antiplatelet_Hypersensitivity records a suspicion
+monitoring_stance=symptom_triggered_only
+provenance_type=assistant_completed_from_guidelines
+quote.1=\\u00A75.5\\: "Hypersensitivity including rash, angioedema or hematologic reaction has been reported in patients receiving Plavix"
+quote.2=\\u00A75.5\\: "Hypersensitivity including angioedema has been reported in patients receiving Effient, including patients with a history of hypersensitivity reaction to other thienopyridines"
+role=ade_alert
+source.1=PLAVIX (clopidogrel) US Prescribing Information 2025, \\u00A75.5
+source.2=EFFIENT (prasugrel) US Prescribing Information 2022, \\u00A75.5
+source_kind=package_insert
+trigger=suspected_antiplatelet_hypersensitivity recorded as yes by Monitor_Antiplatelet_Hypersensitivity
+' ;
+     precondition ::(result_of(Antithrombotic_Regimen_Decision) = Aspirin_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Clopidogrel_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Vorapaxar or result_of(Antithrombotic_Regimen_Decision) = Aspirin_plus_Low_Dose_Rivaroxaban or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet) and suspected_antiplatelet_hypersensitivity = "yes";
+     procedure :: 'Further clinical examination for suspected antiplatelet hypersensitivity reaction, event-triggered, at the monitoring visit when an antiplatelet hypersensitivity reaction is suspected. Patient: attend the examination and report any hives, swelling of the face, lips or throat, wheezing or a widespread rash. Clinician: examine the patient for an antiplatelet hypersensitivity reaction and decide on further work-up, stopping the culprit drug and choosing an alternative antiplatelet if it is confirmed (the sources name no specific test, so none is ordered).' ;
+end action.
 
 enquiry  :: 'Monitor_Ticagrelor_Dyspnea' ;
      caption :: 'Monitor for dyspnea on ticagrelor' ;
@@ -1299,9 +1498,48 @@ trigger=new, prolonged or worsened shortness of breath
      precondition ::result_of(P2Y12_Agent_Decision) = Ticagrelor;
      source :: 'intolerable_dyspnea' ;
           data_definition :: 'intolerable_dyspnea' ;
+          mandatory :: no ;
      source :: 'new_or_worse_dyspnea' ;
           data_definition :: 'new_or_worse_dyspnea' ;
+          mandatory :: no ;
+     source :: 'suspected_ticagrelor_dyspnea' ;
+          data_definition :: 'suspected_ticagrelor_dyspnea' ;
+          mandatory :: no ;
 end enquiry.
+
+action  :: 'Alert_Further_Examination_Ticagrelor_Dyspnea' ;
+     caption :: 'Alert: further examination of ticagrelor-related dyspnea' ;
+     description :: 'Monitors suspected ticagrelor-related dyspnea recorded by Monitor_Ticagrelor_Dyspnea (dyspnea as a labeled adverse effect of Prescribe_Ticagrelor). The ticagrelor label says new, prolonged or worsened dyspnea related to the drug needs no specific treatment and that another antiplatelet agent should be considered when it is intolerable, and names no laboratory or imaging test. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+     metaprops :: 'ServiceRequest.code=further clinical examination for suspected ticagrelor-related dyspnea
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=event-triggered, at the monitoring visit when ticagrelor-related dyspnea is suspected
+ServiceRequest.patientInstruction=attend the examination and report whether the shortness of breath is getting worse or limits your daily activities
+ServiceRequest.performerInstruction=examine the patient for ticagrelor-related dyspnea, exclude other causes such as heart failure and decide on further work-up, considering another antiplatelet agent if the dyspnea is intolerable (the sources name no specific test, so none is ordered)
+applies_when=all_patients_on_therapy
+assistant_invention=the alert step, its suspected_ticagrelor_dyspnea gate and the further-examination order, proposed from Mor Peleg\'s know-how of 4 Nov 2026 because the sources of Monitor_Ticagrelor_Dyspnea name no laboratory or imaging test for ticagrelor-related dyspnea; excluding other causes such as heart failure is the assistant\'s addition, carried over from Monitor_Ticagrelor_Dyspnea, and is not in BRILINTA \\u00A75.3
+category=undesired_ade
+cq=CQ3, CQ5, CQ11
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= further clinical examination for suspected ticagrelor-related dyspnea; ServiceRequest.occurrenceTiming \\= event-triggered, at the monitoring visit when ticagrelor-related dyspnea is suspected; ServiceRequest.patientInstruction \\= attend the examination and report whether the shortness of breath is getting worse or limits your daily activities; ServiceRequest.performerInstruction \\= examine the patient for ticagrelor-related dyspnea, exclude other causes such as heart failure and decide on further work-up, considering another antiplatelet agent if the dyspnea is intolerable (the sources name no specific test, so none is ordered)
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=clinician examination
+knowledge_origin=Mor Peleg\'s know-how of 4 Nov 2026 (a suspected ADE whose sources name no test alerts the clinician to examine further), applied to the label passages of Monitor_Ticagrelor_Dyspnea
+literature_basis=the ticagrelor label says new, prolonged or worsened dyspnea related to the drug needs no specific treatment and that another antiplatelet agent should be considered when it is intolerable, and names no laboratory or imaging test
+monitored_target=suspected ticagrelor-related dyspnea recorded by Monitor_Ticagrelor_Dyspnea (dyspnea as a labeled adverse effect of Prescribe_Ticagrelor)
+monitoring_frequency_basis=event-driven, each time Monitor_Ticagrelor_Dyspnea records a suspicion
+monitoring_stance=symptom_triggered_only
+provenance_type=assistant_completed_from_guidelines
+quote.1=\\u00A75.3\\: "If a patient develops new, prolonged, or worsened dyspnea that is determined to be related to BRILINTA, no specific treatment is required"
+quote.2=\\u00A75.3\\: "In the case of intolerable dyspnea requiring discontinuation of BRILINTA, consider prescribing another antiplatelet agent."
+role=ade_alert
+source.1=BRILINTA (ticagrelor) US Prescribing Information 2026, \\u00A75.3
+source.2=BRILINTA (ticagrelor) US Prescribing Information 2026, \\u00A75.3
+source_kind=package_insert
+trigger=suspected_ticagrelor_dyspnea recorded as yes by Monitor_Ticagrelor_Dyspnea
+' ;
+     precondition ::result_of(P2Y12_Agent_Decision) = Ticagrelor and suspected_ticagrelor_dyspnea = "yes";
+     procedure :: 'Further clinical examination for suspected ticagrelor-related dyspnea, event-triggered, at the monitoring visit when ticagrelor-related dyspnea is suspected. Patient: attend the examination and report whether the shortness of breath is getting worse or limits your daily activities. Clinician: examine the patient for ticagrelor-related dyspnea, exclude other causes such as heart failure and decide on further work-up, considering another antiplatelet agent if the dyspnea is intolerable (the sources name no specific test, so none is ordered).' ;
+end action.
 
 enquiry  :: 'Monitor_Ticagrelor_Bradyarrhythmia' ;
      caption :: 'Check the pulse for bradyarrhythmia on ticagrelor (ECG on symptoms)' ;
@@ -1335,10 +1573,13 @@ trigger=syncope, dizziness or a slow pulse
      precondition ::result_of(P2Y12_Agent_Decision) = Ticagrelor;
      source :: 'dizziness' ;
           data_definition :: 'dizziness' ;
+          mandatory :: no ;
      source :: 'pulse_rate' ;
           data_definition :: 'pulse_rate' ;
+          mandatory :: no ;
      source :: 'syncope' ;
           data_definition :: 'syncope' ;
+          mandatory :: no ;
 end enquiry.
 
 action  :: 'Order_ECG' ;
@@ -1349,7 +1590,7 @@ goal.verb=order
 ordered_for=Monitor_Ticagrelor_Bradyarrhythmia
 role=test_order
 ' ;
-     precondition ::syncope = true or dizziness = true or pulse_rate < 50;
+     precondition ::syncope = "yes" or dizziness = "yes" or pulse_rate < 50;
      procedure :: 'Order 12-lead ECG when the patient reports fainting or dizziness or the pulse rate is below 50/min.' ;
 end action.
 
@@ -1383,10 +1624,13 @@ trigger=witnessed breathing pauses or new daytime sleepiness
      precondition ::result_of(P2Y12_Agent_Decision) = Ticagrelor;
      source :: 'breathing_pauses_during_sleep' ;
           data_definition :: 'breathing_pauses_during_sleep' ;
+          mandatory :: no ;
      source :: 'daytime_sleepiness' ;
           data_definition :: 'daytime_sleepiness' ;
+          mandatory :: no ;
      source :: 'frequent_night_waking' ;
           data_definition :: 'frequent_night_waking' ;
+          mandatory :: no ;
 end enquiry.
 
 action  :: 'Order_Polysomnography' ;
@@ -1397,7 +1641,7 @@ goal.verb=order
 ordered_for=Monitor_Ticagrelor_Central_Sleep_Apnea
 role=test_order
 ' ;
-     precondition ::breathing_pauses_during_sleep = true or daytime_sleepiness = true or frequent_night_waking = true;
+     precondition ::breathing_pauses_during_sleep = "yes" or daytime_sleepiness = "yes" or frequent_night_waking = "yes";
      procedure :: 'Order polysomnography (sleep study) when breathing pauses during sleep, daytime sleepiness or frequent night waking are reported.' ;
 end action.
 
@@ -1433,10 +1677,13 @@ trigger=diarrhea that does not improve
      precondition ::result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet;
      source :: 'abdominal_pain' ;
           data_definition :: 'abdominal_pain' ;
+          mandatory :: no ;
      source :: 'fever' ;
           data_definition :: 'fever' ;
+          mandatory :: no ;
      source :: 'persistent_diarrhea' ;
           data_definition :: 'persistent_diarrhea' ;
+          mandatory :: no ;
 end enquiry.
 
 action  :: 'Order_Stool_C_Difficile_Test' ;
@@ -1447,7 +1694,7 @@ goal.verb=order
 ordered_for=Monitor_PPI_CDAD
 role=test_order
 ' ;
-     precondition ::persistent_diarrhea = true;
+     precondition ::persistent_diarrhea = "yes";
      procedure :: 'Order stool C. difficile toxin test when diarrhea does not improve.' ;
 end action.
 
@@ -1480,28 +1727,30 @@ source.2=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.8
 source_kind=package_insert
 trigger=cramps, tremor, arrhythmia or seizures
 ' ;
-     precondition ::(result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet) or (result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy and on_digoxin_or_diuretic = true);
-     source :: 'magnesium_check_due' ;
-          data_definition :: 'magnesium_check_due' ;
+     precondition ::(result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet) or (result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy and on_digoxin_or_diuretic = "yes");
      source :: 'muscle_cramps_or_spasms' ;
           data_definition :: 'muscle_cramps_or_spasms' ;
+          mandatory :: no ;
      source :: 'palpitations' ;
           data_definition :: 'palpitations' ;
+          mandatory :: no ;
      source :: 'seizure' ;
           data_definition :: 'seizure' ;
+          mandatory :: no ;
      source :: 'tremor' ;
           data_definition :: 'tremor' ;
+          mandatory :: no ;
 end enquiry.
 
 decision  :: 'Tests_Ordering_Recommendations_PPI_Hypomagnesemia' ;
      caption :: 'Which tests to order for suspected hypomagnesemia?' ;
-     description :: 'When the scheduled magnesium check is due or a symptom of hypomagnesemia is found by Monitor_PPI_Hypomagnesemia, which electrolytes to order. The label asks to consider magnesium before starting the PPI and periodically, and the monitor checks calcium and potassium when magnesium is low.' ;
+     description :: 'When a symptom of hypomagnesemia is found by Monitor_PPI_Hypomagnesemia, which electrolytes to order. The label asks to consider magnesium before starting the PPI and periodically; that scheduled check is part of the monitor\'s ServiceRequest.occurrenceTiming (baseline before starting pantoprazole, then every 12 months while it continues), not a data item. The monitor checks calcium and potassium when magnesium is low.' ;
      metaprops :: 'ordered_for=Monitor_PPI_Hypomagnesemia
 quote.1=\\u00A75.8\\: "health care professionals may consider monitoring magnesium levels prior to initiation of PPI treatment and periodically"
 role=test_ordering
 source.1=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.8
 ' ;
-     precondition ::magnesium_check_due = true or muscle_cramps_or_spasms = true or tremor = true or palpitations = true or seizure = true;
+     precondition ::muscle_cramps_or_spasms = "yes" or tremor = "yes" or palpitations = "yes" or seizure = "yes";
      choice_mode :: multiple ;
      candidate :: 'Serum_Magnesium' ;
           caption :: 'Serum magnesium' ;
@@ -1509,7 +1758,7 @@ source.1=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.8
 ' ;
           argument :: for,true() attributes
                argument_name :: 'Arg_Order_Serum_Magnesium' ;
-               caption :: 'Serum magnesium when the scheduled check is due or cramps, tremor, palpitations or seizures suggest hypomagnesemia' ;
+               caption :: 'Serum magnesium when cramps, tremor, palpitations or seizures suggest hypomagnesemia **CHANGED (R5)**' ;
           end attributes
           ;
           recommendation ::netsupport() > 0;
@@ -1564,10 +1813,48 @@ source.2=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A717
 source_kind=package_insert
 trigger=any new fracture
 ' ;
-     precondition ::result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT and previous_mi = true;
+     precondition ::result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT and previous_mi = "yes";
      source :: 'new_fracture' ;
           data_definition :: 'new_fracture' ;
+          mandatory :: no ;
+     source :: 'suspected_ppi_bone_fracture' ;
+          data_definition :: 'suspected_ppi_bone_fracture' ;
+          mandatory :: no ;
 end enquiry.
+
+action  :: 'Alert_Further_Examination_PPI_Bone_Fracture' ;
+     caption :: 'Alert: further examination of osteoporosis-related bone fracture' ;
+     description :: 'Monitors suspected osteoporosis-related bone fracture recorded by Monitor_PPI_Bone_Fracture (osteoporosis-related fracture as a labeled adverse effect of long-term Prescribe_PPI). The pantoprazole label reports an increased fracture risk with high-dose and long-term PPI therapy and asks patients to report fractures, and names no laboratory or imaging test. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+     metaprops :: 'ServiceRequest.code=further clinical examination for suspected osteoporosis-related bone fracture
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=event-triggered, at the monitoring visit when an osteoporosis-related bone fracture is suspected
+ServiceRequest.patientInstruction=attend the examination and report any new bone pain or fracture, especially of the hip, wrist or spine
+ServiceRequest.performerInstruction=examine the patient for an osteoporosis-related bone fracture and decide on further work-up per current osteoporosis guidelines (the sources name no specific test, so none is ordered)
+applies_when=patients on pantoprazole for a year or longer (during extended DAPT after MI)
+assistant_invention=the alert step, its suspected_ppi_bone_fracture gate and the further-examination order, proposed from Mor Peleg\'s know-how of 4 Nov 2026 because the sources of Monitor_PPI_Bone_Fracture name no laboratory or imaging test for osteoporosis-related bone fracture
+category=undesired_ade
+cq=CQ3, CQ5, CQ11
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= further clinical examination for suspected osteoporosis-related bone fracture; ServiceRequest.occurrenceTiming \\= event-triggered, at the monitoring visit when an osteoporosis-related bone fracture is suspected; ServiceRequest.patientInstruction \\= attend the examination and report any new bone pain or fracture, especially of the hip, wrist or spine; ServiceRequest.performerInstruction \\= examine the patient for an osteoporosis-related bone fracture and decide on further work-up per current osteoporosis guidelines (the sources name no specific test, so none is ordered)
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=clinician examination
+knowledge_origin=Mor Peleg\'s know-how of 4 Nov 2026 (a suspected ADE whose sources name no test alerts the clinician to examine further), applied to the label passages of Monitor_PPI_Bone_Fracture
+literature_basis=the pantoprazole label reports an increased fracture risk with high-dose and long-term PPI therapy and asks patients to report fractures, and names no laboratory or imaging test
+monitored_target=suspected osteoporosis-related bone fracture recorded by Monitor_PPI_Bone_Fracture (osteoporosis-related fracture as a labeled adverse effect of long-term Prescribe_PPI)
+monitoring_frequency_basis=event-driven, each time Monitor_PPI_Bone_Fracture records a suspicion
+monitoring_stance=symptom_triggered_only
+provenance_type=assistant_completed_from_guidelines
+quote.1=\\u00A75.4\\: "The risk of fracture was increased in patients who received high-dose, defined as multiple daily doses, and long-term PPI therapy (a year or longer)."
+quote.2=\\u00A717\\: "Advise patients to report any fractures, especially of the hip, wrist or spine, to their healthcare provider"
+role=ade_alert
+source.1=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.4
+source.2=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A717
+source_kind=package_insert
+trigger=suspected_ppi_bone_fracture recorded as yes by Monitor_PPI_Bone_Fracture
+' ;
+     precondition ::(result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT and previous_mi = "yes") and suspected_ppi_bone_fracture = "yes";
+     procedure :: 'Further clinical examination for suspected osteoporosis-related bone fracture, event-triggered, at the monitoring visit when an osteoporosis-related bone fracture is suspected. Patient: attend the examination and report any new bone pain or fracture, especially of the hip, wrist or spine. Clinician: examine the patient for an osteoporosis-related bone fracture and decide on further work-up per current osteoporosis guidelines (the sources name no specific test, so none is ordered).' ;
+end action.
 
 enquiry  :: 'Monitor_PPI_Interstitial_Nephritis' ;
      caption :: 'Monitor for acute tubulointerstitial nephritis on pantoprazole' ;
@@ -1601,14 +1888,19 @@ trigger=fever, rash, joint pain or reduced urine output
      precondition ::result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet;
      source :: 'fever' ;
           data_definition :: 'fever' ;
+          mandatory :: no ;
      source :: 'hematuria' ;
           data_definition :: 'hematuria' ;
+          mandatory :: no ;
      source :: 'joint_pain' ;
           data_definition :: 'joint_pain' ;
+          mandatory :: no ;
      source :: 'new_rash' ;
           data_definition :: 'new_rash' ;
+          mandatory :: no ;
      source :: 'reduced_urine_output' ;
           data_definition :: 'reduced_urine_output' ;
+          mandatory :: no ;
 end enquiry.
 
 decision  :: 'Tests_Ordering_Recommendations_PPI_Interstitial_Nephritis' ;
@@ -1617,7 +1909,7 @@ decision  :: 'Tests_Ordering_Recommendations_PPI_Interstitial_Nephritis' ;
      metaprops :: 'ordered_for=Monitor_PPI_Interstitial_Nephritis
 role=test_ordering
 ' ;
-     precondition ::fever = true or reduced_urine_output = true or hematuria = true or new_rash = true or joint_pain = true;
+     precondition ::fever = "yes" or reduced_urine_output = "yes" or hematuria = "yes" or new_rash = "yes" or joint_pain = "yes";
      choice_mode :: multiple ;
      candidate :: 'Serum_Creatinine' ;
           caption :: 'Serum creatinine' ;
@@ -1671,9 +1963,46 @@ trigger=a photosensitive rash or new arthralgia
      precondition ::result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet;
      source :: 'joint_pain' ;
           data_definition :: 'joint_pain' ;
+          mandatory :: no ;
      source :: 'photosensitive_rash' ;
           data_definition :: 'photosensitive_rash' ;
+          mandatory :: no ;
+     source :: 'suspected_ppi_cutaneous_lupus' ;
+          data_definition :: 'suspected_ppi_cutaneous_lupus' ;
+          mandatory :: no ;
 end enquiry.
+
+action  :: 'Alert_Further_Examination_PPI_Cutaneous_Lupus' ;
+     caption :: 'Alert: further examination of cutaneous or systemic lupus erythematosus' ;
+     description :: 'Monitors suspected cutaneous or systemic lupus erythematosus recorded by Monitor_PPI_Cutaneous_Lupus (cutaneous or systemic lupus erythematosus as a labeled adverse effect of Prescribe_PPI). The pantoprazole label asks to discontinue the drug and refer the patient to a specialist when signs or symptoms of CLE or SLE are noted; it mentions serological testing (e.g. ANA) only as a result that may be positive and asks for no laboratory or imaging test. So, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+     metaprops :: 'ServiceRequest.code=further clinical examination for suspected cutaneous or systemic lupus erythematosus
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=event-triggered, at the monitoring visit when cutaneous or systemic lupus erythematosus is suspected
+ServiceRequest.patientInstruction=attend the examination and report any new or worsening rash on sun-exposed skin or new joint pain
+ServiceRequest.performerInstruction=examine the patient for cutaneous or systemic lupus erythematosus and decide on further work-up and specialist referral (the label asks for specialist referral and orders no test, and mentions ANA only as a result that may be positive, so none is ordered)
+applies_when=all_patients_on_therapy
+assistant_invention=the alert step, its suspected_ppi_cutaneous_lupus gate and the further-examination order, proposed from Mor Peleg\'s know-how of 4 Nov 2026 because the sources of Monitor_PPI_Cutaneous_Lupus ask for no laboratory or imaging test for cutaneous or systemic lupus erythematosus (PROTONIX \\u00A75.6 mentions ANA only descriptively)
+category=undesired_ade
+cq=CQ3, CQ5, CQ11
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= further clinical examination for suspected cutaneous or systemic lupus erythematosus; ServiceRequest.occurrenceTiming \\= event-triggered, at the monitoring visit when cutaneous or systemic lupus erythematosus is suspected; ServiceRequest.patientInstruction \\= attend the examination and report any new or worsening rash on sun-exposed skin or new joint pain; ServiceRequest.performerInstruction \\= examine the patient for cutaneous or systemic lupus erythematosus and decide on further work-up and specialist referral (the label asks for specialist referral and orders no test, and mentions ANA only as a result that may be positive, so none is ordered)
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=clinician examination
+knowledge_origin=Mor Peleg\'s know-how of 4 Nov 2026 (a suspected ADE whose sources name no test alerts the clinician to examine further), applied to the label passages of Monitor_PPI_Cutaneous_Lupus
+literature_basis=the pantoprazole label asks to discontinue the drug and refer the patient to a specialist when signs or symptoms of CLE or SLE are noted, and mentions serological testing (e.g. ANA) only as a result that may be positive, without asking for any laboratory or imaging test
+monitored_target=suspected cutaneous or systemic lupus erythematosus recorded by Monitor_PPI_Cutaneous_Lupus (cutaneous or systemic lupus erythematosus as a labeled adverse effect of Prescribe_PPI)
+monitoring_frequency_basis=event-driven, each time Monitor_PPI_Cutaneous_Lupus records a suspicion
+monitoring_stance=symptom_triggered_only
+provenance_type=assistant_completed_from_guidelines
+quote.1=\\u00A75.6\\: "If signs or symptoms consistent with CLE or SLE are noted in patients receiving PROTONIX, discontinue the drug and refer the patient to the appropriate specialist"
+role=ade_alert
+source.1=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.6
+source_kind=package_insert
+trigger=suspected_ppi_cutaneous_lupus recorded as yes by Monitor_PPI_Cutaneous_Lupus
+' ;
+     precondition ::(result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet) and suspected_ppi_cutaneous_lupus = "yes";
+     procedure :: 'Further clinical examination for suspected cutaneous or systemic lupus erythematosus, event-triggered, at the monitoring visit when cutaneous or systemic lupus erythematosus is suspected. Patient: attend the examination and report any new or worsening rash on sun-exposed skin or new joint pain. Clinician: examine the patient for cutaneous or systemic lupus erythematosus and decide on further work-up and specialist referral (the label asks for specialist referral and orders no test, and mentions ANA only as a result that may be positive, so none is ordered).' ;
+end action.
 
 enquiry  :: 'Monitor_PPI_Severe_Cutaneous_Reactions' ;
      caption :: 'Monitor for severe cutaneous adverse reactions on pantoprazole' ;
@@ -1705,817 +2034,1185 @@ trigger=blistering, peeling skin, mucosal sores or rash with fever
      precondition ::result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet;
      source :: 'blistering_or_peeling_skin' ;
           data_definition :: 'blistering_or_peeling_skin' ;
+          mandatory :: no ;
      source :: 'mouth_sores' ;
           data_definition :: 'mouth_sores' ;
+          mandatory :: no ;
      source :: 'rash_with_fever' ;
           data_definition :: 'rash_with_fever' ;
+          mandatory :: no ;
+     source :: 'suspected_ppi_severe_cutaneous_reactions' ;
+          data_definition :: 'suspected_ppi_severe_cutaneous_reactions' ;
+          mandatory :: no ;
 end enquiry.
+
+action  :: 'Alert_Further_Examination_PPI_Severe_Cutaneous_Reactions' ;
+     caption :: 'Alert: further examination of severe cutaneous adverse reaction' ;
+     description :: 'Monitors suspected severe cutaneous adverse reaction recorded by Monitor_PPI_Severe_Cutaneous_Reactions (severe cutaneous adverse reactions as a labeled adverse effect of Prescribe_PPI). The pantoprazole label asks to discontinue it at the first signs or symptoms of a severe cutaneous adverse reaction and to consider further evaluation, and names no laboratory or imaging test. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+     metaprops :: 'ServiceRequest.code=further clinical examination for suspected severe cutaneous adverse reaction
+ServiceRequest.intent=order
+ServiceRequest.occurrenceTiming=event-triggered, at the monitoring visit when a severe cutaneous adverse reaction is suspected
+ServiceRequest.patientInstruction=stop pantoprazole and attend the examination at once if you have blistering or peeling skin, mouth sores, or a rash with fever
+ServiceRequest.performerInstruction=examine the patient for a severe cutaneous adverse reaction and decide on further evaluation, discontinuing pantoprazole at the first signs (the sources name no specific test, so none is ordered)
+applies_when=all_patients_on_therapy
+assistant_invention=the alert step, its suspected_ppi_severe_cutaneous_reactions gate and the further-examination order, proposed from Mor Peleg\'s know-how of 4 Nov 2026 because the sources of Monitor_PPI_Severe_Cutaneous_Reactions name no laboratory or imaging test for severe cutaneous adverse reaction
+category=undesired_ade
+cq=CQ3, CQ5, CQ11
+goal.noun_phrase=ServiceRequest.intent \\= order; ServiceRequest.code \\= further clinical examination for suspected severe cutaneous adverse reaction; ServiceRequest.occurrenceTiming \\= event-triggered, at the monitoring visit when a severe cutaneous adverse reaction is suspected; ServiceRequest.patientInstruction \\= stop pantoprazole and attend the examination at once if you have blistering or peeling skin, mouth sores, or a rash with fever; ServiceRequest.performerInstruction \\= examine the patient for a severe cutaneous adverse reaction and decide on further evaluation, discontinuing pantoprazole at the first signs (the sources name no specific test, so none is ordered)
+goal.verb=order
+guideline_status=not_specified_as_a_guideline_monitoring_task
+instrument=clinician examination
+knowledge_origin=Mor Peleg\'s know-how of 4 Nov 2026 (a suspected ADE whose sources name no test alerts the clinician to examine further), applied to the label passages of Monitor_PPI_Severe_Cutaneous_Reactions
+literature_basis=the pantoprazole label asks to discontinue it at the first signs or symptoms of a severe cutaneous adverse reaction and to consider further evaluation, and names no laboratory or imaging test
+monitored_target=suspected severe cutaneous adverse reaction recorded by Monitor_PPI_Severe_Cutaneous_Reactions (severe cutaneous adverse reactions as a labeled adverse effect of Prescribe_PPI)
+monitoring_frequency_basis=event-driven, each time Monitor_PPI_Severe_Cutaneous_Reactions records a suspicion
+monitoring_stance=symptom_triggered_only
+provenance_type=assistant_completed_from_guidelines
+quote.1=\\u00A75.5\\: "Discontinue PROTONIX at the first signs or symptoms of severe cutaneous adverse reactions or other signs of hypersensitivity and consider further evaluation."
+role=ade_alert
+source.1=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.5
+source_kind=package_insert
+trigger=suspected_ppi_severe_cutaneous_reactions recorded as yes by Monitor_PPI_Severe_Cutaneous_Reactions
+' ;
+     precondition ::(result_of(Antithrombotic_Regimen_Decision) = DAPT or result_of(Antithrombotic_Regimen_Decision) = Short_DAPT_then_P2Y12_Monotherapy or result_of(Antithrombotic_Regimen_Decision) = Extended_DAPT or result_of(Antithrombotic_Regimen_Decision) = DOAC_plus_Antiplatelet) and suspected_ppi_severe_cutaneous_reactions = "yes";
+     procedure :: 'Further clinical examination for suspected severe cutaneous adverse reaction, event-triggered, at the monitoring visit when a severe cutaneous adverse reaction is suspected. Patient: stop pantoprazole and attend the examination at once if you have blistering or peeling skin, mouth sores, or a rash with fever. Clinician: examine the patient for a severe cutaneous adverse reaction and decide on further evaluation, discontinuing pantoprazole at the first signs (the sources name no specific test, so none is ordered).' ;
+end action.
 
 plan  :: 'Monitor_Undesired_State' ;
      caption :: 'Monitor adverse drug effects' ;
      description :: 'State Achievement monitoring of the adverse drug effects of the antithrombotics and of pantoprazole, from the label Boxed Warnings and Warnings and Precautions.' ;
      component :: 'Display_Potential_ADEs' ;
+          caption :: '# *Monitoring for ADEs:*  
+1. Bleeding  
+2. Drug interactions  
+3. Spinal or epidural hematoma  
+4. Perioperative bleeding and thrombosis  
+5. Renal function (anticoagulant dosing)  
+6. Thrombotic thrombocytopenic purpura  
+7. Reduced clopidogrel effect (CYP2C19 poor metabolizer)  
+8. Antiplatelet hypersensitivity  
+9. Dyspnea (ticagrelor)  
+10. Bradyarrhythmia (ticagrelor)  
+11. Central sleep apnea (ticagrelor)  
+12. C. difficile-associated diarrhea (PPI)  
+13. Hypomagnesemia (PPI)  
+14. Bone fracture (PPI)  
+15. Acute interstitial nephritis (PPI)  
+16. Cutaneous lupus erythematosus (PPI)  
+17. Severe cutaneous reactions (PPI)  ' ;
+          description :: 'Lists the adverse drug effects monitored in Monitor_Undesired_State; each is assessed by the Enquiry of the same name.' ;
           task_definition :: 'Display_Potential_ADEs' ;
           ltwh :: 40,40,0,0;
      component :: 'Monitor_Bleeding' ;
+          caption :: 'Monitor for bleeding (symptom review, Hb/Hct on suspicion)' ;
+          description :: 'Monitors bleeding, including gastrointestinal and intracranial bleeding, as an adverse effect of Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC (and the avoid goal of Prescribe_PPI). The guideline names GI bleeding as a common side effect of DAPT, every antithrombotic label warns of serious bleeding and tells clinicians to promptly evaluate signs of blood loss, the P2Y12 labels say to manage bleeding without stopping when possible, and the DOAC labels say their effect cannot be monitored with standard coagulation tests. Order: bleeding symptom review with hemoglobin and hematocrit on suspected blood loss, each follow-up visit, with same-day evaluation of bleeding symptoms or unexplained hypotension. Patient: report any unusual, prolonged or excessive bleeding or bruising, blood in the urine, red or black tarry stools, vomiting blood or coffee-ground material, coughing up blood, fainting or a sudden severe headache, and seek emergency care for heavy bleeding. Clinician: promptly evaluate signs of blood loss with hemoglobin and hematocrit, suspect bleeding in any hypotensive patient after angiography, PCI, CABG or surgery, stop an anticoagulant for active pathological bleeding, manage antiplatelet-related bleeding without stopping the antiplatelet when possible, and do not use PT, INR, aPTT or anti-factor Xa levels to monitor a DOAC.' ;
           metaprops :: 'ontology.coding=SCT\\:131148009 [Bleeding (finding)]
 ' ;
           task_definition :: 'Monitor_Bleeding' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,140,0,0;
      component :: 'Tests_Ordering_Recommendations_Bleeding' ;
+          caption :: 'Which tests to order for suspected bleeding?' ;
+          description :: 'When a bleeding symptom or unexplained hypotension (systolic blood pressure below 90 mmHg or diastolic blood pressure below 60 mmHg) is found by Monitor_Bleeding, which blood counts to order to evaluate blood loss. The monitor\'s performer instruction is to promptly evaluate signs of blood loss with hemoglobin and hematocrit.' ;
           task_definition :: 'Tests_Ordering_Recommendations_Bleeding' ;
           schedule_constraint :: completed('Monitor_Bleeding') ;
           ltwh :: 40,240,0,0;
      component :: 'Monitor_Drug_Interactions' ;
+          caption :: 'Review interacting medications at initiation, each visit and each new medicine' ;
+          description :: 'Monitors loss of antithrombotic effect or excess bleeding from drug interactions with Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC. The guideline repeats the FDA warning against omeprazole and esomeprazole with clopidogrel, and each label names interactions to avoid (aspirin over 100 mg with ticagrelor, strong CYP3A modulators with ticagrelor and vorapaxar, combined P-gp and CYP3A modulators with rivaroxaban and apixaban, P-gp modulators with dabigatran and edoxaban) plus digoxin level monitoring with ticagrelor. Order: interacting medication review (PPI choice with clopidogrel, aspirin dose with ticagrelor, CYP3A and P-gp inhibitors or inducers, other anticoagulants, SSRIs and SNRIs), at initiation, at each follow-up visit and whenever a new medicine is started. Patient: tell every clinician and pharmacist that you take an antiplatelet or anticoagulant and check with them before starting any prescription, over-the-counter medicine or herbal product such as St. John\'s wort. Clinician: avoid omeprazole and esomeprazole with clopidogrel, keep aspirin at 100 mg or less daily with ticagrelor, avoid strong CYP3A inhibitors or inducers with ticagrelor and vorapaxar, avoid combined P-gp and strong CYP3A inhibitors or inducers with rivaroxaban and apixaban (or reduce the apixaban dose by 50 percent per its label), avoid P-gp inducers with dabigatran and rifampin with edoxaban, monitor digoxin levels when ticagrelor is started or changed, and weigh the added bleeding risk of SSRIs, SNRIs and other anticoagulants.' ;
           metaprops :: 'ontology.coding=SCT\\:79899007 [Drug interaction (finding)]
 ' ;
           task_definition :: 'Monitor_Drug_Interactions' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,340,0,0;
      component :: 'Order_Serum_Digoxin' ;
+          caption :: 'Order serum digoxin level' ;
+          description :: 'Orders a serum digoxin level for Monitor_Drug_Interactions: the ticagrelor label asks to monitor digoxin levels when ticagrelor is started or changed in a patient on digoxin.' ;
           metaprops :: 'ontology.coding=LNC\\:10535-3 [Digoxin [Mass/volume] in Serum or Plasma]
 ' ;
           task_definition :: 'Order_Serum_Digoxin' ;
           schedule_constraint :: completed('Monitor_Drug_Interactions') ;
           ltwh :: 40,440,0,0;
      component :: 'Monitor_Spinal_Epidural_Hematoma' ;
+          caption :: 'Monitor for spinal or epidural hematoma around neuraxial procedures' ;
+          description :: 'Monitors spinal or epidural hematoma as a boxed-warning adverse effect of Prescribe_DOAC and Prescribe_Low_Dose_Rivaroxaban. Every DOAC label carries a Boxed Warning that epidural or spinal hematoma can follow neuraxial anesthesia or spinal puncture and instructs frequent neurological monitoring with urgent treatment, with drug-specific catheter timing. Order: neurological checks for spinal or epidural hematoma around neuraxial anesthesia or spinal puncture, event-triggered, frequent neurological checks whenever neuraxial anesthesia or spinal puncture is performed during anticoagulant therapy. Patient: tell the anesthetist that you take an anticoagulant, and report back pain, tingling, numbness or weakness of the legs, or bowel or bladder problems immediately after an epidural or spinal procedure. Clinician: time epidural catheter removal and the next anticoagulant dose per the drug label (for apixaban remove the catheter no earlier than 24 hours after the last dose and give the next dose no earlier than 5 hours after removal), monitor frequently for neurological impairment and treat urgently if it is found.' ;
           metaprops :: 'ontology.coding=SCT\\:703861005 [Spinal epidural hematoma (disorder)]
 ' ;
           task_definition :: 'Monitor_Spinal_Epidural_Hematoma' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
           ltwh :: 40,540,0,0;
+     component :: 'Alert_Further_Examination_Spinal_Epidural_Hematoma' ;
+          caption :: 'Alert: further examination of spinal or epidural hematoma' ;
+          description :: 'Monitors suspected spinal or epidural hematoma recorded by Monitor_Spinal_Epidural_Hematoma (spinal or epidural hematoma as a boxed-warning adverse effect of Prescribe_DOAC and Prescribe_Low_Dose_Rivaroxaban). The DOAC Boxed Warning and labels ask for frequent monitoring for signs and symptoms of neurological impairment and urgent treatment when neurological compromise is noted, and name no laboratory or imaging test. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+          metaprops :: 'ontology.coding=SCT\\:703861005 [Spinal epidural hematoma (disorder)]
+' ;
+          task_definition :: 'Alert_Further_Examination_Spinal_Epidural_Hematoma' ;
+          schedule_constraint :: completed('Monitor_Spinal_Epidural_Hematoma') ;
+          ltwh :: 40,640,0,0;
      component :: 'Monitor_Perioperative_Interruption' ;
+          caption :: 'Plan antithrombotic interruption before surgery or invasive procedures' ;
+          description :: 'Monitors surgical bleeding and thrombotic events around procedures for Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC. Each P2Y12 and DOAC label states how long before surgery to interrupt and to resume once hemostasis is achieved, and the prasugrel and ticagrelor labels warn against starting the drug when urgent CABG is likely. Order: perioperative antithrombotic plan before surgery or invasive procedures, event-triggered, whenever surgery, CABG or an invasive or dental procedure is planned. Patient: tell your surgeon and dentist that you take an antiplatelet or anticoagulant before any procedure, and do not stop it unless the prescribing clinician tells you how and when. Clinician: when the procedure\'s bleeding risk requires interruption, hold clopidogrel and ticagrelor 5 days and prasugrel at least 7 days before surgery, do not start prasugrel or ticagrelor if urgent CABG is likely, hold rivaroxaban and edoxaban at least 24 hours and apixaban 24 to 48 hours by procedural bleeding risk, hold dabigatran per its renal-function table, have the surgeon talk to the prescriber before stopping vorapaxar, and resume as soon as hemostasis is achieved.' ;
           metaprops :: 'ontology.coding=SCT\\:110265006 [Postoperative hemorrhage (disorder)]
 ' ;
           task_definition :: 'Monitor_Perioperative_Interruption' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,640,0,0;
+          ltwh :: 40,740,0,0;
+     component :: 'Alert_Further_Examination_Perioperative_Interruption' ;
+          caption :: 'Alert: further examination of perioperative bleeding or thrombosis' ;
+          description :: 'Monitors suspected perioperative bleeding or thrombosis recorded by Monitor_Perioperative_Interruption (surgical bleeding and thrombotic events around procedures for Prescribe_Clopidogrel, Prescribe_Ticagrelor, Prescribe_Prasugrel, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban and Prescribe_DOAC). The labels ask to interrupt the antiplatelet or anticoagulant before surgery and to resume it as soon as hemostasis is achieved, and name no laboratory or imaging test for perioperative bleeding or thrombosis. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+          metaprops :: 'ontology.coding=SCT\\:110265006 [Postoperative hemorrhage (disorder)]
+' ;
+          task_definition :: 'Alert_Further_Examination_Perioperative_Interruption' ;
+          schedule_constraint :: completed('Monitor_Perioperative_Interruption') ;
+          ltwh :: 40,840,0,0;
      component :: 'Monitor_Renal_Function' ;
+          caption :: 'Monitor renal function (creatinine, Cockcroft-Gault CrCl) for anticoagulant dosing' ;
+          description :: 'Monitors renal function that sets anticoagulant dosing and eligibility for Prescribe_DOAC and Prescribe_Low_Dose_Rivaroxaban. The dabigatran and rivaroxaban labels instruct baseline and periodic renal assessment with dose adjustment, edoxaban must not be used above a CrCl of 95 mL/min, and every DOAC dose depends on renal function. Order: serum creatinine with Cockcroft-Gault creatinine clearance for anticoagulant dose and eligibility, baseline before starting, then at least every 12 months and sooner when renal function may decline (acute illness, dehydration, new nephrotoxic drugs). Patient: attend the kidney blood test and tell your clinician about vomiting, diarrhea, dehydration or a new medicine that can affect the kidneys. Clinician: adjust or stop the anticoagulant by creatinine clearance per its label, rivaroxaban 15 mg daily for AF if CrCl is 50 or below, dabigatran 75 mg twice daily if CrCl is 15 to 30, apixaban 2.5 mg twice daily with two of age 80 or more, weight 60 kg or less and creatinine 1.5 mg/dL or more, edoxaban 30 mg if CrCl is 15 to 50 and not at all if CrCl is above 95, and avoid rivaroxaban if CrCl is below 15.' ;
           metaprops :: 'ontology.coding=SCT\\:442407001 [Estimation of creatinine clearance by Cockcroft-Gault formula (procedure)]
 ' ;
           task_definition :: 'Monitor_Renal_Function' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,740,0,0;
+          ltwh :: 40,940,0,0;
      component :: 'Order_Serum_Creatinine' ;
+          caption :: 'Order serum creatinine for Cockcroft-Gault creatinine clearance' ;
+          description :: 'Orders serum creatinine, from which the Cockcroft-Gault creatinine clearance is calculated, for Monitor_Renal_Function: anticoagulant dose and eligibility depend on it, and the labels ask for baseline and periodic renal assessment, more often when renal function may decline.' ;
           metaprops :: 'ontology.coding=LNC\\:2160-0 [Creatinine [Mass/volume] in Serum or Plasma]
 ' ;
           task_definition :: 'Order_Serum_Creatinine' ;
           schedule_constraint :: completed('Monitor_Renal_Function') ;
-          ltwh :: 40,840,0,0;
+          ltwh :: 40,1040,0,0;
      component :: 'Monitor_TTP' ;
+          caption :: 'Monitor for thrombotic thrombocytopenic purpura on a thienopyridine' ;
+          description :: 'Monitors thrombotic thrombocytopenic purpura as a labeled adverse effect of Prescribe_Clopidogrel and Prescribe_Prasugrel. Both thienopyridine labels warn that TTP, sometimes fatal, can follow even brief exposure and needs urgent treatment including plasmapheresis, without a routine laboratory schedule. Order: thrombotic thrombocytopenic purpura symptom review with triggered platelet count, blood smear for schistocytes, LDH and serum creatinine, symptom-triggered, with a symptom question at each follow-up visit and particular attention in the first weeks after starting. Patient: get prompt medical attention for unexplained purple skin spots, extreme tiredness, yellow skin or eyes, fever, confusion or passing little urine. Clinician: if TTP is suspected, check platelet count, a blood smear for schistocytes, LDH and serum creatinine, stop the thienopyridine and arrange urgent treatment including plasmapheresis.' ;
           metaprops :: 'ontology.coding=SCT\\:78129009 [Thrombotic thrombocytopenic purpura (disorder)]
 ' ;
           task_definition :: 'Monitor_TTP' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,940,0,0;
+          ltwh :: 40,1140,0,0;
      component :: 'Tests_Ordering_Recommendations_TTP' ;
+          caption :: 'Which tests to order for suspected thrombotic thrombocytopenic purpura?' ;
+          description :: 'When a symptom of thrombotic thrombocytopenic purpura is found by Monitor_TTP, which tests to order to confirm it. The monitor\'s performer instruction is to check platelet count, a blood smear for schistocytes, LDH and serum creatinine.' ;
           task_definition :: 'Tests_Ordering_Recommendations_TTP' ;
           schedule_constraint :: completed('Monitor_TTP') ;
-          ltwh :: 40,1040,0,0;
+          ltwh :: 40,1240,0,0;
      component :: 'Monitor_CYP2C19_Poor_Metabolizer' ;
+          caption :: 'Review CYP2C19 poor-metabolizer status on clopidogrel' ;
+          description :: 'Monitors diminished antiplatelet effect in CYP2C19 poor metabolizers as a boxed-warning risk of Prescribe_Clopidogrel. The clopidogrel Boxed Warning says effectiveness depends on CYP2C19 activation, that tests exist, and that another P2Y12 inhibitor should be considered in identified poor metabolizers, without mandating routine genotyping. Order: CYP2C19 poor-metabolizer status review for clopidogrel response, event-triggered, at initiation when a CYP2C19 genotype result is available and after any ischemic event on clopidogrel. Patient: tell your clinician if you have had a CYP2C19 gene test and report any new chest pain or stroke symptoms. Clinician: if the patient is a known CYP2C19 poor metabolizer, consider another P2Y12 inhibitor, and consider CYP2C19 testing after an ischemic event on clopidogrel.' ;
           metaprops :: 'ontology.coding=SCT\\:738786005 [Cytochrome P450 family 2 subfamily C member 19 poor metabolizer (finding)]
 ' ;
           task_definition :: 'Monitor_CYP2C19_Poor_Metabolizer' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,1140,0,0;
+          ltwh :: 40,1340,0,0;
      component :: 'Order_CYP2C19_Genotype' ;
+          caption :: 'Order CYP2C19 genotype' ;
+          description :: 'Orders CYP2C19 genotyping for Monitor_CYP2C19_Poor_Metabolizer: after an ischemic event on clopidogrel, a poor-metabolizer result would lead to another P2Y12 inhibitor (clopidogrel Boxed Warning).' ;
           metaprops :: 'ontology.coding=LNC\\:57132-3 [CYP2C19 gene allele [Genotype] in Blood or Tissue by Molecular genetics method Nominal]
 ' ;
           task_definition :: 'Order_CYP2C19_Genotype' ;
           schedule_constraint :: completed('Monitor_CYP2C19_Poor_Metabolizer') ;
-          ltwh :: 40,1240,0,0;
+          ltwh :: 40,1440,0,0;
      component :: 'Monitor_Antiplatelet_Hypersensitivity' ;
+          caption :: 'Monitor for antiplatelet hypersensitivity reactions' ;
+          description :: 'Monitors hypersensitivity reactions to Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Prasugrel and Prescribe_Ticagrelor. The aspirin label warns of severe allergic reactions and says to stop use and seek help, and the clopidogrel, prasugrel and ticagrelor labels list hypersensitivity and angioedema, with cross-reactivity between thienopyridines. Order: antiplatelet hypersensitivity reaction review (hives, angioedema, bronchospasm, rash, hematologic reaction), symptom-triggered, with an allergy question at each follow-up visit after starting or switching an antiplatelet. Patient: stop the medicine and seek medical help right away for hives, swelling of the face, lips or throat, wheezing or a widespread rash. Clinician: if a hypersensitivity reaction occurs, stop the culprit drug, treat the reaction and choose an alternative antiplatelet, noting cross-reactivity between thienopyridines (clopidogrel, prasugrel, ticlopidine).' ;
           metaprops :: 'ontology.coding=SCT\\:416098002 [Allergy to drug (finding)]
 ' ;
           task_definition :: 'Monitor_Antiplatelet_Hypersensitivity' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,1340,0,0;
+          ltwh :: 40,1540,0,0;
+     component :: 'Alert_Further_Examination_Antiplatelet_Hypersensitivity' ;
+          caption :: 'Alert: further examination of antiplatelet hypersensitivity reaction' ;
+          description :: 'Monitors suspected antiplatelet hypersensitivity reaction recorded by Monitor_Antiplatelet_Hypersensitivity (hypersensitivity reactions to Prescribe_Aspirin, Prescribe_Clopidogrel, Prescribe_Prasugrel and Prescribe_Ticagrelor). The clopidogrel and prasugrel labels report hypersensitivity including rash, angioedema or hematologic reaction, and the labels name no laboratory or imaging test to confirm it. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+          metaprops :: 'ontology.coding=SCT\\:416098002 [Allergy to drug (finding)]
+' ;
+          task_definition :: 'Alert_Further_Examination_Antiplatelet_Hypersensitivity' ;
+          schedule_constraint :: completed('Monitor_Antiplatelet_Hypersensitivity') ;
+          ltwh :: 40,1640,0,0;
      component :: 'Monitor_Ticagrelor_Dyspnea' ;
+          caption :: 'Monitor for dyspnea on ticagrelor' ;
+          description :: 'Monitors dyspnea as a labeled adverse effect of Prescribe_Ticagrelor. The label says ticagrelor-related dyspnea needs no specific treatment and that intolerable dyspnea warrants switching antiplatelet agent. Order: dyspnea review on ticagrelor, symptom-triggered, with a breathlessness question at each follow-up visit. Patient: contact your clinician if you have unexpected shortness of breath, especially if it is severe. Clinician: if dyspnea is new, prolonged or worse, exclude other causes such as heart failure, continue ticagrelor without specific treatment when it is drug-related and tolerable, and switch to another antiplatelet agent if it is intolerable.' ;
           metaprops :: 'ontology.coding=SCT\\:267036007 [Dyspnea (finding)]
 ' ;
           task_definition :: 'Monitor_Ticagrelor_Dyspnea' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,1440,0,0;
+          ltwh :: 40,1740,0,0;
+     component :: 'Alert_Further_Examination_Ticagrelor_Dyspnea' ;
+          caption :: 'Alert: further examination of ticagrelor-related dyspnea' ;
+          description :: 'Monitors suspected ticagrelor-related dyspnea recorded by Monitor_Ticagrelor_Dyspnea (dyspnea as a labeled adverse effect of Prescribe_Ticagrelor). The ticagrelor label says new, prolonged or worsened dyspnea related to the drug needs no specific treatment and that another antiplatelet agent should be considered when it is intolerable, and names no laboratory or imaging test. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+          metaprops :: 'ontology.coding=SCT\\:267036007 [Dyspnea (finding)]
+' ;
+          task_definition :: 'Alert_Further_Examination_Ticagrelor_Dyspnea' ;
+          schedule_constraint :: completed('Monitor_Ticagrelor_Dyspnea') ;
+          ltwh :: 40,1840,0,0;
      component :: 'Monitor_Ticagrelor_Bradyarrhythmia' ;
+          caption :: 'Check the pulse for bradyarrhythmia on ticagrelor (ECG on symptoms)' ;
+          description :: 'Monitors bradyarrhythmia (ventricular pauses, AV block) as a labeled adverse effect of Prescribe_Ticagrelor. The label warns that ticagrelor can cause ventricular pauses and that patients with conduction disease without a pacemaker were not studied, but states no monitoring instruction. Order: pulse check with ECG on symptoms of bradyarrhythmia on ticagrelor, each follow-up visit, with an ECG on dizziness, syncope or a slow pulse. Patient: report fainting, dizziness, light-headedness or a very slow pulse. Clinician: if bradycardia or syncope is found, obtain an ECG for ventricular pauses or AV block and reconsider ticagrelor in patients with sick sinus syndrome, second or third degree AV block or bradycardia-related syncope without a pacemaker.' ;
           metaprops :: 'ontology.coding=SCT\\:421869004 [Bradyarrhythmia (disorder)]
 ' ;
           task_definition :: 'Monitor_Ticagrelor_Bradyarrhythmia' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,1540,0,0;
+          ltwh :: 40,1940,0,0;
      component :: 'Order_ECG' ;
+          caption :: 'Order 12-lead ECG' ;
+          description :: 'Orders a 12-lead ECG for Monitor_Ticagrelor_Bradyarrhythmia, to look for ventricular pauses or AV block when syncope, dizziness or a slow pulse is found on ticagrelor.' ;
           metaprops :: 'ontology.coding=LNC\\:34534-8 [12 lead EKG panel]
 ' ;
           task_definition :: 'Order_ECG' ;
           schedule_constraint :: completed('Monitor_Ticagrelor_Bradyarrhythmia') ;
-          ltwh :: 40,1640,0,0;
+          ltwh :: 40,2040,0,0;
      component :: 'Monitor_Ticagrelor_Central_Sleep_Apnea' ;
+          caption :: 'Monitor for central sleep apnea on ticagrelor' ;
+          description :: 'Monitors central sleep apnea as a labeled adverse effect of Prescribe_Ticagrelor. The label reports central sleep apnea including Cheyne-Stokes respiration and advises further assessment when it is suspected. Order: central sleep apnea symptom review on ticagrelor, symptom-triggered, with a sleep-breathing question at each follow-up visit. Patient: tell your clinician if you or your partner notice pauses in breathing during sleep, irregular breathing at night, frequent waking or daytime sleepiness. Clinician: if central sleep apnea is suspected, consider further clinical assessment such as a sleep study.' ;
           metaprops :: 'ontology.coding=SCT\\:27405005 [Central sleep apnea syndrome (disorder)]
 ' ;
           task_definition :: 'Monitor_Ticagrelor_Central_Sleep_Apnea' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,1740,0,0;
+          ltwh :: 40,2140,0,0;
      component :: 'Order_Polysomnography' ;
+          caption :: 'Order polysomnography (sleep study)' ;
+          description :: 'Orders a sleep study for Monitor_Ticagrelor_Central_Sleep_Apnea, as the further clinical assessment the ticagrelor label advises when central sleep apnea is suspected.' ;
           metaprops :: 'ontology.coding=LNC\\:28633-6 [Polysomnography (sleep) study]
 ' ;
           task_definition :: 'Order_Polysomnography' ;
           schedule_constraint :: completed('Monitor_Ticagrelor_Central_Sleep_Apnea') ;
-          ltwh :: 40,1840,0,0;
+          ltwh :: 40,2240,0,0;
      component :: 'Monitor_PPI_CDAD' ;
+          caption :: 'Monitor for C. difficile-associated diarrhea on pantoprazole' ;
+          description :: 'Monitors C. difficile-associated diarrhea as a labeled adverse effect of Prescribe_PPI. The label says PPI therapy may raise the risk of C. difficile-associated diarrhea and that the diagnosis should be considered for diarrhea that does not improve. Order: Clostridioides difficile-associated diarrhea symptom review with triggered stool C. difficile testing, symptom-triggered, with a bowel-habit question at each follow-up visit. Patient: call your clinician right away for diarrhea that does not improve, especially with fever or abdominal pain. Clinician: if diarrhea does not improve, test the stool for C. difficile, treat a confirmed infection and review whether the PPI is still needed.' ;
           metaprops :: 'ontology.coding=SCT\\:186431008 [Infection caused by Clostridioides difficile (disorder)]
 ' ;
           task_definition :: 'Monitor_PPI_CDAD' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,1940,0,0;
+          ltwh :: 40,2340,0,0;
      component :: 'Order_Stool_C_Difficile_Test' ;
+          caption :: 'Order stool C. difficile toxin test' ;
+          description :: 'Orders a stool C. difficile toxin test for Monitor_PPI_CDAD, because the pantoprazole label says C. difficile-associated diarrhea should be considered for diarrhea that does not improve.' ;
           metaprops :: 'ontology.coding=LNC\\:34713-8 [Clostridioides difficile toxin A+B [Presence] in Stool]
 ' ;
           task_definition :: 'Order_Stool_C_Difficile_Test' ;
           schedule_constraint :: completed('Monitor_PPI_CDAD') ;
-          ltwh :: 40,2040,0,0;
+          ltwh :: 40,2440,0,0;
      component :: 'Monitor_PPI_Hypomagnesemia' ;
+          caption :: 'Monitor serum magnesium on pantoprazole' ;
+          description :: 'Monitors hypomagnesemia as a labeled adverse effect of Prescribe_PPI. The label\'s own instruction is to consider magnesium before starting and periodically in patients on prolonged treatment or on digoxin or diuretics. Order: serum magnesium, baseline before starting pantoprazole, then every 12 months while it continues, and on symptoms. Patient: report muscle cramps, tremor, spasms, palpitations, an irregular heartbeat or seizures. Clinician: if magnesium is low, check calcium and potassium, replace magnesium and reconsider the PPI.' ;
           metaprops :: 'ontology.coding=SCT\\:190855004 [Hypomagnesemia (disorder)]
 ' ;
           task_definition :: 'Monitor_PPI_Hypomagnesemia' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,2140,0,0;
+          ltwh :: 40,2540,0,0;
      component :: 'Tests_Ordering_Recommendations_PPI_Hypomagnesemia' ;
+          caption :: 'Which tests to order for suspected hypomagnesemia?' ;
+          description :: 'When a symptom of hypomagnesemia is found by Monitor_PPI_Hypomagnesemia, which electrolytes to order. The label asks to consider magnesium before starting the PPI and periodically; that scheduled check is part of the monitor\'s ServiceRequest.occurrenceTiming (baseline before starting pantoprazole, then every 12 months while it continues), not a data item. The monitor checks calcium and potassium when magnesium is low.' ;
           task_definition :: 'Tests_Ordering_Recommendations_PPI_Hypomagnesemia' ;
           schedule_constraint :: completed('Monitor_PPI_Hypomagnesemia') ;
-          ltwh :: 40,2240,0,0;
+          ltwh :: 40,2640,0,0;
      component :: 'Monitor_PPI_Bone_Fracture' ;
+          caption :: 'Review fracture and osteoporosis risk during long-term pantoprazole' ;
+          description :: 'Monitors osteoporosis-related fracture as a labeled adverse effect of long-term Prescribe_PPI. The label links long-term (a year or longer) and high-dose PPI use to hip, wrist and spine fractures and advises managing at-risk patients per osteoporosis guidelines. Order: fracture history and osteoporosis risk review during long-term pantoprazole, every 12 months while pantoprazole continues for 1 year or longer, and on any fracture. Patient: report any fracture, especially of the hip, wrist or spine. Clinician: when pantoprazole continues for a year or longer, assess osteoporosis and fracture risk per current osteoporosis guidelines and use the lowest PPI dose for the shortest duration.' ;
           metaprops :: 'ontology.coding=SCT\\:443165006 [Osteoporotic fracture of bone (disorder)]
 ' ;
           task_definition :: 'Monitor_PPI_Bone_Fracture' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,2340,0,0;
+          ltwh :: 40,2740,0,0;
+     component :: 'Alert_Further_Examination_PPI_Bone_Fracture' ;
+          caption :: 'Alert: further examination of osteoporosis-related bone fracture' ;
+          description :: 'Monitors suspected osteoporosis-related bone fracture recorded by Monitor_PPI_Bone_Fracture (osteoporosis-related fracture as a labeled adverse effect of long-term Prescribe_PPI). The pantoprazole label reports an increased fracture risk with high-dose and long-term PPI therapy and asks patients to report fractures, and names no laboratory or imaging test. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+          metaprops :: 'ontology.coding=SCT\\:443165006 [Osteoporotic fracture of bone (disorder)]
+' ;
+          task_definition :: 'Alert_Further_Examination_PPI_Bone_Fracture' ;
+          schedule_constraint :: completed('Monitor_PPI_Bone_Fracture') ;
+          ltwh :: 40,2840,0,0;
      component :: 'Monitor_PPI_Interstitial_Nephritis' ;
+          caption :: 'Monitor for acute tubulointerstitial nephritis on pantoprazole' ;
+          description :: 'Monitors acute tubulointerstitial nephritis as a labeled adverse effect of Prescribe_PPI. The label says acute TIN can occur at any point during PPI therapy and that the PPI should be stopped and the patient evaluated if it is suspected. Order: acute tubulointerstitial nephritis symptom review with triggered serum creatinine and urinalysis, symptom-triggered, at any time during pantoprazole therapy. Patient: call your clinician right away for fever, rash, joint pain, passing less urine or blood in the urine. Clinician: if acute tubulointerstitial nephritis is suspected, check serum creatinine and urinalysis, stop pantoprazole and evaluate.' ;
           metaprops :: 'ontology.coding=SCT\\:28637003 [Acute tubulointerstitial nephritis (disorder)]
 ' ;
           task_definition :: 'Monitor_PPI_Interstitial_Nephritis' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,2440,0,0;
+          ltwh :: 40,2940,0,0;
      component :: 'Tests_Ordering_Recommendations_PPI_Interstitial_Nephritis' ;
+          caption :: 'Which tests to order for suspected acute tubulointerstitial nephritis?' ;
+          description :: 'When a symptom of acute tubulointerstitial nephritis is found by Monitor_PPI_Interstitial_Nephritis, which tests to order. The monitor\'s performer instruction is to check serum creatinine and urinalysis, stop pantoprazole and evaluate.' ;
           task_definition :: 'Tests_Ordering_Recommendations_PPI_Interstitial_Nephritis' ;
           schedule_constraint :: completed('Monitor_PPI_Interstitial_Nephritis') ;
-          ltwh :: 40,2540,0,0;
+          ltwh :: 40,3040,0,0;
      component :: 'Monitor_PPI_Cutaneous_Lupus' ;
+          caption :: 'Monitor for cutaneous or systemic lupus erythematosus on pantoprazole' ;
+          description :: 'Monitors cutaneous or systemic lupus erythematosus as a labeled adverse effect of Prescribe_PPI. The label reports new or exacerbated CLE and SLE with PPIs and says to stop the drug and refer when signs appear. Order: cutaneous or systemic lupus erythematosus symptom review, symptom-triggered, at any time during pantoprazole therapy. Patient: report a new or worsening rash on sun-exposed skin, or new joint pain. Clinician: if cutaneous or systemic lupus is suspected, stop pantoprazole and refer the patient to the appropriate specialist.' ;
           metaprops :: 'ontology.coding=SCT\\:7119001 [Cutaneous lupus erythematosus (disorder)]
 ' ;
           task_definition :: 'Monitor_PPI_Cutaneous_Lupus' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,2640,0,0;
+          ltwh :: 40,3140,0,0;
+     component :: 'Alert_Further_Examination_PPI_Cutaneous_Lupus' ;
+          caption :: 'Alert: further examination of cutaneous or systemic lupus erythematosus' ;
+          description :: 'Monitors suspected cutaneous or systemic lupus erythematosus recorded by Monitor_PPI_Cutaneous_Lupus (cutaneous or systemic lupus erythematosus as a labeled adverse effect of Prescribe_PPI). The pantoprazole label asks to discontinue the drug and refer the patient to a specialist when signs or symptoms of CLE or SLE are noted; it mentions serological testing (e.g. ANA) only as a result that may be positive and asks for no laboratory or imaging test. So, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+          metaprops :: 'ontology.coding=SCT\\:7119001 [Cutaneous lupus erythematosus (disorder)]
+' ;
+          task_definition :: 'Alert_Further_Examination_PPI_Cutaneous_Lupus' ;
+          schedule_constraint :: completed('Monitor_PPI_Cutaneous_Lupus') ;
+          ltwh :: 40,3240,0,0;
      component :: 'Monitor_PPI_Severe_Cutaneous_Reactions' ;
+          caption :: 'Monitor for severe cutaneous adverse reactions on pantoprazole' ;
+          description :: 'Monitors severe cutaneous adverse reactions as a labeled adverse effect of Prescribe_PPI. The label reports severe cutaneous reactions (EM, SJS/TEN, DRESS, AGEP) and says to stop the drug at the first signs. Order: severe cutaneous adverse reaction symptom review (SJS, TEN, DRESS, AGEP), symptom-triggered, at any time during pantoprazole therapy. Patient: stop pantoprazole and call your clinician right away for blistering or peeling skin, mouth sores, or a rash with fever. Clinician: discontinue pantoprazole at the first signs of a severe cutaneous reaction or other hypersensitivity and consider further evaluation.' ;
           metaprops :: 'ontology.coding=SCT\\:768946000 [Stevens-Johnson syndrome, toxic epidermal necrolysis spectrum (disorder)]
 ' ;
           task_definition :: 'Monitor_PPI_Severe_Cutaneous_Reactions' ;
           schedule_constraint :: completed('Display_Potential_ADEs') ;
-          ltwh :: 40,2740,0,0;
+          ltwh :: 40,3340,0,0;
+     component :: 'Alert_Further_Examination_PPI_Severe_Cutaneous_Reactions' ;
+          caption :: 'Alert: further examination of severe cutaneous adverse reaction' ;
+          description :: 'Monitors suspected severe cutaneous adverse reaction recorded by Monitor_PPI_Severe_Cutaneous_Reactions (severe cutaneous adverse reactions as a labeled adverse effect of Prescribe_PPI). The pantoprazole label asks to discontinue it at the first signs or symptoms of a severe cutaneous adverse reaction and to consider further evaluation, and names no laboratory or imaging test. The sources name no test, so, following Mor Peleg\'s know-how of 4 Nov 2026, this step alerts the clinician to examine the patient further and decide on work-up instead of ordering a test.' ;
+          metaprops :: 'ontology.coding=SCT\\:768946000 [Stevens-Johnson syndrome, toxic epidermal necrolysis spectrum (disorder)]
+' ;
+          task_definition :: 'Alert_Further_Examination_PPI_Severe_Cutaneous_Reactions' ;
+          schedule_constraint :: completed('Monitor_PPI_Severe_Cutaneous_Reactions') ;
+          ltwh :: 40,3440,0,0;
 end plan.
 
 plan  :: 'Monitoring_Plan' ;
      caption :: 'Monitor antithrombotic therapy' ;
      description :: 'Monitors completion of the antithrombotic recommendations, the desired outcome and the adverse drug effects, in three parallel sub-plans.' ;
      component :: 'Monitor_Actions' ;
+          caption :: 'Monitor completion of the antithrombotic recommendations' ;
+          description :: 'Action Enactment monitoring: adherence, regimen duration and step-down, NSAID avoidance and the continued need for the PPI.' ;
           task_definition :: 'Monitor_Actions' ;
           ltwh :: 40,40,0,0;
      component :: 'Monitor_Desired_State' ;
+          caption :: 'Monitor the desired outcome (absence of ischemic events)' ;
+          description :: 'State Achievement monitoring of the shared achieve goal of the antithrombotic drugs: fewer ischemic events and MACE.' ;
           task_definition :: 'Monitor_Desired_State' ;
           ltwh :: 40,140,0,0;
      component :: 'Monitor_Undesired_State' ;
+          caption :: 'Monitor adverse drug effects' ;
+          description :: 'State Achievement monitoring of the adverse drug effects of the antithrombotics and of pantoprazole, from the label Boxed Warnings and Warnings and Precautions.' ;
           task_definition :: 'Monitor_Undesired_State' ;
           ltwh :: 40,240,0,0;
 end plan.
 
 
 data  :: 'requires_oral_anticoagulation' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Does the patient have an indication for long-term oral anticoagulation (e.g. atrial fibrillation)?' ;
-     description :: 'Indication for long-term oral anticoagulation (e.g. atrial fibrillation). Separates the regimens without an oral anticoagulant (Recs 1-10, 15) from those with a DOAC (Recs 11-14). The SNOMED CT concept records current use of an anticoagulant, not the indication.' ;
+     description :: 'Indication for long-term oral anticoagulation (e.g. atrial fibrillation). Separates the regimens without an oral anticoagulant (Recs 1-10, 15) from those with a DOAC (Recs 11-14). The SNOMED CT concept records current use of an anticoagulant, not the indication. Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:711150003 [Long-term current use of anticoagulant (situation)]
 quote=p.e50, Rec 1\\: "In patients with CCD and no indication for oral anticoagulant therapy, low-dose aspirin 81 mg (75-100 mg) is recommended"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 1 (p.e50)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'pci_within_12_months' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'PCI within the past 12 months?' ;
-     description :: 'Percutaneous coronary intervention within the past 12 months; the PCI-related DAPT and DOAC-plus-antiplatelet pathways of Figure 9 apply in this window. The 12-month window is held in the data-item logic; the SNOMED CT concept records a history of PCI.' ;
+     description :: 'Percutaneous coronary intervention within the past 12 months; the PCI-related DAPT and DOAC-plus-antiplatelet pathways of Figure 9 apply in this window. The 12-month window is held in the data-item logic; the SNOMED CT concept records a history of PCI. Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:405741001 [History of percutaneous coronary intervention (situation)]
 quote=p.e50, Rec 2\\: "In patients with CCD treated with PCI, dual antiplatelet therapy (DAPT) consisting of aspirin and clopidogrel for 6 months post PCI"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 2 (p.e50)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'des_implanted' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Was a drug-eluting stent implanted at that PCI?' ;
-     description :: 'A drug-eluting stent was implanted at the recent PCI; required for the short-DAPT then P2Y12-monotherapy option of Rec 3.' ;
+     description :: 'A drug-eluting stent was implanted at the recent PCI; required for the short-DAPT then P2Y12-monotherapy option of Rec 3. Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:705637003 [Drug-eluting coronary artery stent (physical object)]
 quote=p.e50, Rec 3\\: "In select patients with CCD treated with PCI and a drug-eluting stent (DES) who have completed a 1- to 3-month course of DAPT"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 3 (p.e50)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'acs_within_12_months' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Acute coronary syndrome within the past 12 months?' ;
-     description :: 'Acute coronary syndrome within the past 12 months; recent ACS is an indication for DAPT (Figure 9) and an acute indication for antiplatelet therapy alongside a DOAC (Rec 14).' ;
+     description :: 'Acute coronary syndrome within the past 12 months; recent ACS is an indication for DAPT (Figure 9) and an acute indication for antiplatelet therapy alongside a DOAC (Rec 14). Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:394659003 [Acute coronary syndrome (disorder)]
 quote=p.e50, Rec 7\\: "In patients with CCD without recent ACS or a PCI-related indication for DAPT"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 7 (p.e50)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'cabg_within_12_months' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'CABG within the past 12 months?' ;
-     description :: 'Coronary artery bypass grafting within the past 12 months. Rec 6 gives no DAPT duration after CABG; the first postoperative year is used (approved open question 1).' ;
+     description :: 'Coronary artery bypass grafting within the past 12 months. Rec 6 gives no DAPT duration after CABG; the first postoperative year is used (approved open question 1). Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:232717009 [Coronary artery bypass grafting (procedure)]
 quote=p.e50, Rec 6\\: "the use of DAPT after CABG may be useful to reduce the incidence of saphenous vein graft occlusion"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 6 (p.e50)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'previous_mi' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'History of myocardial infarction?' ;
-     description :: 'History of myocardial infarction; the population of extended DAPT (Rec 4), vorapaxar (Rec 5) and ticagrelor 60 mg (PEGASUS).' ;
+     description :: 'History of myocardial infarction; the population of extended DAPT (Rec 4), vorapaxar (Rec 5) and ticagrelor 60 mg (PEGASUS). Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:1755008 [Old myocardial infarction (disorder)]
 quote=p.e50, Rec 4\\: "In patients with CCD who have had a previous MI and are at low bleeding risk"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 4 (p.e50)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'prior_stroke_or_tia' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'History of ischemic stroke or TIA?' ;
-     description :: 'History of ischemic stroke or transient ischemic attack; excludes vorapaxar (Rec 8) and prasugrel (Rec 9). The SNOMED CT concept covers cerebrovascular accident; TIA is a separate concept (161511000) not coded here.' ;
+     description :: 'History of ischemic stroke or transient ischemic attack; excludes vorapaxar (Rec 8) and prasugrel (Rec 9). The SNOMED CT concept covers cerebrovascular accident; TIA is a separate concept (161511000) not coded here. Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:275526006 [History of cerebrovascular accident (situation)]
 quote=p.e50, Rec 9\\: "In patients with CCD and previous stroke, TIA, or ICH, prasugrel should not be used"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Rec 9 (p.e50)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'prior_ich' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'History of intracranial hemorrhage?' ;
-     description :: 'History of intracranial hemorrhage; excludes vorapaxar (Rec 8), prasugrel (Rec 9) and ticagrelor (BRILINTA §4.1).' ;
+     description :: 'History of intracranial hemorrhage; excludes vorapaxar (Rec 8), prasugrel (Rec 9) and ticagrelor (BRILINTA §4.1). Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:16864911000119103 [History of intracranial hemorrhage (situation)]
 quote=\\u00A74.1\\: "BRILINTA is contraindicated in patients with a history of intracranial hemorrhage (ICH) because of a high risk of recurrent ICH in this population"
 source=BRILINTA (ticagrelor) US Prescribing Information 2026, \\u00A74.1
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'high_bleeding_risk' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'High bleeding risk (validated score such as PRECISE-DAPT, DAPT or PARIS, or clinical judgment)?' ;
-     description :: 'High bleeding risk, assessed with a validated score (PRECISE-DAPT, DAPT or PARIS) or clinical judgment; steers the choice and duration of antiplatelet therapy (Synopsis; Recs 3, 4, 12, 15).' ;
+     description :: 'High bleeding risk, assessed with a validated score (PRECISE-DAPT, DAPT or PARIS) or clinical judgment; steers the choice and duration of antiplatelet therapy (Synopsis; Recs 3, 4, 12, 15). Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:711536002 [At high risk for bleeding (finding)]
 quote=p.e50, Synopsis\\: "The use of validated risk scores to address bleeding risk can be useful in choice and duration of antiplatelet therapy."
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 Synopsis (p.e50)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'high_thrombotic_risk' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'High risk of recurrent ischemic events (e.g. multivessel CAD with diabetes, recurrent MI, PAD, HF or CKD, or complex PCI)?' ;
-     description :: 'High risk of recurrent ischemic events (the COMPASS definition: multivessel CAD with diabetes requiring medication, recurrent MI, PAD, HF or CKD; or complex PCI features). The SNOMED CT concept is the nearest match (increased risk for cardiovascular event).' ;
+     description :: 'High risk of recurrent ischemic events (the COMPASS definition: multivessel CAD with diabetes requiring medication, recurrent MI, PAD, HF or CKD; or complex PCI features). The SNOMED CT concept is the nearest match (increased risk for cardiovascular event). Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:395112001 [At increased risk for cardiovascular event (finding)]
 quote=p.e55, text 15\\: "multivessel CAD and at least one of the following\\: diabetes requiring medication, recurrent MI, peripheral artery disease, HF, or CKD"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 supportive text 15 (p.e55)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'aspirin_intolerance' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Aspirin allergy or intolerance (incl. NSAID hypersensitivity or the asthma-rhinitis-nasal polyps syndrome)?' ;
-     description :: 'Aspirin allergy or intolerance, including NSAID hypersensitivity and the asthma-rhinitis-nasal polyps syndrome; selects clopidogrel monotherapy instead of aspirin. The SNOMED CT concept covers aspirin allergy only, not intolerance.' ;
+     description :: 'Aspirin allergy or intolerance, including NSAID hypersensitivity and the asthma-rhinitis-nasal polyps syndrome; selects clopidogrel monotherapy instead of aspirin. The SNOMED CT concept covers aspirin allergy only, not intolerance. Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:293586001 [Allergy to aspirin (finding)]
 quote=p.e51, text 1\\: "As an alternative to low-dose aspirin, clopidogrel may be used in individuals who cannot tolerate aspirin therapy"
 source=2023 AHA/ACC CCD Guideline (Virani et al., DOI 10.1161/CIR.0000000000001168), \\u00A74.3.1 supportive text 1 (p.e51)
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'active_pathological_bleeding' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Active pathological bleeding (e.g. peptic ulcer, intracranial hemorrhage)?' ;
-     description :: 'Active pathological bleeding such as a peptic ulcer or intracranial hemorrhage; every antithrombotic label contraindicates it, so it gates the whole therapy plan. Shares its SNOMED CT concept with Monitor_Bleeding.' ;
+     description :: 'Active pathological bleeding such as a peptic ulcer or intracranial hemorrhage; every antithrombotic label contraindicates it, so it gates the whole therapy plan. Shares its SNOMED CT concept with Monitor_Bleeding. Default "no" for running and testing, so that the precondition of Antithrombotic_Therapy is met and the therapy plan is entered. This source is mandatory because it gates a plan: the clinician must confirm the value, because a default can hide an answer that was never asked.' ;
      metaprops :: 'ontology.coding=SCT\\:131148009 [Bleeding (finding)]
 quote=\\u00A74.1\\: "Plavix is contraindicated in patients with active pathological bleeding such as peptic ulcer or intracranial hemorrhage."
 source=PLAVIX (clopidogrel) US Prescribing Information 2025, \\u00A74.1
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'age_years' ;
      type :: integer ;
      caption :: 'Age' ;
-     description :: 'Age in years; prasugrel is generally not recommended at 75 years or older (EFFIENT Boxed Warning).' ;
+     description :: 'Age in years; prasugrel is generally not recommended at 75 years or older (EFFIENT Boxed Warning). Default 65 for running and testing: a typical adult with CCD, below the prasugrel age threshold of 75 years; the clinician records the actual value.' ;
      metaprops :: 'ontology.coding=SCT\\:424144002 [Current chronological age (observable entity)]
 quote=Boxed Warning\\: "In patients \\u226575 years of age, Effient is generally not recommended, because of the increased risk of fatal and intracranial bleeding and uncertain benefit"
 source=EFFIENT (prasugrel) US Prescribing Information 2022, Boxed Warning
 ' ;
+     default_value ::65;
      unit :: 'years' ;
 end data.
 
 data  :: 'on_digoxin_or_diuretic' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Taking digoxin or a diuretic?' ;
-     description :: 'Taking digoxin or a diuretic (drugs that may cause hypomagnesemia); widens magnesium monitoring on pantoprazole to the short-DAPT regimen (PROTONIX §5.8). A composite flag with no single SNOMED CT concept, so it is left uncoded.' ;
+     description :: 'Taking digoxin or a diuretic (drugs that may cause hypomagnesemia); widens magnesium monitoring on pantoprazole to the short-DAPT regimen (PROTONIX §5.8). A composite flag with no single SNOMED CT concept, so it is left uncoded. Default "no" for running and testing: with the other baseline defaults it leads Antithrombotic_Regimen_Decision to Aspirin_Monotherapy; the clinician records the actual answer.' ;
      metaprops :: 'quote=\\u00A75.8\\: "For patients expected to be on prolonged treatment or who take PPIs with medications such as digoxin or drugs that may cause hypomagnesemia (e.g., diuretics)"
 source=PROTONIX (pantoprazole) US Prescribing Information 2026, \\u00A75.8
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'unusual_bleeding_or_bruising' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Unusual, prolonged or excessive bleeding or bruising since the last visit?' ;
-     description :: 'Unusual, prolonged or excessive bleeding or bruising reported by the patient. Asked by Monitor_Bleeding. The SNOMED CT concept is broader (any bleeding).' ;
+     description :: 'Unusual, prolonged or excessive bleeding or bruising reported by the patient. Asked by Monitor_Bleeding. The SNOMED CT concept is broader (any bleeding). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:131148009 [Bleeding (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'hematuria' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Blood in the urine since the last visit?' ;
-     description :: 'Blood in the urine reported by the patient. Asked by Monitor_Bleeding and Monitor_PPI_Interstitial_Nephritis.' ;
+     description :: 'Blood in the urine reported by the patient. Asked by Monitor_Bleeding and Monitor_PPI_Interstitial_Nephritis. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:34436003 [Blood in urine (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'blood_in_stool' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Red or black tarry stools since the last visit?' ;
-     description :: 'Red or black tarry stools reported by the patient, a sign of gastrointestinal bleeding. Asked by Monitor_Bleeding. The SNOMED CT concept is broader (gastrointestinal hemorrhage, of which red or black stools are a sign).' ;
+     description :: 'Red or black tarry stools reported by the patient, a sign of gastrointestinal bleeding. Asked by Monitor_Bleeding. The SNOMED CT concept is broader (gastrointestinal hemorrhage, of which red or black stools are a sign). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:74474003 [Gastrointestinal hemorrhage (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'hematemesis' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Vomiting blood or coffee-ground material since the last visit?' ;
-     description :: 'Vomiting of blood or coffee-ground material reported by the patient. Asked by Monitor_Bleeding.' ;
+     description :: 'Vomiting of blood or coffee-ground material reported by the patient. Asked by Monitor_Bleeding. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:8765009 [Hematemesis (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'hemoptysis' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Coughing up blood since the last visit?' ;
-     description :: 'Coughing up blood reported by the patient. Asked by Monitor_Bleeding.' ;
+     description :: 'Coughing up blood reported by the patient. Asked by Monitor_Bleeding. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:66857006 [Hemoptysis (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'syncope' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Fainting since the last visit?' ;
-     description :: 'Fainting (syncope) reported by the patient. Asked by Monitor_Bleeding and Monitor_Ticagrelor_Bradyarrhythmia.' ;
+     description :: 'Fainting (syncope) reported by the patient. Asked by Monitor_Bleeding and Monitor_Ticagrelor_Bradyarrhythmia. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:271594007 [Syncope (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'sudden_severe_headache' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Sudden severe headache since the last visit?' ;
-     description :: 'Sudden severe headache reported by the patient, a possible sign of intracranial bleeding. Asked by Monitor_Bleeding.' ;
+     description :: 'Sudden severe headache reported by the patient, a possible sign of intracranial bleeding. Asked by Monitor_Bleeding. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:95660002 [Thunderclap headache (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'systolic_bp' ;
      type :: real ;
      caption :: 'Systolic blood pressure at this visit (mmHg)' ;
-     description :: 'Systolic blood pressure measured at the visit; a low value (below 90 mmHg) is unexplained hypotension that may signal bleeding. Asked by Monitor_Bleeding.' ;
+     description :: 'Systolic blood pressure measured at the visit; a low value (below 90 mmHg) is unexplained hypotension that may signal bleeding. Asked by Monitor_Bleeding. Default 120 mmHg for running and testing: a normal value that does not trigger Tests_Ordering_Recommendations_Bleeding (systolic below 90); the clinician records the actual value.' ;
      metaprops :: 'ontology.coding=SCT\\:271649006 [Systolic blood pressure (observable entity)]
 ' ;
+     default_value ::120;
      unit :: 'mmHg' ;
 end data.
 
 data  :: 'diastolic_bp' ;
      type :: real ;
      caption :: 'Diastolic blood pressure at this visit (mmHg)' ;
-     description :: 'Diastolic blood pressure measured at the visit, recorded with the systolic value. Asked by Monitor_Bleeding.' ;
+     description :: 'Diastolic blood pressure measured at the visit, recorded with the systolic value. Asked by Monitor_Bleeding. Default 80 mmHg for running and testing: a normal value that does not trigger Tests_Ordering_Recommendations_Bleeding (diastolic below 60); the clinician records the actual value.' ;
      metaprops :: 'ontology.coding=SCT\\:271650006 [Diastolic blood pressure (observable entity)]
 ' ;
+     default_value ::80;
      unit :: 'mmHg' ;
 end data.
 
 data  :: 'new_medication_started' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Has a new medicine been started since the last visit?' ;
-     description :: 'A new prescription, over-the-counter medicine or herbal product started since the last visit. Asked by Monitor_Drug_Interactions.' ;
+     description :: 'A new prescription, over-the-counter medicine or herbal product started since the last visit. Asked by Monitor_Drug_Interactions. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:266712008 [New medication commenced (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'on_omeprazole_or_esomeprazole' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Taking omeprazole or esomeprazole?' ;
-     description :: 'Current use of omeprazole or esomeprazole, which reduce the antiplatelet effect of clopidogrel. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is broader (any PPI therapy).' ;
+     description :: 'Current use of omeprazole or esomeprazole, which reduce the antiplatelet effect of clopidogrel. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is broader (any PPI therapy). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:870251000 [Proton pump inhibitor therapy (procedure)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'aspirin_dose_over_100_mg' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Taking more than 100 mg of aspirin a day?' ;
-     description :: 'A daily aspirin dose above 100 mg, which reduces the effect of ticagrelor. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the nearest match (aspirin therapy); there is no dose concept.' ;
+     description :: 'A daily aspirin dose above 100 mg, which reduces the effect of ticagrelor. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the nearest match (aspirin therapy); there is no dose concept. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:717854002 [Aspirin therapy (procedure)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'on_strong_cyp3a_or_pgp_modulator' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Taking a strong CYP3A or P-gp inhibitor or inducer?' ;
-     description :: 'Current use of a strong CYP3A or P-gp inhibitor or inducer, which changes exposure to ticagrelor, vorapaxar and the DOACs. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the nearest match (cytochrome P450 inhibitor).' ;
+     description :: 'Current use of a strong CYP3A or P-gp inhibitor or inducer, which changes exposure to ticagrelor, vorapaxar and the DOACs. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the nearest match (cytochrome P450 inhibitor). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:735424007 [Cytochrome P450 inhibitor (disposition)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'on_ssri_or_snri' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Taking an SSRI or SNRI?' ;
-     description :: 'Current use of a selective serotonin or serotonin-norepinephrine re-uptake inhibitor, which adds bleeding risk. Asked by Monitor_Drug_Interactions. The SNOMED CT concept covers SSRIs only.' ;
+     description :: 'Current use of a selective serotonin or serotonin-norepinephrine re-uptake inhibitor, which adds bleeding risk. Asked by Monitor_Drug_Interactions. The SNOMED CT concept covers SSRIs only. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:373225007 [Selective serotonin re-uptake inhibitor]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'on_other_anticoagulant' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Taking another anticoagulant?' ;
-     description :: 'Current use of another anticoagulant, which adds bleeding risk. Asked by Monitor_Drug_Interactions.' ;
+     description :: 'Current use of another anticoagulant, which adds bleeding risk. Asked by Monitor_Drug_Interactions. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:711150003 [Long-term current use of anticoagulant (situation)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'on_digoxin' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Taking digoxin?' ;
-     description :: 'Current use of digoxin, whose level is monitored when ticagrelor is started or changed. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the substance.' ;
+     description :: 'Current use of digoxin, whose level is monitored when ticagrelor is started or changed. Asked by Monitor_Drug_Interactions. The SNOMED CT concept is the substance. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:387461009 [Digoxin (substance)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'neuraxial_procedure_performed' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Has neuraxial anesthesia or a spinal puncture been performed during anticoagulant therapy?' ;
-     description :: 'Neuraxial anesthesia or spinal puncture performed during anticoagulant therapy, the event that triggers frequent neurological checks. Asked by Monitor_Spinal_Epidural_Hematoma.' ;
+     description :: 'Neuraxial anesthesia or spinal puncture performed during anticoagulant therapy, the event that triggers frequent neurological checks. Asked by Monitor_Spinal_Epidural_Hematoma. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:405650006 [Neuraxial nerve block (procedure)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'back_pain' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Back pain after the epidural or spinal procedure?' ;
-     description :: 'Back pain after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma.' ;
+     description :: 'Back pain after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:161891005 [Backache (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'leg_numbness_or_tingling' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Numbness or tingling of the legs after the epidural or spinal procedure?' ;
-     description :: 'Numbness or tingling of the legs after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma. The SNOMED CT concept covers only numbness, not tingling.' ;
+     description :: 'Numbness or tingling of the legs after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma. The SNOMED CT concept covers only numbness, not tingling. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:309537005 [Numbness of lower limb (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'leg_weakness' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Weakness of the legs after the epidural or spinal procedure?' ;
-     description :: 'Weakness of the legs after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma.' ;
+     description :: 'Weakness of the legs after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:1137412000 [Weakness of muscle of lower limb (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'bowel_or_bladder_dysfunction' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Bowel or bladder problems after the epidural or spinal procedure?' ;
-     description :: 'Bowel or bladder dysfunction after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma. The SNOMED CT concept covers the bowel part only.' ;
+     description :: 'Bowel or bladder dysfunction after a neuraxial procedure. Asked by Monitor_Spinal_Epidural_Hematoma. The SNOMED CT concept covers the bowel part only. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:235594008 [Bowel dysfunction (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'planned_surgery_or_invasive_procedure' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Is surgery, CABG or an invasive or dental procedure planned?' ;
-     description :: 'A planned surgery, CABG or invasive or dental procedure, the event that triggers the perioperative antithrombotic plan. Asked by Monitor_Perioperative_Interruption.' ;
+     description :: 'A planned surgery, CABG or invasive or dental procedure, the event that triggers the perioperative antithrombotic plan. Asked by Monitor_Perioperative_Interruption. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:405613005 [Planned procedure (situation)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'urgent_cabg_likely' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Is urgent CABG likely?' ;
-     description :: 'Urgent CABG is likely, in which case prasugrel or ticagrelor should not be started. Asked by Monitor_Perioperative_Interruption. The SNOMED CT concept is the nearest match (emergency CABG).' ;
+     description :: 'Urgent CABG is likely, in which case prasugrel or ticagrelor should not be started. Asked by Monitor_Perioperative_Interruption. The SNOMED CT concept is the nearest match (emergency CABG). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:414088005 [Emergency CABG]
 ' ;
-end data.
-
-data  :: 'renal_function_check_due' ;
-     type :: boolean ;
-     caption :: 'Is a renal function check due (baseline, or 12 months since the last one)?' ;
-     description :: 'The scheduled renal function test is due: at baseline before starting, then at least every 12 months. Asked by Monitor_Renal_Function. The SNOMED CT concept is the nearest match (renal function monitoring).' ;
-     metaprops :: 'ontology.coding=SCT\\:182809008 [Renal function monitoring (regime/therapy)]
-' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'vomiting_or_diarrhea' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Vomiting or diarrhea since the last visit?' ;
-     description :: 'Vomiting or diarrhea reported by the patient, which may reduce renal function. Asked by Monitor_Renal_Function. The SNOMED CT concept covers only the combined finding of diarrhea and vomiting, not either one alone.' ;
+     description :: 'Vomiting or diarrhea reported by the patient, which may reduce renal function. Asked by Monitor_Renal_Function. The SNOMED CT concept covers only the combined finding of diarrhea and vomiting, not either one alone. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:249519007 [Diarrhea and vomiting (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'dehydration' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Is the patient dehydrated?' ;
-     description :: 'Dehydration, which may reduce renal function. Asked by Monitor_Renal_Function.' ;
+     description :: 'Dehydration, which may reduce renal function. Asked by Monitor_Renal_Function. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:34095006 [Dehydration (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'new_nephrotoxic_medication' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Has a new medicine that can affect the kidneys been started?' ;
-     description :: 'A new nephrotoxic medicine started since the last visit. Asked by Monitor_Renal_Function. The SNOMED CT concept is broader (any new medication).' ;
+     description :: 'A new nephrotoxic medicine started since the last visit. Asked by Monitor_Renal_Function. The SNOMED CT concept is broader (any new medication). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:266712008 [New medication commenced (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'acute_illness' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Acute illness since the last visit?' ;
-     description :: 'An acute illness, during which renal function may decline. Asked by Monitor_Renal_Function.' ;
+     description :: 'An acute illness, during which renal function may decline. Asked by Monitor_Renal_Function. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:2704003 [Acute disease (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'unexplained_purpura' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Unexplained purple skin spots?' ;
-     description :: 'Unexplained purple skin spots (purpura) reported by the patient. Asked by Monitor_TTP.' ;
+     description :: 'Unexplained purple skin spots (purpura) reported by the patient. Asked by Monitor_TTP. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:284078000 [Purpuric rash (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'extreme_fatigue' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Extreme tiredness?' ;
-     description :: 'Extreme tiredness reported by the patient. Asked by Monitor_TTP.' ;
+     description :: 'Extreme tiredness reported by the patient. Asked by Monitor_TTP. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:60119000 [Exhaustion (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'jaundice' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Yellow skin or eyes?' ;
-     description :: 'Yellow skin or eyes (jaundice). Asked by Monitor_TTP.' ;
+     description :: 'Yellow skin or eyes (jaundice). Asked by Monitor_TTP. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:18165001 [Jaundice (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'fever' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Fever since the last visit?' ;
-     description :: 'Fever reported by the patient or measured at the visit. Asked by Monitor_TTP, Monitor_PPI_CDAD and Monitor_PPI_Interstitial_Nephritis.' ;
+     description :: 'Fever reported by the patient or measured at the visit. Asked by Monitor_TTP, Monitor_PPI_CDAD and Monitor_PPI_Interstitial_Nephritis. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:386661006 [Fever (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'confusion' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'New confusion?' ;
-     description :: 'New confusion reported by the patient or a carer. Asked by Monitor_TTP.' ;
+     description :: 'New confusion reported by the patient or a carer. Asked by Monitor_TTP. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:286933003 [Confusional state (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'reduced_urine_output' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Passing less urine than usual?' ;
-     description :: 'Reduced urine output reported by the patient. Asked by Monitor_TTP and Monitor_PPI_Interstitial_Nephritis.' ;
+     description :: 'Reduced urine output reported by the patient. Asked by Monitor_TTP and Monitor_PPI_Interstitial_Nephritis. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:718403007 [Decreased urine output (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'cyp2c19_status' ;
      type :: text ;
      caption :: 'CYP2C19 genotype result on file?' ;
-     description :: 'The CYP2C19 genotype result on file: poor metabolizer, not a poor metabolizer, or unknown (no result). Asked by Monitor_CYP2C19_Poor_Metabolizer. The SNOMED CT concept names the result the clopidogrel label acts on (CYP2C19 poor metabolizer).' ;
+     description :: 'The CYP2C19 genotype result on file: poor metabolizer, not a poor metabolizer, or unknown (no result). Asked by Monitor_CYP2C19_Poor_Metabolizer. The SNOMED CT concept names the result the clopidogrel label acts on (CYP2C19 poor metabolizer). Default "unknown" for running and testing (no result on file); with ischemic_event_on_clopidogrel at its default "no", Order_CYP2C19_Genotype does not run. The clinician records the actual result.' ;
      metaprops :: 'ontology.coding=SCT\\:738786005 [Cytochrome P450 family 2 subfamily C member 19 poor metabolizer (finding)]
 ' ;
-     range ::"poor_metabolizer","not_poor_metabolizer","unknown";
+     range ::"poor_metabolizer||poor_metabolizer","not_poor_metabolizer||not_poor_metabolizer","unknown||unknown";
+     default_value ::"unknown";
 end data.
 
 data  :: 'ischemic_event_on_clopidogrel' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Ischemic event (new chest pain, MI or stroke symptoms) while on clopidogrel?' ;
-     description :: 'An ischemic event while on clopidogrel, which prompts CYP2C19 testing. Asked by Monitor_CYP2C19_Poor_Metabolizer. The SNOMED CT concept is broader (acute coronary syndrome) and does not cover stroke.' ;
+     description :: 'An ischemic event while on clopidogrel, which prompts CYP2C19 testing. Asked by Monitor_CYP2C19_Poor_Metabolizer. The SNOMED CT concept is broader (acute coronary syndrome) and does not cover stroke. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:394659003 [Acute coronary syndrome (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'hives' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Hives?' ;
-     description :: 'Hives (urticaria) after starting or switching an antiplatelet. Asked by Monitor_Antiplatelet_Hypersensitivity.' ;
+     description :: 'Hives (urticaria) after starting or switching an antiplatelet. Asked by Monitor_Antiplatelet_Hypersensitivity. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:126485001 [Urticaria (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'facial_or_throat_swelling' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Swelling of the face, lips or throat?' ;
-     description :: 'Swelling of the face, lips or throat (angioedema). Asked by Monitor_Antiplatelet_Hypersensitivity.' ;
+     description :: 'Swelling of the face, lips or throat (angioedema). Asked by Monitor_Antiplatelet_Hypersensitivity. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:41291007 [Angioedema (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'wheezing' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Wheezing?' ;
-     description :: 'Wheezing, a sign of bronchospasm. Asked by Monitor_Antiplatelet_Hypersensitivity.' ;
+     description :: 'Wheezing, a sign of bronchospasm. Asked by Monitor_Antiplatelet_Hypersensitivity. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:56018004 [Wheezing (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'widespread_rash' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Widespread rash?' ;
-     description :: 'A widespread rash after starting or switching an antiplatelet. Asked by Monitor_Antiplatelet_Hypersensitivity.' ;
+     description :: 'A widespread rash after starting or switching an antiplatelet. Asked by Monitor_Antiplatelet_Hypersensitivity. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:725119006 [Generalized rash (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'new_or_worse_dyspnea' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'New, prolonged or worse shortness of breath?' ;
-     description :: 'New, prolonged or worsened shortness of breath. Asked by Monitor_Ticagrelor_Dyspnea.' ;
+     description :: 'New, prolonged or worsened shortness of breath. Asked by Monitor_Ticagrelor_Dyspnea. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:267036007 [Dyspnea (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'intolerable_dyspnea' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Is the shortness of breath intolerable?' ;
-     description :: 'Shortness of breath the patient finds intolerable, which warrants switching antiplatelet agent. Asked by Monitor_Ticagrelor_Dyspnea. The SNOMED CT concept is the nearest match (dyspnea at rest).' ;
+     description :: 'Shortness of breath the patient finds intolerable, which warrants switching antiplatelet agent. Asked by Monitor_Ticagrelor_Dyspnea. The SNOMED CT concept is the nearest match (dyspnea at rest). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:161941007 [Dyspnea at rest (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'dizziness' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Dizziness or light-headedness since the last visit?' ;
-     description :: 'Dizziness or light-headedness reported by the patient. Asked by Monitor_Ticagrelor_Bradyarrhythmia.' ;
+     description :: 'Dizziness or light-headedness reported by the patient. Asked by Monitor_Ticagrelor_Bradyarrhythmia. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:404640003 [Dizziness (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'pulse_rate' ;
      type :: integer ;
      caption :: 'Pulse rate at this visit (/min)' ;
-     description :: 'Pulse rate measured at the visit; a slow pulse (below 50/min) prompts an ECG. Asked by Monitor_Ticagrelor_Bradyarrhythmia.' ;
+     description :: 'Pulse rate measured at the visit; a slow pulse (below 50/min) prompts an ECG. Asked by Monitor_Ticagrelor_Bradyarrhythmia. Default 70 /min for running and testing: a normal value that does not trigger Order_ECG (pulse below 50); the clinician records the actual value.' ;
      metaprops :: 'ontology.coding=SCT\\:78564009 [Heart rate measured at systemic artery (observable entity)]
 ' ;
+     default_value ::70;
      unit :: '/min' ;
 end data.
 
 data  :: 'breathing_pauses_during_sleep' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Pauses in breathing or irregular breathing during sleep (noticed by the patient or partner)?' ;
-     description :: 'Pauses in breathing or irregular breathing during sleep, noticed by the patient or bed partner. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea. The SNOMED CT concept is broader (sleep apnea).' ;
+     description :: 'Pauses in breathing or irregular breathing during sleep, noticed by the patient or bed partner. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea. The SNOMED CT concept is broader (sleep apnea). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:73430006 [Sleep apnea (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'daytime_sleepiness' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Daytime sleepiness?' ;
-     description :: 'New daytime sleepiness. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea.' ;
+     description :: 'New daytime sleepiness. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:1367959007 [Excessive daytime sleepiness (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'frequent_night_waking' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Frequent waking at night?' ;
-     description :: 'Frequent waking at night. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea.' ;
+     description :: 'Frequent waking at night. Asked by Monitor_Ticagrelor_Central_Sleep_Apnea. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:423052008 [Frequent night waking (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'persistent_diarrhea' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Diarrhea that does not improve?' ;
-     description :: 'Diarrhea that does not improve. Asked by Monitor_PPI_CDAD. The SNOMED CT concept is the nearest match (chronic diarrhea).' ;
+     description :: 'Diarrhea that does not improve. Asked by Monitor_PPI_CDAD. The SNOMED CT concept is the nearest match (chronic diarrhea). Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:236071009 [Chronic diarrhea (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'abdominal_pain' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Abdominal pain?' ;
-     description :: 'Abdominal pain reported by the patient. Asked by Monitor_PPI_CDAD.' ;
+     description :: 'Abdominal pain reported by the patient. Asked by Monitor_PPI_CDAD. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:21522001 [Abdominal pain (finding)]
 ' ;
-end data.
-
-data  :: 'magnesium_check_due' ;
-     type :: boolean ;
-     caption :: 'Is a magnesium check due (baseline, or 12 months since the last one)?' ;
-     description :: 'The scheduled serum magnesium test is due: at baseline before starting pantoprazole, then every 12 months while it continues. Asked by Monitor_PPI_Hypomagnesemia. The SNOMED CT concept is the nearest match (the serum magnesium measurement).' ;
-     metaprops :: 'ontology.coding=SCT\\:63571001 [Magnesium measurement, serum (procedure)]
-' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'muscle_cramps_or_spasms' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Muscle cramps or spasms?' ;
-     description :: 'Muscle cramps or spasms reported by the patient. Asked by Monitor_PPI_Hypomagnesemia. The SNOMED CT concept covers only cramp, not spasms.' ;
+     description :: 'Muscle cramps or spasms reported by the patient. Asked by Monitor_PPI_Hypomagnesemia. The SNOMED CT concept covers only cramp, not spasms. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:55300003 [Cramp (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'tremor' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Tremor?' ;
-     description :: 'Tremor reported by the patient or seen at the visit. Asked by Monitor_PPI_Hypomagnesemia.' ;
+     description :: 'Tremor reported by the patient or seen at the visit. Asked by Monitor_PPI_Hypomagnesemia. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:26079004 [Tremor (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'palpitations' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Palpitations or an irregular heartbeat?' ;
-     description :: 'Palpitations or an irregular heartbeat reported by the patient. Asked by Monitor_PPI_Hypomagnesemia.' ;
+     description :: 'Palpitations or an irregular heartbeat reported by the patient. Asked by Monitor_PPI_Hypomagnesemia. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:80313002 [Palpitations (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'seizure' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Seizure since the last visit?' ;
-     description :: 'A seizure since the last visit. Asked by Monitor_PPI_Hypomagnesemia.' ;
+     description :: 'A seizure since the last visit. Asked by Monitor_PPI_Hypomagnesemia. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:91175000 [Seizure (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'new_fracture' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Any fracture since the last visit (especially hip, wrist or spine)?' ;
-     description :: 'A fracture since the last visit, especially of the hip, wrist or spine. Asked by Monitor_PPI_Bone_Fracture.' ;
+     description :: 'A fracture since the last visit, especially of the hip, wrist or spine. Asked by Monitor_PPI_Bone_Fracture. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:125605004 [Fracture of bone (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'new_rash' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'New rash?' ;
-     description :: 'A new rash reported by the patient. Asked by Monitor_PPI_Interstitial_Nephritis.' ;
+     description :: 'A new rash reported by the patient. Asked by Monitor_PPI_Interstitial_Nephritis. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:271807003 [Eruption of skin (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'joint_pain' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'New joint pain?' ;
-     description :: 'New joint pain reported by the patient. Asked by Monitor_PPI_Interstitial_Nephritis and Monitor_PPI_Cutaneous_Lupus.' ;
+     description :: 'New joint pain reported by the patient. Asked by Monitor_PPI_Interstitial_Nephritis and Monitor_PPI_Cutaneous_Lupus. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:57676002 [Pain of joint (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'photosensitive_rash' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'New or worsening rash on sun-exposed skin?' ;
-     description :: 'A new or worsening rash on sun-exposed skin. Asked by Monitor_PPI_Cutaneous_Lupus.' ;
+     description :: 'A new or worsening rash on sun-exposed skin. Asked by Monitor_PPI_Cutaneous_Lupus. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:90128006 [Photosensitivity (finding)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'blistering_or_peeling_skin' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Blistering or peeling skin?' ;
-     description :: 'Blistering or peeling skin. Asked by Monitor_PPI_Severe_Cutaneous_Reactions. The SNOMED CT concept covers only blistering (bullous eruption), not peeling skin.' ;
+     description :: 'Blistering or peeling skin. Asked by Monitor_PPI_Severe_Cutaneous_Reactions. The SNOMED CT concept covers only blistering (bullous eruption), not peeling skin. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:271759003 [Bullous eruption (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'mouth_sores' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Mouth sores?' ;
-     description :: 'Sores in the mouth. Asked by Monitor_PPI_Severe_Cutaneous_Reactions.' ;
+     description :: 'Sores in the mouth. Asked by Monitor_PPI_Severe_Cutaneous_Reactions. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:26284000 [Ulcer of mouth (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.
 
 data  :: 'rash_with_fever' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'Rash with fever?' ;
-     description :: 'A rash accompanied by fever. Asked by Monitor_PPI_Severe_Cutaneous_Reactions. The SNOMED CT concept is the nearest match (skin eruption); fever is a separate item.' ;
+     description :: 'A rash accompanied by fever. Asked by Monitor_PPI_Severe_Cutaneous_Reactions. The SNOMED CT concept is the nearest match (skin eruption); fever is a separate item. Default "no" for running and testing (finding absent); the clinician records the actual answer.' ;
      metaprops :: 'ontology.coding=SCT\\:271807003 [Eruption of skin (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
+end data.
+
+data  :: 'suspected_spinal_epidural_hematoma' ;
+     type :: text ;
+     caption :: 'Is a spinal or epidural hematoma suspected?' ;
+     description :: 'Records the clinician\'s judgment, from the findings Monitor_Spinal_Epidural_Hematoma collects, that spinal or epidural hematoma is suspected. Read by the precondition of Alert_Further_Examination_Spinal_Epidural_Hematoma. The SNOMED CT concept is the one Monitor_Spinal_Epidural_Hematoma is coded with. Default "no" for running and testing; the clinician sets "yes" when spinal or epidural hematoma is suspected.' ;
+     metaprops :: 'ontology.coding=SCT\\:703861005 [Spinal epidural hematoma (disorder)]
+' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
+end data.
+
+data  :: 'suspected_perioperative_interruption' ;
+     type :: text ;
+     caption :: 'Is perioperative bleeding or thrombosis suspected?' ;
+     description :: 'Records the clinician\'s judgment, from the findings Monitor_Perioperative_Interruption collects, that perioperative bleeding or thrombosis is suspected. Read by the precondition of Alert_Further_Examination_Perioperative_Interruption. The SNOMED CT concept is the one Monitor_Perioperative_Interruption is coded with (it names the bleeding half of the suspicion). Default "no" for running and testing; the clinician sets "yes" when perioperative bleeding or thrombosis is suspected.' ;
+     metaprops :: 'ontology.coding=SCT\\:110265006 [Postoperative hemorrhage (disorder)]
+' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
+end data.
+
+data  :: 'suspected_antiplatelet_hypersensitivity' ;
+     type :: text ;
+     caption :: 'Is an antiplatelet hypersensitivity reaction suspected?' ;
+     description :: 'Records the clinician\'s judgment, from the findings Monitor_Antiplatelet_Hypersensitivity collects, that an antiplatelet hypersensitivity reaction is suspected. Read by the precondition of Alert_Further_Examination_Antiplatelet_Hypersensitivity. The SNOMED CT concept is the one Monitor_Antiplatelet_Hypersensitivity is coded with. Default "no" for running and testing; the clinician sets "yes" when an antiplatelet hypersensitivity reaction is suspected.' ;
+     metaprops :: 'ontology.coding=SCT\\:416098002 [Allergy to drug (finding)]
+' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
+end data.
+
+data  :: 'suspected_ticagrelor_dyspnea' ;
+     type :: text ;
+     caption :: 'Is ticagrelor-related dyspnea suspected?' ;
+     description :: 'Records the clinician\'s judgment, from the findings Monitor_Ticagrelor_Dyspnea collects, that ticagrelor-related dyspnea is suspected. Read by the precondition of Alert_Further_Examination_Ticagrelor_Dyspnea. The SNOMED CT concept is the one Monitor_Ticagrelor_Dyspnea is coded with. Default "no" for running and testing; the clinician sets "yes" when ticagrelor-related dyspnea is suspected.' ;
+     metaprops :: 'ontology.coding=SCT\\:267036007 [Dyspnea (finding)]
+' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
+end data.
+
+data  :: 'suspected_ppi_bone_fracture' ;
+     type :: text ;
+     caption :: 'Is an osteoporosis-related bone fracture suspected?' ;
+     description :: 'Records the clinician\'s judgment, from the findings Monitor_PPI_Bone_Fracture collects, that an osteoporosis-related bone fracture is suspected. Read by the precondition of Alert_Further_Examination_PPI_Bone_Fracture. The SNOMED CT concept is the one Monitor_PPI_Bone_Fracture is coded with. Default "no" for running and testing; the clinician sets "yes" when an osteoporosis-related bone fracture is suspected.' ;
+     metaprops :: 'ontology.coding=SCT\\:443165006 [Osteoporotic fracture of bone (disorder)]
+' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
+end data.
+
+data  :: 'suspected_ppi_cutaneous_lupus' ;
+     type :: text ;
+     caption :: 'Is cutaneous or systemic lupus erythematosus suspected?' ;
+     description :: 'Records the clinician\'s judgment, from the findings Monitor_PPI_Cutaneous_Lupus collects, that cutaneous or systemic lupus erythematosus is suspected. Read by the precondition of Alert_Further_Examination_PPI_Cutaneous_Lupus. The SNOMED CT concept is the one Monitor_PPI_Cutaneous_Lupus is coded with. Default "no" for running and testing; the clinician sets "yes" when cutaneous or systemic lupus erythematosus is suspected.' ;
+     metaprops :: 'ontology.coding=SCT\\:7119001 [Cutaneous lupus erythematosus (disorder)]
+' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
+end data.
+
+data  :: 'suspected_ppi_severe_cutaneous_reactions' ;
+     type :: text ;
+     caption :: 'Is a severe cutaneous adverse reaction suspected?' ;
+     description :: 'Records the clinician\'s judgment, from the findings Monitor_PPI_Severe_Cutaneous_Reactions collects, that a severe cutaneous adverse reaction is suspected. Read by the precondition of Alert_Further_Examination_PPI_Severe_Cutaneous_Reactions. The SNOMED CT concept is the one Monitor_PPI_Severe_Cutaneous_Reactions is coded with. Default "no" for running and testing; the clinician sets "yes" when a severe cutaneous adverse reaction is suspected.' ;
+     metaprops :: 'ontology.coding=SCT\\:768946000 [Stevens-Johnson syndrome, toxic epidermal necrolysis spectrum (disorder)]
+' ;
+     range ::"yes||yes","no||no";
+     default_value ::"no";
 end data.

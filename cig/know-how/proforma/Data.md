@@ -22,13 +22,13 @@ The property names and quoted descriptions come from Composer's data item proper
 | Dynamic | "A dynamic data item has its value calculated from other data rather than directly set." | `dynamic :: yes` | `set_attribute(attribute: "dynamic", value: "yes")` |
 | Metaproperties | "The data item's metaproperties" | `metaprops` | `set_attribute(attribute: "metaprops")` |
 
-Other attributes the language reference lists: `mandatory_validation :: <expr>`, `true_value` / `false_value` (the captions of a boolean's two values) and `warning_condition :: <n>, <expr>` with its own caption.
+Other attributes the language reference lists: `mandatory_validation :: <expr>`, `true_value` / `false_value` (the captions of a boolean's two values; the kit does not use `boolean`, see Type) and `warning_condition :: <n>, <expr>` with its own caption.
 
 ## Type
 
-`boolean`, `integer`, `real`, `text`, `date`, `time`, `datetime`, and the set types `setof_text`, `setof_integer`, `setof_real`.
+`integer`, `real`, `text`, `date`, `time`, `datetime`, and the set types `setof_text`, `setof_integer`, `setof_real`. The language also has `boolean`, but Composer and the Deontics engine do not (the engine passes every value as a string), so the kit never uses it: `type :: boolean` is a gate FAIL.
 
-- `boolean` for a yes/no fact (a symptom, a contraindication, a sub-population flag such as `on_interacting_medication`); conditions compare it with `= true` / `= false`.
+- `text` with the range `"yes||yes", "no||no"` for a yes/no fact (a symptom, a contraindication, a sub-population flag such as `on_interacting_medication`); conditions compare it with `= "yes"` / `= "no"`, never `= true`, `= false` or `not(...)`.
 - `real` (or `integer`) with a `unit` for a measured value (`systolic_bp`, mmHg; `age_years`, years); conditions compare it with `<`, `>=`, ...
 - `text` with a `range` for a fixed value set, compared with `=`.
 - `setof_text` for a multiple selection, tested with `includes`.
@@ -49,7 +49,24 @@ data  :: 'regimen_class' ;
 end data.
 ```
 
-A condition compares the value: `regimen_class = "dapt"`. `default_value :: <expr> ;` gives the value used until the item is set.
+A condition compares the value: `regimen_class = "dapt"`. A yes/no item is the same pattern with two values:
+
+```
+data  :: 'active_pathological_bleeding' ;
+     type :: text ;
+     caption :: 'Does the patient have active pathological bleeding?' ;
+     range :: "yes||yes", "no||no";
+     default_value :: "no" ;
+end data.
+```
+
+`default_value :: <expr> ;` gives the value used until the item is set. Every data item an Enquiry asks for has one, so the guideline runs in the engine without every answer typed in:
+
+- findings (symptoms, signs, the `suspected_` item of an ADE Enquiry): `"no"`;
+- numeric bedside values: a normal value that does not trigger the test step (systolic 120 and diastolic 80 mmHg, heart rate 70/min);
+- baseline items: a value on the guideline's main path (the therapy plan is entered and the regimen decision recommends a candidate); numeric ones a plausible adult value (age 65).
+
+The description says so: "Default <value> for running and testing; the clinician confirms the actual value." A derived item has no default. `check_cig.mjs` warns on an Enquiry data item without one (FAIL for a mandatory item).
 
 ## Derivation and dynamic
 
@@ -57,7 +74,7 @@ A condition compares the value: `regimen_class = "dapt"`. `default_value :: <exp
 
 ## Enquiry sources and mandatory
 
-An Enquiry asks for a data item through a source: `source :: '<item>' ;` followed by `data_definition :: '<item>' ;` and, optionally, `mandatory :: yes ;` when the Enquiry cannot complete without it. `add_source(task:, data:, mandatory:)` adds the source (`mandatory` defaults to true; it can also create the item with `create_type`). A data item a precondition or argument reads must be asked for by an Enquiry (or derived); `check_cig.mjs` reports items nothing asks for or derives. One finding several Enquiries ask about is one data item, sourced by each.
+An Enquiry asks for a data item through a source: `source :: '<item>' ;` followed by `data_definition :: '<item>' ;` and `mandatory :: yes|no ;`. A source with no `mandatory` line is mandatory, and the engine does not complete an Enquiry while a mandatory value is missing. So every source is written `mandatory :: no ;` (`add_source(task:, data:, mandatory: false)`), except a **plan-gating** item: one a plan's precondition reads (e.g. `active_pathological_bleeding`, read by the therapy plan's precondition). Its source stays mandatory, and its `default_value` meets the plan's precondition (`"no"` here), so a test run enters the plan instead of discarding it; its description says the clinician must confirm the value, since a default can hide a question never asked. `add_source` can also create the item with `create_type`. A data item a precondition or argument reads must be asked for by an Enquiry (or derived); `check_cig.mjs` reports items nothing asks for or derives. One finding several Enquiries ask about is one data item, sourced by each.
 
 ## Ontology coding and source quotes
 
@@ -77,12 +94,17 @@ set_attribute(selector: "systolic_bp", attribute: "description",
               value: "Bedside systolic blood pressure; below 90 mmHg triggers the bleeding test step")
 set_attribute(selector: "systolic_bp", attribute: "metaprops",
               value: "ontology.coding=SCT:271649006 [Systolic blood pressure (observable entity)]")
-add_source(task: "Monitor_Bleeding", data: "systolic_bp")
+set_attribute(selector: "systolic_bp", attribute: "default_value", value: "120")
+add_source(task: "Monitor_Bleeding", data: "systolic_bp", mandatory: false)
+
+add_data_item(name: "melena", type: "text", range: "\"yes||yes\", \"no||no\"",
+              default_value: "\"no\"", caption: "Black, tarry stools?")
+add_source(task: "Monitor_Bleeding", data: "melena", mandatory: false)
 
 add_data_item(name: "regimen_class", type: "text",
               range: "\"sapt||Single antiplatelet therapy\", \"dapt||Dual antiplatelet therapy\"")
 add_data_item(name: "bmi", type: "real", unit: "kg/m2", derivation: "weight_kg / (height_m * height_m)")
-check_expression(expression: "systolic_bp < 90 or regimen_class = \"dapt\"")
+check_expression(expression: "systolic_bp < 90 or melena = \"yes\"")
 ```
 
 ## `.pf` text
@@ -95,6 +117,7 @@ data  :: 'systolic_bp' ;
      metaprops :: 'ontology.coding=SCT\\:271649006 [Systolic blood pressure (observable entity)]
 ' ;
      unit :: 'mmHg' ;
+     default_value :: 120 ;
 end data.
 ```
 

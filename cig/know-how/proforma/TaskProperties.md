@@ -12,6 +12,8 @@ PROforma has one task class with four kinds: **Plan**, **Action**, **Enquiry** a
 
 A task appears in a guideline twice: as a **definition** (the `plan`, `action`, `enquiry` or `decision` block) and as a **component** of its parent plan (`component :: '<name>'` inside the plan block), which places the definition in that plan. The definition holds what the task is; the component holds how the plan runs it (scheduling, cycles, flags) and, in Composer, the task's ontology coding. The root plan has no parent plan, so it has no component.
 
+Composer shows the **component's** caption and description, not the definition's. So every component carries the same `caption` and `description` as its task definition: set both on the definition and on the component (`set_attribute(selector: "<plan>/component:<task>", attribute: "caption" | "description")`; CLI `set --selector <plan>/component:<task> --attribute caption`). `add_task(caption:, description:)` sets them on the definition only. `check_cig.mjs` fails a component whose caption or description is missing or differs from its definition's.
+
 ## Common task properties (all four kinds)
 
 **Task common properties.** "Important properties common to all task types."
@@ -19,8 +21,8 @@ A task appears in a guideline twice: as a **definition** (the `plan`, `action`, 
 | Composer property | Composer's description | `.pf` attribute |
 |---|---|---|
 | Name | "The internal name for this component" | the block name, e.g. `action :: 'Monitor_X'` (identifier; `rename` changes it) |
-| Caption | "A human-readable caption" | `caption` (one line, except a Markdown list such as `Display_Potential_ADEs`, `skills/cig-monitoring/references/ADEMonitoringEnquiry.md`) |
-| Description | "A short descriptive string" | `description` |
+| Caption | "A human-readable caption" | `caption` on the definition and, the same text, on its component (one line, except a Markdown list such as `Display_Potential_ADEs`, `skills/cig-monitoring/references/ADEMonitoringEnquiry.md`) |
+| Description | "A short descriptive string" | `description` on the definition and, the same text, on its component |
 | **Ontology coding** | "Term in a controlled vocabulary or ontology corresponding to" the task | metaprop `ontology.coding=<SCT\|LNC\|IC0\|IC9>:<code> [<caption>]` on the task's **component** in the parent plan (`set_attribute(selector: "<plan>/component:<task>", attribute: "metaprops", ...)`), e.g. `ontology.coding=SCT:131148009 [Bleeding (finding)]`; an ordered test: `LNC:<code> [<caption>]`. Composer hides the key in its metaprops editor and shows it here. See `Ontology.md` |
 | Metaproperties | "The task's metaproperties" | `metaprops` on the definition (the kit's goal, order, provenance and `rxnorm.coding` keys) |
 
@@ -62,7 +64,7 @@ Each kind has the common properties above plus these.
 | Plan | Termination condition | | `terminate :: <expr>` |
 | Plan | Abort condition | | `abort :: <expr>` |
 | Action | Procedure | "The action's procedure" | `procedure :: '<text>'` (in this kit, the instruction to carry out; for a monitoring action, the order) |
-| Enquiry | Sources | the data items it asks for | `source :: '<data item>'` (`add_source`), optional `mandatory :: yes \| no`. An Enquiry has no procedure: an ADE Enquiry states its order in its description (`skills/cig-monitoring/references/ADEMonitoringEnquiry.md`) |
+| Enquiry | Sources | the data items it asks for | `source :: '<data item>'` (`add_source`) with `mandatory :: yes \| no` (no line means yes). Write `mandatory :: no` (`add_source(mandatory: false)`) except for an item a plan's precondition reads (`Data.md`). An Enquiry has no procedure: an ADE Enquiry states its order in its description (`skills/cig-monitoring/references/ADEMonitoringEnquiry.md`) |
 | Decision | Choice mode | single or multiple choice | `choice_mode :: single \| multiple` |
 | Decision | Support mode | symbolic or numeric argument support | `support_mode :: symbolic \| numeric` |
 | Decision | Preselect candidates | | `preselect_candidates :: yes \| no` |

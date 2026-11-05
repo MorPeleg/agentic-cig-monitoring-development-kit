@@ -38,7 +38,7 @@ add_task(plan: "Monitor_Desired_State", kind: "action", name: "Monitor_<Outcome>
          caption: "Monitor <outcome>")
 set_attribute(selector: "Monitor_<Outcome>", attribute: "description", value: "Monitors <monitored_target>. <literature_basis>.")
 set_attribute(selector: "Monitor_<Outcome>", attribute: "procedure", value: "<Code>, <occurrenceTiming>. Patient: <patientInstruction>. Clinician: <performerInstruction>.")
-set_attribute(selector: "Monitor_<Outcome>", attribute: "precondition", value: "on_interacting_medication = true")   # only for a sub-population
+set_attribute(selector: "Monitor_<Outcome>", attribute: "precondition", value: "on_interacting_medication = \"yes\"")   # only for a sub-population
 set_attribute(selector: "Monitor_<Outcome>", attribute: "metaprops", value: "<all lines, plain>")
 ```
 
@@ -56,7 +56,7 @@ Every monitoring action **must** carry a full `metaprops` attribute: Java-proper
 - **Order**: `ServiceRequest.intent=order`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, and `ServiceRequest.performerInstruction` (for triggered labs/clinician steps), matching `goal.noun_phrase` and the native `procedure`.
 - `category` = `action_completion` | `desired_outcome` | `undesired_ade`.
 - `monitored_target` = the state/harm/action this monitors **and the therapy task it traces back to, by name** (traceability — answers "which task relates to this source/harm?").
-- `applies_when` = the population/condition the **source** attaches to this harm (e.g. *only with a concomitant interacting medication*); `all_patients_on_therapy` only when the source applies it universally. A sub-population action must also carry an executable `precondition` over an Enquiry data item (e.g. `on_interacting_medication = true`). **Do not make a conditional ADE universal.**
+- `applies_when` = the population/condition the **source** attaches to this harm (e.g. *only with a concomitant interacting medication*); `all_patients_on_therapy` only when the source applies it universally. A sub-population action must also carry an executable `precondition` over an Enquiry data item (e.g. `on_interacting_medication = "yes"`). **Do not make a conditional ADE universal.**
 - `provenance_type` = e.g. `guideline_specified` | `assistant_completed_from_guidelines` | `package_insert_specified` | `mechanism_prompted_then_assistant_independent_literature_search_and_operationalized` | `assistant_independent_literature_search_and_operationalized`.
 - `source_kind` = `clinical_guideline` | `package_insert` | `case_report` | `screening_instrument` | `safety_source` …
 - `source` / `source.1..n` = each citation (include a stable id where possible, e.g. PMID/PMC + title, or the guideline/label section and page).
@@ -92,7 +92,7 @@ A name like `Monitor_<Harm>` does **not** say *how* to monitor. For each ADE you
 4. **What triggers urgent/same-day assessment** → `trigger`.
 5. **Source vs. invention** — cite and quote a source for each choice where possible; mark anything you designed as `assistant_invention`.
 
-**Worked block (labeled ADE — acute pancreatitis from a package insert)**, the generic value from `MetapropsSyntax.md` as it lands in the `.pf` (`\\:` is the escape `format` writes, read back as `:`). It illustrates the contract; it is not a monitor every CIG needs. It is shown as an Action, as in the guidelines that predate the ADE Enquiry pattern; under that pattern the same metaprops sit on an `enquiry  :: 'Monitor_Pancreatitis'` whose description ends with the order (there is no `procedure`), which asks for a data item such as `severe_abdominal_pain` (boolean, SNOMED CT coded) and is followed by `Order_Serum_Lipase` (LOINC coded, `precondition :: severe_abdominal_pain = true`).
+**Worked block (labeled ADE — acute pancreatitis from a package insert)**, the generic value from `MetapropsSyntax.md` as it lands in the `.pf` (`\\:` is the escape `format` writes, read back as `:`). It illustrates the contract; it is not a monitor every CIG needs. It is shown as an Action, as in the guidelines that predate the ADE Enquiry pattern; under that pattern the same metaprops sit on an `enquiry  :: 'Monitor_Pancreatitis'` whose description ends with the order (there is no `procedure`), which asks for a data item such as `severe_abdominal_pain` (yes/no text, default "no", SNOMED CT coded) and is followed by `Order_Serum_Lipase` (LOINC coded, `precondition :: severe_abdominal_pain = "yes"`).
 
 ```
 action  :: 'Monitor_Pancreatitis' ;

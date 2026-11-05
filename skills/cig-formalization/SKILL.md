@@ -50,7 +50,8 @@ renamed. The proposal also fixes, per task: kind, parent
 plan, `after` siblings, the goal `verb`, the precondition (whether there is one,
 and over which data item), the `applies_when` sub-population, and the
 `monitoring_stance`. §5 (data items table) fixes every Enquiry data item: name,
-type, unit, source, users. §9 (Sources) holds the citation and verbatim passage
+type (yes/no items are `text` with the yes/no range), unit, default value,
+whether its source is mandatory (only plan-gating items), source, users. §9 (Sources) holds the citation and verbatim passage
 behind each element. Where the proposal gives a `noun_phrase` *summary* rather
 than the full order, you compose the `ServiceRequest.*` keys, `goal.noun_phrase`,
 `procedure`, `description` and the other metaprops lines from the proposal's §3
@@ -95,7 +96,7 @@ during emission.
 - **Goal side + opt-in case-report source rule + labeled-ADE skeleton:**
   `skills/cig-monitoring/references/ActionEnactmentGoal.md`.
 - **ADE monitoring in `Monitor_Undesired_State` (display Action, ADE Enquiries,
-  finding data items, test steps, with their tool calls):**
+  finding data items, test steps, suspected-ADE alerts, with their tool calls):**
   `skills/cig-monitoring/references/ADEMonitoringEnquiry.md`.
 - **Structural patterns (only when the approved scope includes them):**
   `TopLevelPlan.md`, `MonitoringPlan.md`, `ActionComponent.md`,
@@ -220,7 +221,10 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
    (an action's on its component, `cig/know-how/proforma/Ontology.md`).
    Emit the other native properties (Wait condition, Postcondition, Event
    trigger, cycles, a plan's termination/abort condition) exactly when the
-   proposal fixes them.
+   proposal fixes them. Composer shows the **component's** caption and
+   description, so every component (all but the root plan's, which has none)
+   carries the same `caption` and `description` as its task definition
+   (`set_attribute(selector: "<plan>/component:<task>", attribute: "caption" | "description")`).
 8. **Every citation quoted.** Each `source.N` on a monitoring or therapy action
    is paired with `quote.N`: the verbatim passage (at most about 25 words, in
    double quotes, prefixed with page/section, `...` for omissions) copied from
@@ -244,10 +248,26 @@ These apply to **full re-emit**. Coding-patch mode uses the stricter freeze rule
     `Monitor_Undesired_State`: `Display_Potential_ADEs` first; every ADE monitor
     an `enquiry` (never an `action`) after it, with the monitor metaprops and
     the order in its `description`; its finding data items (SNOMED CT coded);
-    and at most one test step after it, gated on the findings: an
-    `Order_<Test>` action (LOINC coded on its component) or a
-    `Tests_Ordering_Recommendations_<ADE>` decision (`choice_mode multiple`,
-    one LOINC-coded candidate per test, each with an argument).
+    and exactly one follow-up step after it: a test step gated on the
+    findings (`a = "yes" or b = "yes" ...`, reading only that Enquiry's data
+    items), either an `Order_<Test>` action (LOINC coded on its component) or
+    a `Tests_Ordering_Recommendations_<ADE>` decision (`choice_mode multiple`,
+    one LOINC-coded candidate per test, each with an argument); or, when the
+    sources name no test, the `suspected_<ade>` item and the
+    `Alert_Further_Examination_<ADE>` action (`role=ade_alert`, the full
+    monitor contract, gated on `suspected_<ade> = "yes"`).
+13. **Runnable data items** (`cig/know-how/proforma/Data.md`). No
+    `type :: boolean`: a yes/no item is `text` with
+    `range: "\"yes||yes\", \"no||no\""`, compared with `= "yes"` / `= "no"`
+    (never `= true`, `= false` or `not(x)`). Every Enquiry source is added
+    with `add_source(..., mandatory: false)` (CLI `add-source --mandatory
+    false`) except a plan-gating item (one a plan's precondition reads), whose
+    source keeps the default mandatory. Every Enquiry data item gets the
+    `default_value` §5 fixes (`"no"` for findings and `suspected_` items, a
+    normal value for bedside measurements, a main-path value for baseline
+    items, a value that meets the plan's precondition for a plan-gating item;
+    none for a derived item), stated in its description. No `*_check_due` /
+    `*_due` data items: a scheduled test stays in the order.
 
 ## The deterministic recipe
 
@@ -290,17 +310,25 @@ omitted from the listings for brevity. Through capa the tool ids are
    the gate check for those.
 7. **Enquiry data items** — one per §5 row, then one source each:
    ```
-   add_data_item(name: "threshold_measure", type: "real", caption: "<the measure, as asked>", unit: "<unit>")
-   set_attribute(selector: "threshold_measure", attribute: "description", value: "<what it is>; primary eligibility threshold")
-   add_data_item(name: "on_interacting_medication", type: "boolean", caption: "On <the interacting medication class>?")
+   add_data_item(name: "threshold_measure", type: "real", caption: "<the measure, as asked>", unit: "<unit>",
+                 default_value: "<a main-path value>")
+   set_attribute(selector: "threshold_measure", attribute: "description", value: "<what it is>; primary eligibility threshold. Default <v> for running and testing; the clinician confirms the actual value.")
+   add_data_item(name: "on_interacting_medication", type: "text", caption: "On <the interacting medication class>?",
+                 range: "\"yes||yes\", \"no||no\"", default_value: "\"no\"")
    set_attribute(selector: "on_interacting_medication", attribute: "metaprops",
                  value: "source=<Drug> US Prescribing Information, §<n> <Warning>\nquote=§<n>: \"<verbatim sentence that scopes the harm to patients on the interacting medication>\"")
-   add_source(task: "Get_Eligibility_Data", data: "threshold_measure")
-   add_source(task: "Get_Eligibility_Data", data: "on_interacting_medication")
+   add_source(task: "Get_Eligibility_Data", data: "threshold_measure", mandatory: false)
+   add_source(task: "Get_Eligibility_Data", data: "on_interacting_medication", mandatory: false)
+   add_data_item(name: "contraindication_present", type: "text", caption: "<the contraindication, as asked>?",
+                 range: "\"yes||yes\", \"no||no\"", default_value: "\"no\"")
+   add_source(task: "Get_Eligibility_Data", data: "contraindication_present")   # plan-gating: read by the therapy plan's precondition, stays mandatory
    ```
    Real types: `real` / `integer` for numeric thresholds (with `unit`),
-   `boolean` for yes/no facts, `text` (with `range` when the values are a closed
+   `text` with the range `"yes||yes", "no||no"` for yes/no facts (never
+   `boolean`: Composer and the Deontics engine have none), `text` (with `range` when the values are a closed
    list, e.g. `range: "\"none\", \"<named_contraindication>\""`) otherwise.
+   Sources are `mandatory: false` except the plan-gating items §5 marks, and
+   every item gets its §5 `default_value` (rule 13).
    Set every native data-item property the proposal fixes (`cig/know-how/proforma/Data.md`:
    caption, description, type, unit, range, default value, derivation).
    `add_data_item` has no `description` parameter; set it with `set_attribute`.
@@ -310,18 +338,18 @@ omitted from the listings for brevity. Through capa the tool ids are
    expression that uses them.
 8. **Decision** — candidates, then at least one argument each:
    ```
-   check_expression(expression: "threshold_measure >= 30 and contraindication_present = false")
+   check_expression(expression: "threshold_measure >= 30 and contraindication_present = \"no\"")
    add_candidate(decision: "Eligibility_Decision", name: "Eligible", caption: "...")
    set_attribute(selector: "Eligibility_Decision/candidate:Eligible", attribute: "description", value: "<free-text rationale>")
    add_argument(decision: "Eligibility_Decision", candidate: "Eligible", support: "for",
-                condition: "threshold_measure >= 30 and contraindication_present = false",
+                condition: "threshold_measure >= 30 and contraindication_present = \"no\"",
                 name: "Arg_Eligible", caption: "<rationale, with the evidence grade if the source gives one>")
    set_attribute(selector: "Eligibility_Decision/candidate:Eligible/argument:Arg_Eligible", attribute: "metaprops",
                  value: "source=<guideline, recommendation, page>\nquote=<page/section>: \"<verbatim criterion passage>\"")
    ```
    Run `check_expression` on every condition first: the type must be
    `truth_value` and each name must resolve to the intended `data (...)` item;
-   only values the proposal means as literals (`none`, `true`, a candidate name)
+   only values the proposal means as literals (`"yes"`, `"no"`, `none`, a candidate name)
    may resolve to "text literal". Support direction and condition come from the
    proposal verbatim. The recommendation defaults to `netsupport() > 0`; set
    `choice_mode` only when §6 says `multiple`
@@ -338,7 +366,11 @@ omitted from the listings for brevity. Through capa the tool ids are
     (next section). Iterate the table top to bottom; do not add or skip rows.
     In `Monitor_Undesired_State`, emit `Display_Potential_ADEs` first, then
     each ADE as the *ADE bundle* (below): the Enquiry, its data items and its
-    test step.
+    test step or suspected-ADE alert. Then give every component the caption
+    and description of its task definition:
+    `set_attribute(selector: "<parent plan>/component:<task>", attribute: "caption", value: "<the definition's caption>")`
+    and the same for `description` (every task except the root plan; the
+    values are copied from the definition, never rewritten).
 11. **Coding pass.** For each monitoring task (the disorder, finding or
     measurement it watches), each therapy action (the procedure or substance
     it delivers) and each data item that names a clinical concept (the
@@ -503,8 +535,8 @@ Rules for the bundle:
 - Emit a `precondition` **iff** `applies_when` names a sub-population (not
   `all_patients_on_therapy`). It is an executable expression over a data item
   that the eligibility/baseline Enquiry asks for (`add_source`), checked with
-  `check_expression` first. Boolean data items are compared with `= true` /
-  `= false`. Universal-but-event-triggered actions (e.g. AKI triggered by
+  `check_expression` first. Yes/no data items are compared with `= "yes"` /
+  `= "no"`. Universal-but-event-triggered actions (e.g. AKI triggered by
   dehydration) do **not** get a precondition — the trigger lives in
   `ServiceRequest.occurrenceTiming`/`trigger`, per the proposal.
 - **Drug-gated monitors** are the one other case with a precondition. A monitor
@@ -539,13 +571,17 @@ calls") literally; the proposal's §6 fixes each name, data item and test.
    <code>, <occurrenceTiming>. Patient: <...>. Clinician: <...>.` (an Enquiry
    has no `procedure`); its metaprops = the full monitor contract above, in
    one call.
-3. Its findings: `add_data_item` (lower-case name, real type, unit for a
-   measured value, caption phrased as the question), `set_attribute`
-   description and metaprops (SNOMED CT coding from the coding pass, `source`
-   + `quote` when the proposal gives one), `add_source(task: "Monitor_<ADE>")`.
-   A finding shared by two ADEs is one data item sourced by both Enquiries.
+3. Its findings: `add_data_item` (lower-case name; yes/no `text` with
+   `range: "\"yes||yes\", \"no||no\""` and `default_value: "\"no\""`, or a
+   measured value with its unit and a normal default that does not trigger
+   the test step; caption phrased as the question), `set_attribute`
+   description (stating the default) and metaprops (SNOMED CT coding from the
+   coding pass, `source` + `quote` when the proposal gives one),
+   `add_source(task: "Monitor_<ADE>", mandatory: false)`. A finding shared by
+   two ADEs is one data item sourced by both Enquiries. No `*_check_due` item.
 4. Its test step, `after: ["Monitor_<ADE>"]`, with the precondition the
-   proposal fixes (a disjunction over the Enquiry's findings, checked with
+   proposal fixes (a disjunction over the Enquiry's findings only,
+   `a = "yes" or b = "yes" or systolic_bp < 90`, checked with
    `check_expression`):
    - one test: `add_task(kind: "action", name: "Order_<Test>")`, `caption`,
      `description`, `procedure`, metaprops `role=test_order`,
@@ -559,6 +595,18 @@ calls") literally; the proposal's §6 fixes each name, data item and test.
      LOINC metaprops (`<decision>/candidate:<Test>`) and
      `add_argument(support: "for", condition: "true()", name:
      "Arg_Order_<Test>")` unless the proposal gives a restricting condition.
+5. An ADE whose sources name no test gets, instead of step 4, the
+   suspected-ADE alert (`ADEMonitoringEnquiry.md` section 4):
+   `add_data_item(name: "suspected_<ade>", type: "text", range:
+   "\"yes||yes\", \"no||no\"", default_value: "\"no\"", caption: "Is <ADE>
+   suspected?")` with the ADE's SNOMED CT coding,
+   `add_source(task: "Monitor_<ADE>", data: "suspected_<ade>", mandatory:
+   false)`; then `add_task(kind: "action", name:
+   "Alert_Further_Examination_<ADE>", after: ["Monitor_<ADE>"], precondition:
+   "suspected_<ade> = \"yes\"")` with its `caption` ("Alert: further
+   examination of <ADE>"), `description`, `procedure`, one metaprops with
+   `role=ade_alert` and the full monitor contract (`monitored_target=Monitor_<ADE>`),
+   and the ADE's SNOMED CT coding on its component.
 
 **Multi-line captions.** The display caption is the one value with line
 breaks: pass real newlines in the `caption` value (in JSON, `\n`). On Windows
@@ -646,8 +694,16 @@ re-emit if any fails:
       findings carry SNOMED CT coding (`SCT:<id> [<caption>]`); the component
       of every `Order_<Test>` action and every test-ordering candidate carries
       `LNC:<code> [<caption>]`; each
-      test step runs after its Enquiry with a precondition over its findings,
-      and each test-ordering decision has `choice_mode multiple`.
+      test step runs after its Enquiry with a precondition over its findings
+      only, and each test-ordering decision has `choice_mode multiple`; every
+      ADE Enquiry without a test step has its `suspected_<ade>` item and its
+      `Alert_Further_Examination_<ADE>` action gated on it.
+- [ ] No data item is `boolean`; every yes/no item has the range
+      `"yes||yes", "no||no"` and is compared with `= "yes"` / `= "no"`; every
+      Enquiry source is non-mandatory except the plan-gating ones; every
+      Enquiry data item has a `default_value`; no `*_due` data item.
+- [ ] Every component's `caption` and `description` equal its task
+      definition's.
 - [ ] **Single** root plan (`export_json.root`) for the requested
       sub-structure; every task has `reachable: true`; the `outline` tree
       matches the §6 parent plans and `after` constraints.

@@ -63,14 +63,14 @@ end plan.
 - Create **one action per therapy intervention** (drug, diet, physical activity, etc.) with `add_task` in the therapy plan. The therapy actions are parallel (no `after`) unless the guideline orders them.
 - Complete vague recommendations from other guidelines or the web, and record the source with its verbatim passage (`source.N` + `quote.N`; Step 3 of the skill). The recommendation and why it was modelled go in `description`; the concrete instruction (dose and titration, activity minutes, grams of protein) in `procedure`.
 - Give every therapy action a State Achievement Goal (`achieve` for desired states, `avoid` for undesired states) and, in the coding pass, the SNOMED CT concept of the procedure or substance it delivers.
-- Set a **Precondition** wherever the source limits an intervention to some patients; it must be an executable expression over Enquiry data items. `check_expression` it against the file.
+- Set a **Precondition** wherever the source limits an intervention to some patients; it must be an executable expression over Enquiry data items (a yes/no item compared with `= "yes"` / `= "no"`). `check_expression` it against the file. The items a **plan's** precondition reads are plan-gating: their sources stay mandatory and their defaults meet the precondition (`cig/know-how/proforma/Data.md`).
 
 ## Structural example
 
-In `cig/examples/ccd-antithrombotic-monitoring.pf`, the therapy plan `Antithrombotic_Therapy` runs after the regimen Decision and is gated by `active_pathological_bleeding = false`, the contraindication every candidate regimen shares. Its components:
+In `cig/examples/ccd-antithrombotic-monitoring.pf`, the therapy plan `Antithrombotic_Therapy` runs after the regimen Decision and is gated by `active_pathological_bleeding = "no"`, the contraindication every candidate regimen shares. Because a plan's precondition reads it, `active_pathological_bleeding` is the plan-gating item: its source is mandatory and its default `"no"` lets a test run enter the plan (`cig/know-how/proforma/Data.md`). Its components:
 
 ```
-plan Antithrombotic_Therapy                        precondition active_pathological_bleeding = false
+plan Antithrombotic_Therapy                        precondition active_pathological_bleeding = "no"
   action   Advise_Avoid_Chronic_NSAIDs             goal.verb=avoid; no precondition, runs first
   decision P2Y12_Agent_Decision                    after the advice; precondition result_of(Antithrombotic_Regimen_Decision) = <a regimen with a P2Y12 inhibitor>
   action   Prescribe_Aspirin, Prescribe_Vorapaxar, Prescribe_Low_Dose_Rivaroxaban, Prescribe_DOAC

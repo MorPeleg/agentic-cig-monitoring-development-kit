@@ -17,7 +17,9 @@ Deontics Composer shows a task's **native properties** in its property sheet (se
 | Clinical concept | **Ontology coding**: metaprop `ontology.coding=SCT:<id> [<caption>]` on the task's **component** in its parent plan (`cig/know-how/proforma/Ontology.md`) | coding pass (WARN until set) | coding pass (WARN until set) |
 | Why it exists, verbatim | `source.N` + `quote.N` metaprops | at least one quote required | at least one quote required |
 
-The tasks around an ADE Enquiry (the `Display_Potential_ADEs` Action, the finding data items, the `Order_<Test>` Action and the `Tests_Ordering_Recommendations_<ADE>` Decision) have their own, smaller contract: see "ADE Enquiry pattern" below and `ADEMonitoringEnquiry.md`.
+The tasks around an ADE Enquiry (the `Display_Potential_ADEs` Action, the finding data items, the `Order_<Test>` Action and the `Tests_Ordering_Recommendations_<ADE>` Decision) have their own, smaller contract: see "ADE Enquiry pattern" below and `ADEMonitoringEnquiry.md`. The suspected-ADE alert Action (`Alert_Further_Examination_<ADE>`, `role=ade_alert`) is a monitoring Action and carries this full contract.
+
+Composer shows a task's **component** caption and description, so the component of every task in its parent plan carries the same `caption` and `description` as the definition (`cig/know-how/proforma/TaskProperties.md`).
 
 ## Grammar (Java properties)
 
@@ -52,7 +54,7 @@ A monitoring action's goal is to have something done: an Action Enactment goal, 
 2. `goal.noun_phrase`: see "The order".
 3. `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, plus `ServiceRequest.performerInstruction` when the step is triggered or urgent.
 4. `category`: one of `action_completion` | `desired_outcome` | `undesired_ade`.
-5. `monitored_target`: the state, harm or action monitored, **and the therapy task it traces back to, by its PROforma name** (e.g. `… (achieve goal of Prescribe_X)`). Goals have no names of their own, so the task name is the traceability link.
+5. `monitored_target`: the state, harm or action monitored, **and the therapy task it traces back to, by its PROforma name** (e.g. `… (achieve goal of Prescribe_X)`). Goals have no names of their own, so the task name is the traceability link. A suspected-ADE alert names its ADE Enquiry (`Monitor_<ADE>`), which traces to the therapy task.
 6. `applies_when`: the **population or condition under which this monitoring applies**, faithful to the cited source.
    - If the source qualifies the harm to a sub-population (e.g. a harm the label attaches *only to patients on an interacting medication*, or *only to patients with a given comorbidity*), state that condition here and gate the action with an executable `precondition` (below).
    - Use the bare token `all_patients_on_therapy` only when the source applies it to everyone on the drug.
@@ -81,10 +83,12 @@ The native `description` of a monitoring action states what is monitored and why
 The full pattern is `ADEMonitoringEnquiry.md`; the contract of each element:
 
 - **ADE Enquiry** (`Monitor_<ADE>`, `enquiry`): every required key above, unchanged, plus at least one data item source.
-- **Finding data item** (a source of an ADE Enquiry): a `caption` (the question as asked), a real type (`boolean`, or `real`/`integer` with a `unit`), and **required** Ontology coding `ontology.coding=SCT:<id> [<caption>]` in its own metaprops; `source` + `quote` recommended.
+- **Finding data item** (a source of an ADE Enquiry): a `caption` (the question as asked), a real type (yes/no `text` with the range `"yes||yes", "no||no"`, or `real`/`integer` with a `unit`; never `boolean`), a `default_value` (`"no"`, or a normal value that does not trigger the test step), a non-mandatory source, and **required** Ontology coding `ontology.coding=SCT:<id> [<caption>]` in its own metaprops; `source` + `quote` recommended. No scheduling item (`*_check_due`, `*_due`).
 - **`Display_Potential_ADEs`** (`action`): `role=ade_display`, `goal.verb=order`, `goal.noun_phrase=display of the potential adverse drug effects monitored for this therapy`; a multi-line Markdown `caption` with one list item per ADE Enquiry. No `ServiceRequest.*` block and no source.
-- **`Order_<Test>`** (`action`): `role=test_order`, `ordered_for=Monitor_<ADE>`, `goal.verb=order`, `goal.noun_phrase=<test name>`, **required** `ontology.coding=LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` on its component; `caption`, `description`, `procedure`; a `precondition` over the Enquiry's findings; optional `source.N` + `quote.N`.
-- **`Tests_Ordering_Recommendations_<ADE>`** (`decision`, `choice_mode :: multiple`): `role=test_ordering`, `ordered_for=Monitor_<ADE>`; a `precondition` over the Enquiry's findings; one candidate per test with **required** `ontology.coding=LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` in the candidate's metaprops and at least one argument (`for,true()` unless the source restricts the test).
+- **`Order_<Test>`** (`action`): `role=test_order`, `ordered_for=Monitor_<ADE>`, `goal.verb=order`, `goal.noun_phrase=<test name>`, **required** `ontology.coding=LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` on its component; `caption`, `description`, `procedure`; a `precondition` over the Enquiry's findings only (`a = "yes" or b = "yes" ...`); optional `source.N` + `quote.N`.
+- **`Tests_Ordering_Recommendations_<ADE>`** (`decision`, `choice_mode :: multiple`): `role=test_ordering`, `ordered_for=Monitor_<ADE>`; a `precondition` over the Enquiry's findings only; one candidate per test with **required** `ontology.coding=LNC:<LOINC_NUM> [<LONG_COMMON_NAME>]` in the candidate's metaprops and at least one argument (`for,true()` unless the source restricts the test).
+- **`suspected_<ade>`** (data item, an ADE Enquiry with no test step): yes/no `text`, default `"no"`, caption "Is <ADE> suspected?", SNOMED CT coded with the ADE's concept, a non-mandatory source of the Enquiry.
+- **`Alert_Further_Examination_<ADE>`** (`action`, after its Enquiry, `precondition :: suspected_<ade> = "yes"`): `role=ade_alert` and every required key above (`goal.verb=order`; `ServiceRequest.code=further clinical examination for suspected <ADE>`, `ServiceRequest.occurrenceTiming=when <ADE> is suspected`, `ServiceRequest.patientInstruction`, `ServiceRequest.performerInstruction=examine the patient for <ADE> and decide on further work-up`; `category=undesired_ade`; `monitored_target=Monitor_<ADE>`; `assistant_invention` noting that the alert follows Mor Peleg's know-how and orders no test because the sources name none), a `caption` "Alert: further examination of <ADE>", `description`, `procedure`, and the ADE's SNOMED CT coding on its component.
 
 ## Therapy actions
 
@@ -173,15 +177,16 @@ A monitoring task (Action or ADE Enquiry) FAILS review if any of these hold:
 
 `precondition` is a native task property: "If present, this condition must evaluate to true at the point when the task becomes active, otherwise the task will immediately be discarded without executing" (Composer property sheet).
 
-When `applies_when` names a sub-population rather than `all_patients_on_therapy`, gate the monitoring action with a `precondition`. It must be a PROforma expression over a data item that the eligibility/baseline Enquiry asks for, so the scoping is executable and not only documented. Add the data item and its source if they do not exist yet. A sentence such as "patient takes an interacting medication = true" is not a precondition.
+When `applies_when` names a sub-population rather than `all_patients_on_therapy`, gate the monitoring action with a `precondition`. It must be a PROforma expression over a data item that the eligibility/baseline Enquiry asks for, so the scoping is executable and not only documented. Add the data item and its source if they do not exist yet. A sentence such as "patient takes an interacting medication = yes" is not a precondition.
 
 Example (every call also takes `file`):
 
 ```
-add_data_item(name: "on_interacting_medication", type: "boolean", caption: "On the interacting medication the label names?")
-add_source(task: "Get_Eligibility_Data", data: "on_interacting_medication")
-set_attribute(selector: "Monitor_<Harm>", attribute: "precondition", value: "on_interacting_medication = true")
-check_expression(expression: "on_interacting_medication = true")
+add_data_item(name: "on_interacting_medication", type: "text", range: "\"yes||yes\", \"no||no\"",
+              default_value: "\"no\"", caption: "On the interacting medication the label names?")
+add_source(task: "Get_Eligibility_Data", data: "on_interacting_medication", mandatory: false)
+set_attribute(selector: "Monitor_<Harm>", attribute: "precondition", value: "on_interacting_medication = \"yes\"")
+check_expression(expression: "on_interacting_medication = \"yes\"")
 ```
 
 `lint` and `check_expression` type-check the precondition. `check_cig.mjs` fails a sub-population action without one. The `cig-monitoring-review` source-fidelity phase checks that an action whose cited source qualifies the harm carries both a faithful `applies_when` and the precondition.

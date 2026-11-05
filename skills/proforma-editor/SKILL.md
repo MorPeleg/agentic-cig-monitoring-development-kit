@@ -78,8 +78,8 @@ truth.
 | **set_metadata** | Metadata fields. | `file`, `title`, `desc`, `author`, `version`, `cdate`, `mdate` |
 | **add_task** | Create a task **and** its component in a plan, optionally sequenced and gated. The normal way to add any task. | `file`, `plan`, `kind` (`plan`/`action`/`enquiry`/`decision`/`task`), `name`, `caption`, `description`, `after` (array of sibling names), `precondition`, `ltwh` |
 | **add_component** | Add a component that reuses an existing task definition. | `file`, `plan`, `task_definition`, `name`, `after`, `pf` |
-| **add_data_item** | Add a data item. No `description` parameter: set it with `set_attribute`. | `file`, `name`, `type` (`text`/`integer`/`real`/`boolean`/`date`/`time`/`datetime`/`setof_*`), `caption`, `range`, `default_value`, `derivation`, `unit` |
-| **add_source** | Make an enquiry (or decision) ask for a data item; can create the item. | `file`, `task`, `data`, `mandatory` (default true), `create_type` |
+| **add_data_item** | Add a data item. No `description` parameter: set it with `set_attribute`. | `file`, `name`, `type` (`text`/`integer`/`real`/`date`/`time`/`datetime`/`setof_*`; `boolean` exists but the kit never uses it: a yes/no item is `text` with `range` `"yes||yes", "no||no"`), `caption`, `range`, `default_value`, `derivation`, `unit` |
+| **add_source** | Make an enquiry (or decision) ask for a data item; can create the item. | `file`, `task`, `data`, `mandatory` (default true; the kit passes `false` except for an item a plan's precondition reads), `create_type` |
 | **add_candidate** | Add a decision candidate. | `file`, `decision`, `name`, `caption`, `recommendation` (default `netsupport() > 0`), `priority` |
 | **add_argument** | Add an argument to a candidate. | `file`, `decision`, `candidate`, `support` (`for`/`against`/`confirming`/`excluding`, or a weight), `condition`, `name`, `caption` |
 | **set_attribute** | Add or **replace** one attribute. Free-text attributes (`caption`, `description`, `metaprops`, `procedure`, `trigger`, `context`) take plain text; others take PROforma text (expressions, `choice_mode` value, `ltwh`). | `file`, `selector`, `attribute`, `value` |
@@ -139,7 +139,7 @@ Names are illustrative.
 # a monitoring action with a population-scoped precondition, its native properties,
 # then its metaprops in one call (contract: skills/cig-monitoring/references/MetapropsSyntax.md)
 add_task(file, plan: "Monitor_Undesired_State", kind: "action", name: "Monitor_<Harm>",
-         caption: "Monitor for <harm> ...", precondition: "on_interacting_medication = true")
+         caption: "Monitor for <harm> ...", precondition: "on_interacting_medication = \"yes\"")
 set_attribute(file, selector: "Monitor_<Harm>", attribute: "description", value: "Monitors <harm> ...")
 set_attribute(file, selector: "Monitor_<Harm>", attribute: "procedure",
               value: "<code>, <occurrenceTiming>. Patient: ... Clinician: ...")
@@ -149,6 +149,10 @@ set_attribute(file, selector: "Monitor_<Harm>", attribute: "metaprops",
 # a task's Ontology coding goes on its component in the parent plan
 set_attribute(file, selector: "Monitor_Undesired_State/component:Monitor_<Harm>", attribute: "metaprops",
               value: "ontology.coding=SCT:<id> [<preferred term, as returned by snomed_search>]")
+
+# Composer shows the component's caption and description: copy the definition's onto it
+set_attribute(file, selector: "Monitor_Undesired_State/component:Monitor_<Harm>", attribute: "caption", value: "Monitor for <harm> ...")
+set_attribute(file, selector: "Monitor_Undesired_State/component:Monitor_<Harm>", attribute: "description", value: "Monitors <harm> ...")
 
 # metaprops on a data item or a decision argument (Ontology coding, source + quote)
 set_attribute(file, selector: "threshold_measure", attribute: "metaprops",
@@ -160,10 +164,11 @@ set_attribute(file, selector: "Eligibility_Decision/candidate:Eligible/argument:
 export_json(file)  ->  tasks[name == "Monitor_X"].metaprops
 set_attribute(file, selector: "Monitor_X", attribute: "metaprops", value: "<every key=value line>")
 
-# a typed data item the enquiry asks for
-add_data_item(file, name: "on_interacting_medication", type: "boolean", caption: "On <the interacting medication class>?")
-set_attribute(file, selector: "on_interacting_medication", attribute: "description", value: "...")
-add_source(file, task: "Get_Eligibility_Data", data: "on_interacting_medication")
+# a yes/no data item the enquiry asks for: text with the yes/no range, a default, a non-mandatory source
+add_data_item(file, name: "on_interacting_medication", type: "text", caption: "On <the interacting medication class>?",
+              range: "\"yes||yes\", \"no||no\"", default_value: "\"no\"")
+set_attribute(file, selector: "on_interacting_medication", attribute: "description", value: "... Default \"no\" for running and testing; the clinician confirms the actual value.")
+add_source(file, task: "Get_Eligibility_Data", data: "on_interacting_medication", mandatory: false)
 ```
 
 ## PROforma gotchas
@@ -187,9 +192,18 @@ add_source(file, task: "Get_Eligibility_Data", data: "on_interacting_medication"
   `<>` (`!=` is also accepted). Comparisons do not chain (`a < b < c` is an error).
 - **Decision results:** `result_of(D) = C` for a single-choice decision;
   `result_set(D) includes C` for `choice_mode :: multiple`.
-- **Boolean data** is typed as text by the verifier: compare with `= true` /
-  `= false` (e.g. `on_interacting_medication = true`), not `true()` and not a
-  bare name.
+- **Yes/no data** is `text` with `range :: "yes||yes","no||no"`: compare with
+  `= "yes"` / `= "no"` (e.g. `on_interacting_medication = "yes"`), never
+  `= true`, `= false`, `not(x)` or a bare name. Composer and the Deontics
+  engine have no `boolean` type (the engine passes every value as a string),
+  so the kit's gate FAILs a `boolean` data item.
+- **A source with no `mandatory` line is mandatory**, and the engine will not
+  complete an Enquiry while a mandatory value is missing: pass
+  `add_source(mandatory: false)` except for an item a plan's precondition reads,
+  and give every Enquiry data item a `default_value`.
+- **Composer shows a component's caption and description**, not the task
+  definition's: `add_task(caption:, description:)` sets the definition only, so
+  copy both onto `<plan>/component:<task>` with `set_attribute`.
 - **metaprops is Java properties text:** one `key=value` per line, no line
   break inside a value. Repeatable keys are numbered (`source.1`, `source.2`);
   a repeated bare key keeps only the last value. Inside a value, `=` and `:` are

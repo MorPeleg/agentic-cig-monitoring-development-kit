@@ -53,8 +53,8 @@ export default [
 The same JSON the `export_json` tool returns. Every field is always present (`null`, `[]` or `false` when unset).
 
 - `metadata` {`name`, `title`, `desc`, `author`, `version`, …}; `metaprops` (guideline level); `root` (the root plan's name).
-- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, `ServiceRequest.performerInstruction`, `monitored_target`, `applies_when`, `source` / `source.N`, `quote` / `quote.N`, `rxnorm.coding`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure` (the native order / instruction text), …; for plans `components[]` {`name`, `task`, `metaprops` (a task's `ontology.coding` lives here, on its component), `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`}; and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
-- `data[]`: `name`, `type`, `caption`, `description`, `unit`, `range[]`, `default_value`, `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops` (e.g. `ontology.coding`, `source`, `quote`). Candidate and argument `metaprops` are in the export too. An `ontology.coding` value is Composer's `<SCT|LNC|IC0|IC9>:<code> [<caption>]` (`cig/know-how/proforma/Ontology.md`); read it with `h.coding`.
+- `tasks[]`: `name`, `kind` (`plan` | `action` | `enquiry` | `decision`), `caption`, `description`, `metaprops` {key: value, unescaped; `goal.verb`, `goal.noun_phrase`, `ServiceRequest.intent`, `ServiceRequest.code`, `ServiceRequest.occurrenceTiming`, `ServiceRequest.patientInstruction`, `ServiceRequest.performerInstruction`, `monitored_target`, `applies_when`, `source` / `source.N`, `quote` / `quote.N`, `rxnorm.coding`, …}, `precondition` (the expression as text), `wait_condition`, `postcondition`, `procedure` (the native order / instruction text), …; for plans `components[]` {`name`, `task`, `metaprops` (a task's `ontology.coding` lives here, on its component), `after[]` (sibling names it waits for), `optional`, `number_of_cycles`, `cycle_repeat`, …}; for decisions `choice_mode`, `candidates[]` {`name`, `description`, `recommendation`, `priority`, `arguments[]` {`name`, `support` (`for` | `against` | `confirming` | `excluding`), `condition`}}; for enquiries `sources[]` {`data`, `mandatory`} (`null` means no `mandatory` line, which is mandatory; `false` is `mandatory :: no`); and `used_by[]` (parent plans), `paths[]` (root-to-task paths), `reachable`.
+- `data[]`: `name`, `type` (a yes/no item is `text`, never `boolean`), `caption`, `description`, `unit`, `range[]` (raw values such as `"\"yes||yes\""`; the part before `||` is the value), `default_value` (raw, e.g. `"\"no\""`), `derivation`, `asked_by[]` (the Enquiries that ask for it), `metaprops` (e.g. `ontology.coding`, `source`, `quote`). Candidate and argument `metaprops` are in the export too. An `ontology.coding` value is Composer's `<SCT|LNC|IC0|IC9>:<code> [<caption>]` (`cig/know-how/proforma/Ontology.md`); read it with `h.coding`.
 
 #### `h`: the helpers `run_cqs.mjs` provides
 
@@ -65,12 +65,16 @@ The same JSON the `export_json` tool returns. Every field is always present (`nu
 | `h.data(name?)` | the data item with that exact name (or `null`); with no argument, all data items |
 | `h.meta(t, key, all?)` | `t.metaprops[key]` or `null`; with `all = true`, the values of a repeatable key (`key`, `key.1`, `key.2`, …) as an array in number order |
 | `h.goal(t)` | `{ verb, noun_phrase }` from `goal.verb` / `goal.noun_phrase` as written (each `null` if absent) |
-| `h.monitoringTasks()` | the monitoring tasks, as in `check_cig.mjs`: actions whose `goal.verb` is `order` (trimmed, case-insensitive) except the ADE display (`role=ade_display`) and test-order (`role=test_order`) actions, plus the ADE Enquiries (`goal.verb=order` with a `ServiceRequest` block) |
+| `h.monitoringTasks()` | the monitoring tasks, as in `check_cig.mjs`: actions whose `goal.verb` is `order` (trimmed, case-insensitive) except the ADE display (`role=ade_display`) and test-order (`role=test_order`) actions, plus the ADE Enquiries (`goal.verb=order` with a `ServiceRequest` block); the suspected-ADE alerts (`role=ade_alert`) are included |
 | `h.monitoringActions()` | the same as `h.monitoringTasks()` (kept for older query files; it includes the ADE Enquiries) |
 | `h.monitorEnquiries()` | the ADE Enquiries only |
 | `h.adeDisplay()` | the ADE display action(s), each with `items`: the list items of its Markdown caption |
 | `h.findingsOf(enquiry)` | the data item objects an Enquiry asks for (its sources) |
 | `h.testSteps(enquiry?)` | the test steps (`Order_<Test>` actions, `Tests_Ordering_Recommendations_<ADE>` decisions), optionally of one ADE Enquiry, as `{ name, kind, ordered_for, precondition, choice_mode, tests: [{ name, coding, system, code, caption }] }`; `coding` is the raw value (an `Order_<Test>` action's from its component), `system`/`code`/`caption` its parts |
+| `h.alertsOf(enquiry?)` | the suspected-ADE alerts (`Alert_Further_Examination_<ADE>` actions, `role=ade_alert`), optionally of one ADE Enquiry, as `{ name, kind: "alert", for, precondition, suspected, coding }`: `for` is the Enquiry its `monitored_target` names (or its name implies), `suspected` the `suspected_` items its precondition reads, `coding` parsed as in `h.coding` |
+| `h.followUpsOf(enquiry)` | an ADE Enquiry's follow-up steps: `h.testSteps(enquiry)` then `h.alertsOf(enquiry)` (one row per step; an ADE has exactly one) |
+| `h.isYesNo(item)` | `true` when a data item (object or name) is a yes/no item: `type` `text` with a range of exactly `yes` and `no` |
+| `h.reads(expr)` | the data item names an expression reads (quoted text such as `"yes"` is skipped), e.g. the findings a test step's precondition is gated on |
 | `h.coding(x)` | the ontology coding of a task (read from its component in the parent plan, as Composer does), a data item, a candidate, a task or data item name, or a raw value, parsed as `{ system, code, caption }` (`system` is `SCT`, `LNC`, `IC0` or `IC9`); `null` when uncoded or not in Composer's form |
 | `h.therapyActions()` | actions whose `goal.verb` is `achieve` or `avoid` (trimmed, case-insensitive) |
 | `h.children(plan)` | the tasks run by the plan's components, one level |
@@ -117,8 +121,20 @@ Use `h.descendants("Monitoring_Plan")` when the CQ spans nested sub-plans.
   }],
   expect: (rows) =>
     rows[0].findings.length > 0 && rows[0].findings.every((f) => /^SCT:\d{6,18} \[.+\]$/.test(f.coding || "")) &&
+    rows[0].findings.every((f) => f.type !== "boolean") &&
     rows[0].steps.length === 1 && rows[0].steps[0].precondition &&
     rows[0].steps[0].tests.every((t) => t.system === "LNC" && /^\d+-\d$/.test(t.code || "")),
+}
+```
+
+An ADE whose sources name no test has a suspected-ADE alert instead of a test step:
+
+```js
+{
+  id: "CQ11",
+  question: "For <harm>, which has no test, what prompts further examination?",
+  query: (g, h) => h.alertsOf("Monitor_<Harm>").map((a) => ({ ...a, yesNo: a.suspected.every((n) => h.isYesNo(n)) })),
+  expect: (rows) => rows.length === 1 && rows[0].suspected.length === 1 && rows[0].yesNo && rows[0].coding?.system === "SCT",
 }
 ```
 

@@ -59,7 +59,8 @@ const byName = new Map(g.tasks.map((t) => [t.name, t]));
 const verbOf = (t) => (t?.metaprops?.["goal.verb"] || "").trim().toLowerCase();
 const roleOf = (t) => (t?.metaprops?.role || "").trim().toLowerCase();
 // monitoring tasks, as in check_cig.mjs: Actions with goal.verb=order (except the ADE display and
-// test-order Actions) and the ADE Enquiries (goal.verb=order with a ServiceRequest block)
+// test-order Actions; the suspected-ADE alerts, role=ade_alert, are monitoring Actions) and the ADE
+// Enquiries (goal.verb=order with a ServiceRequest block)
 const isMonitor = (t) =>
   verbOf(t) === "order" &&
   ((t.kind === "action" && !["ade_display", "test_order"].includes(roleOf(t))) ||
@@ -76,6 +77,23 @@ const codingValue = (x) => {
   if (isTask(x)) return taskCoding(g, x.name);
   return x.metaprops?.["ontology.coding"] ?? null;
 };
+const dataNames = new Set(g.data.map((d) => d.name));
+// the data items an expression reads (quoted text stripped first, so "yes" is not a name)
+const reads = (expr) => {
+  const text = String(expr || "").replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''");
+  return [...new Set((text.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter((n) => dataNames.has(n)))];
+};
+const rangeValues = (d) => (d?.range || []).map((v) => String(v).trim().replace(/^(["'])([\s\S]*)\1$/, "$2").split("||")[0].trim());
+const isWord = (name, text) => new RegExp(`(^|[^A-Za-z0-9_])${name}([^A-Za-z0-9_]|$)`).test(text || "");
+// the ADE Enquiry a suspected-ADE alert follows: named in monitored_target, else by Alert_Further_Examination_<ADE>
+const alertEnquiry = (t) => {
+  const enqs = g.tasks.filter((e) => e.kind === "enquiry" && isMonitor(e));
+  return (
+    enqs.find((e) => isWord(e.name, t.metaprops?.monitored_target)) ||
+    enqs.find((e) => t.name === "Alert_Further_Examination_" + e.name.replace(/^Monitor_/, "")) ||
+    null
+  );
+};
 const h = {
   /** Tasks, optionally of one kind (plan, action, enquiry, decision, task). */
   tasks: (kind) => g.tasks.filter((t) => !kind || t.kind === kind),
@@ -84,7 +102,7 @@ const h = {
   /** A metaprops value; repeatable keys (source) come back as an array with meta(t, "source", true). */
   meta: (t, key, all = false) => (all ? metaValues(t?.metaprops, key) : t?.metaprops?.[key] ?? null),
   goal: (t) => ({ verb: t?.metaprops?.["goal.verb"] ?? null, noun_phrase: t?.metaprops?.["goal.noun_phrase"] ?? null }),
-  /** Monitoring tasks: monitor Actions and ADE Enquiries (not the ADE display or test-order Actions). */
+  /** Monitoring tasks: monitor Actions (suspected-ADE alerts included) and ADE Enquiries (not the ADE display or test-order Actions). */
   monitoringTasks: () => g.tasks.filter(isMonitor),
   /** Alias of monitoringTasks (kept for older query files). */
   monitoringActions: () => g.tasks.filter(isMonitor),
@@ -115,6 +133,31 @@ const h = {
           return { name: x.name, coding: codingValue(x), system: c?.system ?? null, code: c?.code ?? null, caption: c?.caption ?? null, label: c?.caption ?? null };
         }),
       })),
+  /** Suspected-ADE alerts (Alert_Further_Examination_<ADE> Actions, role=ade_alert), optionally for one ADE Enquiry:
+   *  {name, kind: "alert", for, precondition, suspected: [suspected_ items its precondition reads], coding} */
+  alertsOf: (enquiry) =>
+    g.tasks
+      .filter((t) => t.kind === "action" && roleOf(t) === "ade_alert")
+      .map((t) => ({ t, e: alertEnquiry(t) }))
+      .filter(({ e }) => !enquiry || e?.name === enquiry)
+      .map(({ t, e }) => ({
+        name: t.name,
+        kind: "alert",
+        for: e?.name ?? null,
+        precondition: t.precondition,
+        suspected: reads(t.precondition).filter((n) => n.startsWith("suspected_")),
+        coding: h.coding(t),
+      })),
+  /** The follow-up steps of an ADE Enquiry: its test steps, then its suspected-ADE alerts (kind "alert"). */
+  followUpsOf: (enquiry) => [...h.testSteps(enquiry), ...h.alertsOf(enquiry)],
+  /** True when a data item (object or name) is a yes/no item: type text with a range of exactly yes and no. */
+  isYesNo: (x) => {
+    const d = typeof x === "string" ? g.data.find((dd) => dd.name === x) : x;
+    const v = rangeValues(d).map((s) => s.toLowerCase()).sort();
+    return (d?.type || "").toLowerCase() === "text" && v.length === 2 && v[0] === "no" && v[1] === "yes";
+  },
+  /** The data item names an expression (a precondition, an argument condition) reads. */
+  reads,
   /** The ontology coding of a task (read from its component in the parent plan, as Composer does),
    *  a data item, a candidate or a raw value, parsed from Composer's "<prefix>:<code> [<caption>]":
    *  {system: "SCT"|"LNC"|"IC0"|"IC9", code, caption}, or null when uncoded or not in that form. */

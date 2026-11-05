@@ -100,7 +100,7 @@ For each therapy goal defined in the previous step, and for each desired and und
 The know-how above says *what* to model. How each PROforma construct is represented in a Deontics Composer guideline (`.pf`), with its native properties and the tool calls that set them, is in [`proforma/`](proforma/):
 
 - [`TaskProperties.md`](proforma/TaskProperties.md): the properties every task has (Plan, Action, Enquiry and Decision are all Tasks), and the ones each kind adds.
-- [`Data.md`](proforma/Data.md): data items (type, caption, unit, range, default value, derivation, dynamic, ontology coding, source quotes).
+- [`Data.md`](proforma/Data.md): data items (type, caption, unit, range, yes/no items, default value, mandatory sources, derivation, dynamic, ontology coding, source quotes), and the rules that let a guideline run in the Deontics engine.
 - [`Ontology.md`](proforma/Ontology.md): Composer's ontology coding (`SCT:<id> [<caption>]`, `LNC:<code> [<caption>]`) and where each element carries it.
 - [`Enquiry.md`](proforma/Enquiry.md) and [`Decision.md`](proforma/Decision.md): populating an Enquiry's data items and a Decision's candidates and arguments.
 

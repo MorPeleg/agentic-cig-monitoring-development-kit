@@ -90,7 +90,7 @@ The root goal keys may also be repeated on the file-level `metaprops` line.
 plan ccd_antithrombotic_monitoring                 goal.verb=treat
   enquiry  Get_Antithrombotic_Data                 14 typed baseline data items
   decision Antithrombotic_Regimen_Decision         after Get_Antithrombotic_Data; 9 regimen candidates
-  plan     Antithrombotic_Therapy                  after the Decision; precondition active_pathological_bleeding = false
+  plan     Antithrombotic_Therapy                  after the Decision; precondition active_pathological_bleeding = "no"
   plan     Monitoring_Plan                         after Antithrombotic_Therapy; Monitor_Actions, Monitor_Desired_State, Monitor_Undesired_State in parallel
 ```
 

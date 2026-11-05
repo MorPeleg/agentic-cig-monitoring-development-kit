@@ -58,10 +58,12 @@ A data item:
 
 ```
 data  :: 'skin_rash' ;
-     type :: boolean ;
+     type :: text ;
      caption :: 'New skin rash or eruption?' ;
      metaprops :: 'ontology.coding=SCT\\:271807003 [Eruption of skin (disorder)]
 ' ;
+     range ::"yes||yes","no||no";
+     default_value :: "no" ;
 end data.
 ```
 
